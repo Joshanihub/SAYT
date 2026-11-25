@@ -24,7 +24,7 @@ import math
 import struct
 import sys
 import wave
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 # ---------------------------------------------------------------------------
 # Constants (must match generator)
@@ -128,11 +128,56 @@ class VerificationResult:
         return sum(1 for _, ok, _ in self.checks if not ok)
 
 
+def _resolve_safe_fixture_path(filename: object,
+                               input_dir: Path) -> tuple[Path | None, str]:
+    """Validate *filename* and resolve it strictly within *input_dir*.
+
+    Rejects non-strings, empty strings, null bytes, absolute or drive/root-
+    anchored paths, parent-directory traversal (``..``), and symlinks or paths
+    whose resolved target escapes *input_dir*.
+    """
+    if not isinstance(filename, str) or not filename:
+        return None, "Manifest filename must be a non-empty string"
+
+    if "\x00" in filename:
+        return None, f"Invalid null byte in filename: {filename!r}"
+
+    # Check both Windows and POSIX path semantics so traversal or rooted paths
+    # from a foreign OS cannot sneak through on any platform.
+    win_path = PureWindowsPath(filename)
+    posix_path = PurePosixPath(filename)
+    if (
+        win_path.is_absolute()
+        or posix_path.is_absolute()
+        or bool(win_path.drive)
+        or bool(win_path.root)
+        or bool(posix_path.root)
+        or ".." in win_path.parts
+        or ".." in posix_path.parts
+    ):
+        return None, f"Unsafe path rejected (absolute or traversal): {filename}"
+
+    base_dir = input_dir.resolve()
+    candidate = Path(filename)
+    resolved_path = (base_dir / candidate).resolve()
+
+    if resolved_path == base_dir or not resolved_path.is_relative_to(base_dir):
+        return None, f"Path escapes fixture directory: {filename}"
+
+    return resolved_path, "Path confined within fixture directory"
+
+
 def verify_file(entry: dict, input_dir: Path) -> VerificationResult:
     """Verify a single fixture file against its manifest entry."""
     result = VerificationResult()
-    filename = entry["filename"]
-    filepath = input_dir / filename
+    filename = entry.get("filename") if isinstance(entry, dict) else None
+
+    # 0. Strict path confinement
+    filepath, path_detail = _resolve_safe_fixture_path(filename, input_dir)
+    if filepath is None:
+        result.check("safe_path", False, path_detail)
+        return result
+    result.check("safe_path", True, path_detail)
 
     # 1. File existence
     result.check("file_exists", filepath.exists(),
@@ -236,7 +281,7 @@ def verify_all(input_dir: Path) -> int:
     print(f"Files to verify: {len(files)}\n")
 
     for entry in files:
-        filename = entry["filename"]
+        filename = entry.get("filename", "<invalid>") if isinstance(entry, dict) else "<invalid>"
         result = verify_file(entry, input_dir)
         status = "PASS" if result.passed else "FAIL"
         icon = "✓" if result.passed else "✗"

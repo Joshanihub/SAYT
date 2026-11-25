@@ -183,5 +183,86 @@ class TestVerifyClippingDetection(unittest.TestCase):
             shutil.rmtree(tmpdir, ignore_errors=True)
 
 
+class TestVerifyPathValidation(unittest.TestCase):
+    """Verifier rejects absolute paths and directory traversal outside input_dir."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.parent_dir = Path(tempfile.mkdtemp(prefix="sayt_ver_path_"))
+        cls.fixture_dir = cls.parent_dir / "fixtures"
+        cls.fixture_dir.mkdir()
+        gen.generate(cls.fixture_dir, force=True)
+
+        # Place a valid WAV outside fixture_dir to prove traversal cannot read it
+        cls.outside_wav = cls.parent_dir / "outside.wav"
+        shutil.copy2(cls.fixture_dir / "deck_a_440hz.wav", cls.outside_wav)
+        cls.manifest_text = (cls.fixture_dir / "manifest.json").read_text()
+        manifest = json.loads(cls.manifest_text)
+        cls.valid_entry = dict(next(
+            e for e in manifest["files"]
+            if e["filename"] == "deck_a_440hz.wav"
+        ))
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.parent_dir, ignore_errors=True)
+
+    def _assert_rejected(self, malicious_filename: object) -> None:
+        entry = dict(self.valid_entry, filename=malicious_filename)
+        result = ver.verify_file(entry, self.fixture_dir)
+        self.assertFalse(result.passed,
+                         f"Expected rejection for {malicious_filename!r}")
+        self.assertEqual(result.checks[0][0], "safe_path")
+        self.assertFalse(result.checks[0][1])
+        # Verification must stop at safe_path without touching the filesystem
+        self.assertEqual(len(result.checks), 1)
+
+    def test_parent_traversal_rejected(self):
+        self._assert_rejected("../outside.wav")
+
+    def test_backslash_parent_traversal_rejected(self):
+        self._assert_rejected(r"..\outside.wav")
+
+    def test_nested_traversal_rejected(self):
+        self._assert_rejected("sub/../../outside.wav")
+
+    def test_absolute_path_rejected(self):
+        self._assert_rejected(str(self.outside_wav.resolve()))
+
+    def test_posix_root_path_rejected(self):
+        self._assert_rejected("/etc/passwd")
+
+    def test_windows_drive_relative_path_rejected(self):
+        self._assert_rejected("C:outside.wav")
+
+    def test_current_dir_dot_rejected(self):
+        self._assert_rejected(".")
+
+    def test_empty_and_non_string_filename_rejected(self):
+        self._assert_rejected("")
+        self._assert_rejected(None)
+
+    def test_verify_all_fails_on_traversal_manifest(self):
+        manifest_path = self.fixture_dir / "manifest.json"
+        try:
+            manifest = json.loads(self.manifest_text)
+            manifest["files"][0]["filename"] = "../outside.wav"
+            manifest_path.write_text(json.dumps(manifest))
+            self.assertEqual(ver.verify_all(self.fixture_dir), 1)
+        finally:
+            manifest_path.write_text(self.manifest_text)
+
+    def test_symlink_escape_rejected(self):
+        link_path = self.fixture_dir / "escape_link.wav"
+        try:
+            link_path.symlink_to(self.outside_wav)
+        except OSError:
+            self.skipTest("Symlink creation requires elevated privileges on this host")
+        try:
+            self._assert_rejected("escape_link.wav")
+        finally:
+            link_path.unlink(missing_ok=True)
+
+
 if __name__ == "__main__":
     unittest.main()
