@@ -68,6 +68,10 @@ jobs:
           cargo test --workspace
           pnpm test
 
+      - name: Run audio validation tests on Linux
+        if: runner.os == 'Linux'
+        run: python3 -m unittest discover -s tools/audio-validation/tests -v
+
       - name: Audit Rust dependency policy and advisories
         run: |
           cargo deny check --hide-inclusion-graph bans licenses sources
