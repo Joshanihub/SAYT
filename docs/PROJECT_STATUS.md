@@ -14,7 +14,7 @@
 - Started from `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`; the worktree was clean.
 - Created `feat/stitch-m1-dj-workspace`.
 - CI setup fix is separately committed as `49676c2` (`fix(ci): remove premature pnpm cache setup`) and pushed to the feature branch.
-- GitHub Actions run [45702184357](https://github.com/Joshanihub/SAYT/actions/runs/45702184357) completed with three failures after Node/pnpm initialization. It exposed Windows Prettier line-ending failures, missing Ubuntu ALSA headers, and a macOS CoreAudio `Send` compile failure. Follow-up fixes are in the current working tree; their remote run is pending.
+- Initial run [45702184357](https://github.com/Joshanihub/SAYT/actions/runs/45702184357) exposed Windows Prettier line-ending failures, missing Ubuntu ALSA headers, and a macOS CoreAudio `Send` compile failure. Follow-up run [45710169519](https://github.com/Joshanihub/SAYT/actions/runs/45710169519) passed all required checks on Ubuntu, Windows, and macOS.
 
 ## Design reference
 
@@ -34,7 +34,7 @@ The original Stitch export and extracted references are in `design/reference/`. 
 ## Outstanding exit gates
 
 1. Local Rust and frontend format, lint, typecheck, unit, and build checks passed; exact commands, runtime pins, and test limits are recorded in `docs/M1_REPORT.md`.
-2. Push the follow-up CI corrections and verify all three OS jobs without weakening audit policy.
+2. Review the passing cross-platform run [45710169519](https://github.com/Joshanihub/SAYT/actions/runs/45710169519) alongside the still-open physical-device acceptance gate.
 3. Run an owner-approved file-picker and loaded-deck desktop smoke check; inspect 1440×900, 1280×800, and a narrow viewport when the app is not being used interactively.
 4. Run the physical-device checklist in `docs/REQUIREMENTS.md`: dual playback, independent controls, gain/EQ/crossfader audibility, device recovery, and shutdown. No such evidence is recorded yet.
 5. Before a consequential release decision, assess reachability/impact of the five unmaintained Rust crates and `glib` unsoundness notice, review the two BlueOak npm license terms, and complete an SBOM/legal review. Fresh local scan results are recorded in `docs/DEPENDENCIES_AND_LICENSES.md`.

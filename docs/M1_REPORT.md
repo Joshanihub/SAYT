@@ -25,10 +25,10 @@
 
 - First repair commit: `49676c2` (`fix(ci): remove premature pnpm cache setup`), pushed separately to this feature branch. It removes the `cache: pnpm` option from pinned `actions/setup-node`; Node and pnpm versions and frozen-lockfile behavior remain pinned.
 - Run [45702184357](https://github.com/Joshanihub/SAYT/actions/runs/45702184357) completed with all three OS jobs failing after setup initialization. The Node/pnpm install steps passed on Windows, macOS, and Ubuntu.
-- Windows then failed `pnpm format:check` with Prettier reporting 36 project files. The follow-up adds `.gitattributes` to force LF text checkouts. **Inference:** the cross-platform pattern is consistent with Windows line-ending conversion; the next remote run must confirm this correction.
+- Windows then failed `pnpm format:check` with Prettier reporting 36 project files. The follow-up adds `.gitattributes` to force LF text checkouts; the follow-up matrix passed formatting on Windows, macOS, and Ubuntu, confirming the checkout correction.
 - Ubuntu failed Rust lint/compile because `alsa-sys` could not find `alsa.pc`; the workflow now installs `libasound2-dev`.
 - macOS failed because `cpal::Stream`'s CoreAudio type is not `Send`, so Tauri could not manage `Mutex<Engine>`. The desktop shell now keeps `Engine` inside a dedicated owner thread and exposes only a bounded request/reply sender through Tauri state.
-- Follow-up remote CI is **not yet run**. No OS matrix is claimed green until GitHub Actions reports all required checks passing.
+- Follow-up run [45710169519](https://github.com/Joshanihub/SAYT/actions/runs/45710169519) on commit `693983fd0548079e7d6792e32b37c90fa4938f76` completed successfully on Windows, macOS, and Ubuntu. Each job passed formatting, lint, frontend typecheck/build, Rust tests, dependency-policy/advisory checks, npm audit, and license inventory.
 
 ## Local automated checks
 
@@ -64,6 +64,6 @@ The commands below were run on 2026-11-26 after the final source and test edits;
 
 ## Git and next gate
 
-- Branch: `feat/stitch-m1-dj-workspace`; base commit `1d0323799d0a833a40b20cd58b1c79e43a11044b`; separate CI setup commit `49676c2`.
-- The implementation commit, follow-up CI run, and pull request URL are added after push.
-- M1 remains **IN PROGRESS** until the cross-platform CI run passes and the owner records physical-device evidence for two real WAV files, independent transport, gain/EQ/crossfader, device failure/recovery, and shutdown. Do not begin M2 before that review.
+- Branch: `feat/stitch-m1-dj-workspace`; base commit `1d0323799d0a833a40b20cd58b1c79e43a11044b`; implementation commits `49676c2`, `c517a49`, and `693983f`.
+- Pull request: [#1](https://github.com/Joshanihub/SAYT/pull/1), open and unmerged. Cross-platform run: [45710169519](https://github.com/Joshanihub/SAYT/actions/runs/45710169519), all three OS jobs passed.
+- M1 remains **IN PROGRESS** until the owner records physical-device evidence for two real WAV files, independent transport, gain/EQ/crossfader, device failure/recovery, and shutdown. Do not begin M2 before that review.
