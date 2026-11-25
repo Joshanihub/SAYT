@@ -1,0 +1,8 @@
+Cargo.lock
+pnpm-lock.yaml
+LICENSE
+target/
+node_modules/
+dist/
+coverage/
+apps/desktop/src-tauri/gen/

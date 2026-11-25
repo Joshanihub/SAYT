@@ -1,0 +1,17 @@
+[workspace]
+members = [
+  "apps/desktop/src-tauri",
+  "crates/sayt-contract",
+  "crates/sayt-engine",
+  "crates/sayt-dsp",
+  "crates/sayt-decode",
+  "crates/sayt-render",
+  "crates/sayt-library",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+repository = "https://github.com/Joshanihub/SAYT"

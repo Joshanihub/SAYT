@@ -1,0 +1,22 @@
+{
+  "name": "sayt-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@12.23.0",
+  "engines": {
+    "node": ">=24.16.0 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @sayt/desktop dev",
+    "build": "pnpm --filter @sayt/desktop build",
+    "typecheck": "pnpm --filter @sayt/desktop typecheck",
+    "lint": "pnpm --filter @sayt/desktop lint",
+    "test": "pnpm --filter @sayt/desktop test",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "desktop": "pnpm --filter @sayt/desktop tauri"
+  },
+  "devDependencies": {
+    "prettier": "3.10.1"
+  }
+}

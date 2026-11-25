@@ -1,0 +1,5 @@
+SAYT is a pre-release project. Its core license is proposed as GPL-3.0-or-later and is not approved for a public release.
+
+Third-party software is listed in docs/licensing/third-party.md and pinned by Cargo.lock and pnpm-lock.yaml. License and vulnerability checks are part of CI.
+
+Product names and marks mentioned in documentation identify their respective owners. Mention does not imply endorsement or an integration agreement.
