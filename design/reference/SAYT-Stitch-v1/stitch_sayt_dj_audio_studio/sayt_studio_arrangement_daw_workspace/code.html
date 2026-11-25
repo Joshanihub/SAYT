@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&family=Space+Grotesk:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-container":"#c51640","error-container":"#93000a","tertiary":"#ffffff","outline-variant":"#444938","on-secondary-container":"#00374d","on-primary-container":"#506e00","inverse-surface":"#e2e2e9","on-surface":"#e2e2e9","secondary-fixed-dim":"#7bd0ff","on-secondary-fixed":"#001e2c","primary-container":"#c6f26a","on-secondary":"#00354a","surface-container-lowest":"#0c0e13","on-primary":"#253600","surface-dim":"#111318","secondary-container":"#00a6e0","surface-container-low":"#1a1b21","secondary":"#7bd0ff","tertiary-container":"#ffdadb","outline":"#8e937f","primary":"#ffffff","on-primary-fixed-variant":"#374e00","on-secondary-fixed-variant":"#004c69","inverse-primary":"#4b6700","error":"#ffb4ab","on-primary-fixed":"#141f00","on-background":"#e2e2e9","surface-container-highest":"#33353a","tertiary-fixed-dim":"#ffb2b7","surface":"#111318","primary-fixed":"#c6f26a","surface-tint":"#abd551","on-surface-variant":"#c4c9b3","tertiary-fixed":"#ffdadb","on-error":"#690005","primary-fixed-dim":"#abd551","on-tertiary":"#67001b","inverse-on-surface":"#2e3036","on-tertiary-fixed":"#40000d","background":"#111318","surface-container":"#1e2025","surface-container-high":"#282a2f","on-tertiary-fixed-variant":"#92002a","secondary-fixed":"#c4e7ff","on-error-container":"#ffdad6","surface-bright":"#37393f","surface-variant":"#33353a"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"margin-mobile":"0.5rem",margin:"0.75rem","space-xs":"0.25rem",gutter:"0.5rem","space-sm":"0.5rem","space-md":"0.75rem","space-lg":"1rem","gutter-compact":"0.25rem","space-xl":"1.5rem"},fontFamily:{"headline-xl":["Space Grotesk"],"body-md":["Inter"],"headline-lg":["Space Grotesk"],"body-sm":["Inter"],"label-telemetry-lg":["JetBrains Mono"],"label-telemetry-md":["JetBrains Mono"],"body-lg":["Inter"],"headline-md":["Space Grotesk"],"label-telemetry-sm":["JetBrains Mono"],"label-hardware":["Space Grotesk"]},fontSize:{"headline-xl":["28px",{lineHeight:"34px",letterSpacing:"-0.02em",fontWeight:"700"}],"body-md":["12px",{lineHeight:"16px",fontWeight:"400"}],"headline-lg":["22px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"600"}],"body-sm":["11px",{lineHeight:"14px",fontWeight:"400"}],"label-telemetry-lg":["20px",{lineHeight:"24px",letterSpacing:"-0.03em",fontWeight:"700"}],"label-telemetry-md":["13px",{lineHeight:"16px",letterSpacing:"-0.01em",fontWeight:"600"}],"body-lg":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-md":["16px",{lineHeight:"22px",fontWeight:"600"}],"label-telemetry-sm":["10px",{lineHeight:"12px",letterSpacing:"0.02em",fontWeight:"500"}],"label-hardware":["9px",{lineHeight:"10px",letterSpacing:"0.08em",fontWeight:"700"}]}}}};</script></head><body class="bg-surface-container-lowest text-on-surface font-body-md select-none"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-dim/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-7 w-full px-margin flex items-center justify-between bg-surface-container-lowest"><div class="flex items-center gap-space-sm"><div class="flex items-center gap-space-xs"><span class="w-2.5 h-2.5 rounded-full bg-error inline-block"></span><span class="w-2.5 h-2.5 rounded-full bg-primary-fixed-dim inline-block"></span><span class="w-2.5 h-2.5 rounded-full bg-secondary inline-block"></span></div><span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase tracking-wider pl-space-xs">SAYT — Open Music Creation & Performance Platform</span></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant bg-surface-container px-space-sm py-0.5 rounded"><span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span><span>DSP: 4.2%</span><span class="text-outline">|</span><span>48kHz</span><span class="text-outline">|</span><span>128 spl • 2.67ms buffer time</span></div><div class="flex items-center gap-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-on-surface">horizontal_rule</span><span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-on-surface">crop_square</span><span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-on-surface">close</span></div></div></div><div class="h-11 w-full px-margin flex items-center justify-between bg-surface-container-low"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm"><img alt="SAYT Open Music Platform Logo" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCDrQexQvTy-pr3yp21JOX42oEneZ5oOuLNBukodJ0cxvA33IHCl598hTHUAX2ANmJhjEbJLWEfbKBiauAfoAyNf2iLAui2eLuOIE0RFK7DmpirdjMRacp1FS3rxwiokx_GCJVNAcTDnQYxxxoc-TREA1yWwF3BLmvF2AlkxyfUc3g0CyvY6-RwbamG8jFIOvANLq3Gi3SwkOaZ-DTjMtRVamiof8YwfevsFfFAB7I"/><span class="font-headline-md text-headline-md text-primary tracking-tight font-bold hidden xl:inline">SAYT</span></div><nav class="flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-bold rounded"><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="sayt-open" href="#">SAYT Open</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="sayt-dj" href="#">SAYT DJ</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="library" href="#">Library</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="bridge" href="#">Bridge</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="preparation" href="#">Preparation</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="fx-sampler" href="#">FX & Sampler</a><a aria-current="page" class="px-space-md py-1 transition-colors bg-primary-container text-on-primary-container font-bold rounded" data-path="studio" href="#">Studio</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="settings" href="#">Settings</a></nav></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-highest px-space-sm py-1 rounded"><span class="w-2 h-2 rounded-full bg-primary-fixed animate-ping"></span><span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface">CoreAudio • Built-in Output (0.0dB)</span></div><div class="flex items-center gap-space-xs px-space-sm py-1 bg-surface-container rounded"><div class="flex flex-col gap-0.5"><div class="w-12 h-1 bg-surface-dim rounded-full overflow-hidden flex"><div class="w-3/4 h-full bg-primary-container"></div><div class="w-1/4 h-full bg-secondary-container"></div></div><div class="w-12 h-1 bg-surface-dim rounded-full overflow-hidden flex"><div class="w-2/3 h-full bg-primary-container"></div><div class="w-1/4 h-full bg-secondary-container"></div></div></div><span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">MST</span></div><div class="flex items-center gap-space-xs font-label-telemetry-md text-label-telemetry-md text-secondary bg-surface-container px-space-sm py-1 rounded"><span class="material-symbols-outlined text-[14px]">sync</span><span>124.00</span><span class="font-label-hardware text-label-hardware text-outline">BPM</span></div><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant bg-surface-container px-space-sm py-1 rounded cursor-pointer hover:bg-surface-container-high"><span class="w-2 h-2 rounded-full bg-error-container"></span><span>REC</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><aside class="fixed left-0 top-18 bottom-6 w-16 bg-surface-container-lowest z-40 flex flex-col items-center py-space-md justify-between shadow-[1px_0_4px_rgba(0,0,0,0.3)]"><nav class="flex flex-col items-center gap-space-sm" data-active-classes="bg-primary-container text-on-primary-container rounded"><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="deck-control" href="#"><span class="material-symbols-outlined text-[18px]">album</span><span class="font-label-hardware text-label-hardware mt-0.5">DECKS</span></a><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="mixer-strip" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-label-hardware text-label-hardware mt-0.5">MIX</span></a><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="sampler-racks" href="#"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="font-label-hardware text-label-hardware mt-0.5">PADS</span></a><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="fx-chain" href="#"><span class="material-symbols-outlined text-[18px]">waves</span><span class="font-label-hardware text-label-hardware mt-0.5">FX</span></a><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="midi-map" href="#"><span class="material-symbols-outlined text-[18px]">piano</span><span class="font-label-hardware text-label-hardware mt-0.5">MIDI</span></a></nav><div class="flex flex-col items-center gap-space-xs text-on-surface-variant"><div class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container hover:text-on-surface cursor-pointer"><span class="material-symbols-outlined text-[16px]">fullscreen</span></div><div class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container hover:text-on-surface cursor-pointer"><span class="material-symbols-outlined text-[16px]">help_outline</span></div></div></aside><div class="pl-16"><main class="w-full pt-18 pb-6 bg-surface-container-lowest min-h-screen"><div class="flex flex-col w-full text-on-surface select-none">
+<!-- Top DAW Header & Control Ribbon -->
+<div class="flex flex-col bg-surface-container-low px-space-md py-space-sm gap-space-xs shadow-md">
+<!-- Sub-row 1: Project Metadata & Global System Telemetry -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded bg-primary-container inline-block shadow-sm"></span>
+<span class="font-headline-md text-headline-md text-primary font-bold tracking-tight">Neon Horizon (VIP Arrangement)</span>
+<span class="bg-surface-container-highest text-on-surface-variant font-label-telemetry-sm text-label-telemetry-sm px-space-xs py-0.5 rounded">v2.4.1</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[13px] text-primary-fixed-dim">cloud_done</span>
+<span>Saved to Cloud & NVMe Storage</span>
+<span class="text-outline">·</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">Autosave: 28s ago</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs bg-surface-container-highest px-space-sm py-0.5 rounded font-label-telemetry-sm text-label-telemetry-sm">
+<span class="text-outline">RENDER:</span>
+<span class="text-primary-fixed">64-bit Float</span>
+<span class="text-outline">|</span>
+<span class="text-outline">LATENCY:</span>
+<span class="text-secondary">2.1ms (96kHz)</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high text-on-surface font-label-hardware text-label-hardware uppercase px-space-sm py-1 rounded transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">file_download</span>
+            Export Audio
+          </button>
+<button class="bg-primary-container text-on-primary-container font-label-hardware text-label-hardware uppercase px-space-sm py-1 rounded font-bold transition-all shadow-sm">
+            Freeze & Commit
+          </button>
+</div>
+</div>
+</div>
+<!-- Sub-row 2: Global Transport HUD & Tool Rack -->
+<div class="flex items-center justify-between bg-surface-container-lowest p-space-xs rounded shadow-inner">
+<!-- Transport Cluster -->
+<div class="flex items-center gap-space-sm">
+<!-- Main Digital Display HUD -->
+<div class="flex items-center bg-surface-container-low px-space-md py-1 rounded gap-space-md shadow-inner">
+<div class="flex flex-col">
+<span class="font-label-hardware text-label-hardware text-outline uppercase tracking-wider">Arrangement Counter</span>
+<span class="font-label-telemetry-lg text-label-telemetry-lg text-primary-fixed tracking-tight font-bold">BAR 033.1.00</span>
+</div>
+<div class="w-px h-7 bg-surface-container-highest"></div>
+<div class="flex flex-col">
+<span class="font-label-hardware text-label-hardware text-outline uppercase tracking-wider">Absolute Time</span>
+<span class="font-label-telemetry-md text-label-telemetry-md text-on-surface font-semibold">01:04.250</span>
+</div>
+<div class="w-px h-7 bg-surface-container-highest"></div>
+<!-- Tempo & Signature -->
+<div class="flex items-center gap-space-sm">
+<div class="flex flex-col">
+<span class="font-label-hardware text-label-hardware text-outline uppercase">BPM</span>
+<div class="flex items-center gap-1">
+<span class="font-label-telemetry-md text-label-telemetry-md text-primary font-bold">124.00</span>
+<button class="bg-surface-container px-1 py-0.5 rounded font-label-hardware text-label-hardware text-primary-fixed hover:bg-surface-bright">TAP</button>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-hardware text-label-hardware text-outline uppercase">Meter</span>
+<span class="font-label-telemetry-md text-label-telemetry-md text-on-surface font-bold">4/4</span>
+</div>
+</div>
+</div>
+<!-- Hardware Physical Transport Buttons -->
+<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" title="Return to Zero (Home)">
+<span class="material-symbols-outlined text-[16px]">first_page</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" title="Rewind">
+<span class="material-symbols-outlined text-[16px]">fast_rewind</span>
+</button>
+<button class="h-7 px-3 flex items-center justify-center gap-1 rounded bg-primary-container text-on-primary-container font-label-telemetry-sm text-label-telemetry-sm font-bold shadow-md" title="Play / Pause">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>PLAY</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" title="Stop">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">stop</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container hover:bg-error-container text-error transition-colors" title="Global Record Arm">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">radio_button_checked</span>
+</button>
+</div>
+<!-- Metronome & Cycle Loop Status -->
+<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded">
+<button class="px-space-sm h-7 flex items-center gap-1 rounded bg-primary-container text-on-primary-container font-label-hardware text-label-hardware uppercase">
+<span class="material-symbols-outlined text-[13px]">timer</span>
+<span>METRO (1/4)</span>
+</button>
+<button class="px-space-sm h-7 flex items-center gap-1 rounded bg-secondary-container text-on-secondary-container font-label-hardware text-label-hardware uppercase">
+<span class="material-symbols-outlined text-[13px]">repeat</span>
+<span>LOOP: 17–49</span>
+</button>
+<button class="px-space-sm h-7 flex items-center gap-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-hardware text-label-hardware uppercase">
+<span>PUNCH I/O</span>
+</button>
+</div>
+</div>
+<!-- Arrangement Edit Tools & Snap Ribbon -->
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center bg-surface-container-low p-1 rounded gap-0.5">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-primary-container text-on-primary-container" title="Pointer Tool (V)">
+<span class="material-symbols-outlined text-[15px]">near_me</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Pencil Tool (B)">
+<span class="material-symbols-outlined text-[15px]">edit</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Split / Razor (C)">
+<span class="material-symbols-outlined text-[15px]">content_cut</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Eraser (E)">
+<span class="material-symbols-outlined text-[15px]">delete</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant" title="Slip Editing Tool (Y)">
+<span class="material-symbols-outlined text-[15px]">swap_horiz</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded">
+<span class="font-label-hardware text-label-hardware text-outline uppercase">SNAP:</span>
+<div class="flex items-center gap-0.5 font-label-telemetry-sm text-label-telemetry-sm">
+<button class="px-1.5 py-0.5 rounded bg-surface-container text-outline hover:text-on-surface">BAR</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container text-outline hover:text-on-surface">1/4</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container text-outline hover:text-on-surface">1/8</button>
+<button class="px-1.5 py-0.5 rounded bg-primary-container text-on-primary-container font-bold">1/16</button>
+<button class="px-1.5 py-0.5 rounded bg-surface-container text-outline hover:text-on-surface">TRIP</button>
+</div>
+<span class="text-outline">|</span>
+<button class="font-label-telemetry-sm text-label-telemetry-sm text-secondary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">grid_4x4</span>
+<span>ADAPTIVE</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Main DAW Body: Split Browser (20%) & Arrangement Timeline (80%) -->
+<div class="flex flex-row w-full bg-surface-container-lowest overflow-hidden" style="height: calc(100vh - 168px);">
+<!-- Collapsible Left Media & Instrument Browser (approx 20% width) -->
+<aside class="w-64 flex-shrink-0 flex flex-col bg-surface-dim shadow-xl">
+<!-- Browser Top Header & Fast Search -->
+<div class="p-space-sm flex flex-col gap-space-xs bg-surface-container-low">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 font-label-hardware text-label-hardware text-outline uppercase tracking-wider">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">folder_open</span>
+<span>Project Explorer & VSTs</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="w-5 h-5 flex items-center justify-center rounded bg-surface-container hover:bg-surface-bright text-on-surface-variant">
+<span class="material-symbols-outlined text-[12px]">tune</span>
+</button>
+<button class="w-5 h-5 flex items-center justify-center rounded bg-surface-container hover:bg-surface-bright text-on-surface-variant">
+<span class="material-symbols-outlined text-[12px]">refresh</span>
+</button>
+</div>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-2 text-[14px] text-outline">search</span>
+<input class="w-full bg-surface-container-lowest text-on-surface font-body-sm text-body-sm pl-7 pr-7 py-1 rounded placeholder:text-outline focus:outline-none shadow-inner" placeholder="Search samples, VSTs, presets..." type="text" value="Core Tech"/>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline absolute right-2">⌘F</span>
+</div>
+</div>
+<!-- Tree Hierarchy Navigator -->
+<div class="flex-1 overflow-y-auto p-space-xs space-y-0.5 font-body-sm text-body-sm">
+<!-- Category: Instruments -->
+<div class="px-space-xs py-1 flex items-center justify-between text-outline uppercase font-label-hardware text-label-hardware">
+<span>Software Instruments</span>
+<span class="material-symbols-outlined text-[12px]">expand_more</span>
+</div>
+<div class="pl-2 space-y-0.5">
+<div class="flex items-center justify-between px-space-xs py-1 rounded bg-surface-container-high text-primary-fixed cursor-pointer">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px] text-secondary">memory</span>
+<span class="font-medium truncate">Vital (Spectral Warp)</span>
+</div>
+<span class="font-label-hardware text-label-hardware bg-surface-dim px-1 rounded text-outline">VST3</span>
+</div>
+<div class="flex items-center justify-between px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface cursor-pointer">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px] text-primary-container">layers</span>
+<span class="truncate">Serum 2 Advanced</span>
+</div>
+<span class="font-label-hardware text-label-hardware bg-surface-dim px-1 rounded text-outline">AU</span>
+</div>
+<div class="flex items-center justify-between px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface cursor-pointer">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px] text-tertiary-fixed-dim">piano</span>
+<span class="truncate">u-he Diva Analog</span>
+</div>
+<span class="font-label-hardware text-label-hardware bg-surface-dim px-1 rounded text-outline">VST3</span>
+</div>
+</div>
+<!-- Category: Sample Libraries -->
+<div class="pt-2 px-space-xs py-1 flex items-center justify-between text-outline uppercase font-label-hardware text-label-hardware">
+<span>Factory Sound Banks</span>
+<span class="material-symbols-outlined text-[12px]">expand_more</span>
+</div>
+<div class="pl-2 space-y-0.5">
+<div class="flex items-center gap-1.5 px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant cursor-pointer">
+<span class="material-symbols-outlined text-[14px] text-primary-container">folder</span>
+<span>Core Drums (909 / 808 HD)</span>
+</div>
+<div class="flex items-center gap-1.5 px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant cursor-pointer">
+<span class="material-symbols-outlined text-[14px] text-secondary">folder</span>
+<span>Synths & Sub Basses</span>
+</div>
+<div class="flex items-center gap-1.5 px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant cursor-pointer">
+<span class="material-symbols-outlined text-[14px] text-tertiary-container">folder</span>
+<span>Vocal Chops & Atmospheres</span>
+</div>
+<div class="flex items-center gap-1.5 px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant cursor-pointer">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed-dim">folder</span>
+<span>FX, Sweeps & Risers</span>
+</div>
+<div class="flex items-center gap-1.5 px-space-xs py-1 rounded bg-surface-container text-on-surface font-semibold cursor-pointer">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">audiotrack</span>
+<span>TechHouse_Clap_08.wav</span>
+</div>
+<div class="flex items-center gap-1.5 px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant cursor-pointer">
+<span class="material-symbols-outlined text-[14px] text-outline">audiotrack</span>
+<span>Acid_Sub_Transient_F#.wav</span>
+</div>
+</div>
+<!-- Project Assets -->
+<div class="pt-2 px-space-xs py-1 flex items-center justify-between text-outline uppercase font-label-hardware text-label-hardware">
+<span>Neon Horizon Stems</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-container">14 Files</span>
+</div>
+</div>
+<!-- Quick Sample Wave Preview Player -->
+<div class="p-space-sm bg-surface-container-low flex flex-col gap-space-xs shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 truncate">
+<span class="material-symbols-outlined text-[14px] text-primary-container">volume_up</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary truncate font-bold">TechHouse_Clap_08</span>
+</div>
+<div class="flex items-center gap-1 font-label-hardware text-label-hardware">
+<span class="bg-primary-container text-on-primary-container px-1 py-0.5 rounded font-bold">AUTO</span>
+<span class="text-outline">24b/48k</span>
+</div>
+</div>
+<!-- Mini Waveform Canvas Simulation -->
+<div class="h-10 w-full bg-surface-container-lowest rounded p-1 flex items-center relative overflow-hidden shadow-inner cursor-pointer">
+<div class="absolute left-0 top-0 bottom-0 w-3/5 bg-primary-container/10"></div>
+<div class="absolute left-3/5 top-0 bottom-0 w-0.5 bg-primary-container"></div>
+<!-- Waveform SVG Bar Representation -->
+<svg class="w-full h-8 text-primary-fixed-dim" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0,12 L4,10 L8,6 L12,18 L16,4 L20,20 L24,7 L28,17 L32,9 L36,15 L40,11 L44,13 L48,10 L52,14 L56,11 L60,13 L64,12 L68,12 L72,12 L76,12 L80,12 L84,12 L88,12 L92,12 L96,12 L100,12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+<path d="M0,12 L4,14 L8,18 L12,6 L16,20 L20,4 L24,17 L28,7 L32,15 L36,9 L40,13 L44,11 L48,14 L52,10 L56,13 L60,11 L64,12 L68,12 L72,12 L76,12 L80,12 L84,12 L88,12 L92,12 L96,12 L100,12" fill="none" opacity="0.6" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between text-outline font-label-telemetry-sm text-label-telemetry-sm">
+<span>0.385s</span>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[13px] text-primary-container cursor-pointer">play_arrow</span>
+<span class="material-symbols-outlined text-[13px] cursor-pointer hover:text-on-surface">volume_down</span>
+<div class="w-12 h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="w-3/4 h-full bg-primary-fixed"></div>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Arrangement Timeline (approx 80% width) -->
+<div class="flex-1 flex flex-col bg-surface-container-lowest overflow-hidden">
+<!-- Arrangement Markers & Timeline Ruler Strip -->
+<div class="flex flex-col bg-surface-container-low select-none shadow-sm">
+<!-- Marker Flags Row -->
+<div class="flex items-center h-5 bg-surface-dim pl-56 relative overflow-hidden">
+<!-- Marker 01: Intro -->
+<div class="absolute left-56 flex items-center gap-0.5 bg-surface-container-high px-1.5 py-0.5 rounded text-outline font-label-telemetry-sm text-label-telemetry-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span>01 Intro</span>
+</div>
+<!-- Marker 17: Build A -->
+<div class="absolute left-[36%] flex items-center gap-0.5 bg-surface-container px-1.5 py-0.5 rounded text-secondary font-label-telemetry-sm text-label-telemetry-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>17 Build A</span>
+</div>
+<!-- Marker 33: Main Drop (Active Focus) -->
+<div class="absolute left-[56%] flex items-center gap-1 bg-primary-container text-on-primary-container px-2 py-0.5 rounded font-label-telemetry-sm text-label-telemetry-sm font-bold shadow-sm">
+<span class="w-2 h-2 rounded-full bg-on-primary-container animate-pulse"></span>
+<span>33 MAIN DROP</span>
+</div>
+<!-- Marker 49: Breakdown -->
+<div class="absolute left-[76%] flex items-center gap-0.5 bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant font-label-telemetry-sm text-label-telemetry-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span>
+<span>49 Breakdown</span>
+</div>
+<!-- Marker 65: Climax -->
+<div class="absolute left-[92%] flex items-center gap-0.5 bg-surface-container px-1.5 py-0.5 rounded text-error font-label-telemetry-sm text-label-telemetry-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+<span>65 Climax</span>
+</div>
+</div>
+<!-- Cycle Loop Bracket & Bar Graduations Ruler -->
+<div class="flex items-center h-7 bg-surface-container-low pl-56 relative font-label-telemetry-sm text-label-telemetry-sm text-outline overflow-hidden">
+<!-- Active Loop Region Highlight: Bar 17 to 49 -->
+<div class="absolute left-[36%] w-[40%] top-0 bottom-0 bg-secondary/15 flex items-center justify-between px-1">
+<div class="flex items-center gap-0.5 text-secondary font-label-hardware text-label-hardware">
+<span class="material-symbols-outlined text-[12px]">keyboard_tab_rtl</span>
+<span>LOOP IN: 17.1</span>
+</div>
+<div class="h-0.5 flex-1 bg-secondary mx-2"></div>
+<div class="flex items-center gap-0.5 text-secondary font-label-hardware text-label-hardware">
+<span>LOOP OUT: 49.1</span>
+<span class="material-symbols-outlined text-[12px]">keyboard_tab</span>
+</div>
+</div>
+<!-- Ruler Tick Marks -->
+<div class="w-full flex justify-between pr-4">
+<div class="flex items-baseline gap-4"><span class="text-on-surface font-bold">1</span><span>5</span><span>9</span><span>13</span></div>
+<div class="flex items-baseline gap-4"><span class="text-secondary font-bold">17</span><span>21</span><span>25</span><span>29</span></div>
+<div class="flex items-baseline gap-4"><span class="text-primary-fixed font-bold text-label-telemetry-md">33</span><span>37</span><span>41</span><span>45</span></div>
+<div class="flex items-baseline gap-4"><span class="text-on-surface font-bold">49</span><span>53</span><span>57</span><span>61</span></div>
+<div class="flex items-baseline gap-4"><span class="text-error font-bold">65</span><span>69</span><span>73</span></div>
+</div>
+</div>
+</div>
+<!-- Tracks Canvas Container with Stacked Tracks & Vertical Playhead -->
+<div class="flex-1 overflow-y-auto overflow-x-hidden relative bg-surface-container-lowest">
+<!-- Persistent Glowing Playhead Indicator at Bar 33.1 (56% offset + track header width) -->
+<div class="absolute top-0 bottom-0 left-[56%] w-px bg-primary-container z-30 pointer-events-none shadow-[0_0_12px_rgba(198,242,106,0.8)]">
+<div class="w-3.5 h-3.5 bg-primary-container text-on-primary-container rounded-sm flex items-center justify-center font-label-hardware text-label-hardware -ml-1.5 shadow-md">
+            ▼
+          </div>
+</div>
+<!-- Grid Lines Background Overlay -->
+<div class="absolute inset-0 pl-56 flex pointer-events-none opacity-10">
+<div class="w-1/8 h-full bg-outline-variant/30"></div>
+<div class="w-1/8 h-full bg-outline-variant/30"></div>
+<div class="w-1/8 h-full bg-outline-variant/30"></div>
+<div class="w-1/8 h-full bg-outline-variant/30"></div>
+<div class="w-1/8 h-full bg-outline-variant/30"></div>
+<div class="w-1/8 h-full bg-outline-variant/30"></div>
+<div class="w-1/8 h-full bg-outline-variant/30"></div>
+<div class="w-1/8 h-full bg-outline-variant/30"></div>
+</div>
+<div class="flex flex-col space-y-1 p-space-xs">
+<!-- TRACK 01: Audio - Drum Bus -->
+<div class="flex h-24 bg-surface-container-low rounded overflow-hidden shadow-sm group">
+<!-- Track Header (Width: 220px) -->
+<div class="w-56 flex-shrink-0 bg-surface-dim p-space-xs flex flex-col justify-between relative shadow-r">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-container"></div>
+<div class="flex items-center justify-between pl-2">
+<div class="flex items-center gap-1.5 truncate">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">01</span>
+<span class="font-headline-md text-headline-md text-primary font-bold truncate">Drum Bus (Main)</span>
+</div>
+<span class="bg-primary-container/20 text-primary-container font-label-hardware text-label-hardware px-1 rounded">AUDIO</span>
+</div>
+<!-- Controls Strip: Vol Fader, Pan, M/S/R -->
+<div class="pl-2 space-y-1">
+<div class="flex items-center justify-between">
+<!-- Micro Volume Fader -->
+<div class="flex items-center gap-1.5">
+<span class="font-label-hardware text-label-hardware text-outline">VOL</span>
+<div class="w-16 h-2 bg-surface-container-lowest rounded-full overflow-hidden relative shadow-inner">
+<div class="w-4/5 h-full bg-primary-container rounded-full"></div>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface font-semibold">-1.2 dB</span>
+</div>
+<!-- Pan -->
+<div class="flex items-center gap-0.5">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed">C</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-0.5">
+<div class="flex items-center gap-1">
+<button class="w-5 h-5 rounded bg-surface-container hover:bg-surface-container-high text-outline hover:text-on-surface font-label-hardware text-label-hardware">M</button>
+<button class="w-5 h-5 rounded bg-surface-container hover:bg-surface-container-high text-outline hover:text-on-surface font-label-hardware text-label-hardware">S</button>
+<button class="w-5 h-5 rounded bg-error-container text-on-error font-label-hardware text-label-hardware">R</button>
+<button class="px-1 h-5 rounded bg-surface-container text-on-surface-variant font-label-hardware text-label-hardware uppercase">AUTO</button>
+</div>
+<div class="flex items-center gap-0.5">
+<div class="w-1 h-3.5 bg-primary-container rounded-xs"></div>
+<div class="w-1 h-2.5 bg-primary-container rounded-xs"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Track Lane: Audio Clips -->
+<div class="flex-1 bg-surface-container p-1 relative flex items-center overflow-hidden">
+<!-- Clip 1: Intro HiHats (Bars 1-17) -->
+<div class="absolute left-0 w-[36%] h-20 bg-surface-container-high rounded p-1.5 flex flex-col justify-between shadow-inner overflow-hidden">
+<div class="flex items-center justify-between text-on-surface-variant font-label-hardware text-label-hardware">
+<span class="truncate">HiHat Loop 16B [Clean]</span>
+<span>Audio Stem</span>
+</div>
+<!-- Waveform SVG -->
+<svg class="w-full h-11 text-outline" preserveaspectratio="none" viewbox="0 0 200 30">
+<path d="M0,15 Q5,2 10,15 T20,15 T30,15 T40,6 T50,15 T60,15 T70,4 T80,15 T90,15 T100,5 T110,15 T120,15 T130,5 T140,15 T150,15 T160,5 T170,15 T180,15 T190,5 T200,15" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+<div class="flex justify-between font-label-telemetry-sm text-label-telemetry-sm text-outline">
+<span>124 BPM</span>
+<span>Stereo 48k</span>
+</div>
+</div>
+<!-- Clip 2: Kicks & Snares Stem (Bars 17-65 - Heavy Drop) -->
+<div class="absolute left-[36%] w-[56%] h-20 bg-primary-container/20 rounded p-1.5 flex flex-col justify-between shadow-inner overflow-hidden">
+<div class="flex items-center justify-between text-primary-container font-label-hardware text-label-hardware">
+<div class="flex items-center gap-1 font-bold">
+<span class="material-symbols-outlined text-[11px]">graphic_eq</span>
+<span>Kicks & Snares Stem (Hard Clip Transient)</span>
+</div>
+<span class="bg-primary-container text-on-primary-container px-1 rounded font-bold">TRANS 0.0dB</span>
+</div>
+<!-- Dense Kick-Snare Waveform SVG -->
+<svg class="w-full h-11 text-primary-fixed" preserveaspectratio="none" viewbox="0 0 300 30">
+<path d="M0,15 L5,0 L10,30 L15,15 L35,15 L40,4 L45,26 L50,15 L75,15 L80,0 L85,30 L90,15 L115,15 L120,4 L125,26 L130,15 L155,15 L160,0 L165,30 L170,15 L195,15 L200,4 L205,26 L210,15 L235,15 L240,0 L245,30 L250,15 L275,15 L280,4 L285,26 L290,15 L300,15" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+</svg>
+<div class="flex justify-between font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed">
+<span>Sidechain: Master Ch 01</span>
+<span>Gain: 0.0 dB</span>
+</div>
+</div>
+</div>
+</div>
+<!-- TRACK 02: MIDI / Instrument - Bassline Acid 303 -->
+<div class="flex h-24 bg-surface-container-low rounded overflow-hidden shadow-sm group">
+<!-- Track Header -->
+<div class="w-56 flex-shrink-0 bg-surface-dim p-space-xs flex flex-col justify-between relative shadow-r">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-secondary"></div>
+<div class="flex items-center justify-between pl-2">
+<div class="flex items-center gap-1.5 truncate">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">02</span>
+<span class="font-headline-md text-headline-md text-secondary font-bold truncate">Acid Bass 303</span>
+</div>
+<span class="bg-secondary/20 text-secondary font-label-hardware text-label-hardware px-1 rounded">VITAL</span>
+</div>
+<!-- Controls -->
+<div class="pl-2 space-y-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="font-label-hardware text-label-hardware text-outline">VOL</span>
+<div class="w-16 h-2 bg-surface-container-lowest rounded-full overflow-hidden relative shadow-inner">
+<div class="w-3/5 h-full bg-secondary rounded-full"></div>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface font-semibold">-2.8 dB</span>
+</div>
+<div class="flex items-center gap-0.5">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary">L04</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-0.5">
+<div class="flex items-center gap-1">
+<button class="w-5 h-5 rounded bg-surface-container hover:bg-surface-container-high text-outline font-label-hardware text-label-hardware">M</button>
+<button class="w-5 h-5 rounded bg-secondary-container text-on-secondary font-label-hardware text-label-hardware">S</button>
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">R</button>
+<span class="font-label-hardware text-label-hardware text-outline">CH: ALL</span>
+</div>
+<div class="flex items-center gap-0.5">
+<div class="w-1 h-4 bg-secondary rounded-xs"></div>
+<div class="w-1 h-3 bg-secondary rounded-xs"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Track Lane: MIDI Note Events Display -->
+<div class="flex-1 bg-surface-container p-1 relative flex items-center overflow-hidden">
+<!-- MIDI Region: Bars 17–49 (Acid Sequence) -->
+<div class="absolute left-[36%] w-[40%] h-20 bg-secondary/15 rounded p-1.5 flex flex-col justify-between shadow-inner overflow-hidden">
+<div class="flex items-center justify-between text-secondary font-label-hardware text-label-hardware">
+<div class="flex items-center gap-1 font-bold">
+<span class="material-symbols-outlined text-[12px]">piano</span>
+<span>Acid 303 Drive_Pattern_04 [Vital VST]</span>
+</div>
+<span class="bg-secondary text-on-secondary px-1 rounded font-bold">32 NOTES</span>
+</div>
+<!-- Piano Roll Note Bars Grid Simulation -->
+<div class="h-10 w-full bg-surface-container-lowest/60 rounded p-1 relative overflow-hidden flex flex-col justify-between">
+<!-- Simulated MIDI notes on pitch tracks -->
+<div class="relative w-full h-full">
+<div class="absolute left-2 top-1 w-6 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-10 top-4 w-4 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-16 top-2 w-8 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-28 top-5 w-5 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-36 top-1 w-7 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-48 top-3 w-5 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-56 top-2 w-9 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-68 top-6 w-4 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-76 top-1 w-8 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-88 top-4 w-6 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+<div class="absolute left-[92%] top-2 w-7 h-1.5 bg-secondary rounded-xs shadow-sm"></div>
+</div>
+</div>
+<div class="flex justify-between font-label-telemetry-sm text-label-telemetry-sm text-secondary">
+<span>Scale: F# Phrygian</span>
+<span>Portamento: 45ms</span>
+</div>
+</div>
+</div>
+</div>
+<!-- TRACK 03: Audio - Vocal Hook Lead -->
+<div class="flex h-24 bg-surface-container-low rounded overflow-hidden shadow-sm group">
+<!-- Track Header -->
+<div class="w-56 flex-shrink-0 bg-surface-dim p-space-xs flex flex-col justify-between relative shadow-r">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-tertiary-container"></div>
+<div class="flex items-center justify-between pl-2">
+<div class="flex items-center gap-1.5 truncate">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">03</span>
+<span class="font-headline-md text-headline-md text-tertiary-container font-bold truncate">Vocal Hook Lead</span>
+</div>
+<span class="bg-tertiary-container/20 text-tertiary-container font-label-hardware text-label-hardware px-1 rounded">AUDIO</span>
+</div>
+<!-- Controls -->
+<div class="pl-2 space-y-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="font-label-hardware text-label-hardware text-outline">VOL</span>
+<div class="w-16 h-2 bg-surface-container-lowest rounded-full overflow-hidden relative shadow-inner">
+<div class="w-3/4 h-full bg-tertiary-container rounded-full"></div>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface font-semibold">-0.5 dB</span>
+</div>
+<div class="flex items-center gap-0.5">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-tertiary-container">C</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-0.5">
+<div class="flex items-center gap-1">
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">M</button>
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">S</button>
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">R</button>
+<button class="px-1 h-5 rounded bg-surface-container text-on-surface-variant font-label-hardware text-label-hardware">WARP</button>
+</div>
+<div class="flex items-center gap-0.5">
+<div class="w-1 h-3.5 bg-tertiary-container rounded-xs"></div>
+<div class="w-1 h-3 bg-tertiary-container rounded-xs"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Track Lane: Chopped Vocal Waveforms with Handles -->
+<div class="flex-1 bg-surface-container p-1 relative flex items-center overflow-hidden">
+<!-- Vocal Chop 1 (Build Up) -->
+<div class="absolute left-[36%] w-[18%] h-20 bg-tertiary-container/15 rounded p-1.5 flex flex-col justify-between shadow-inner">
+<div class="flex items-center justify-between font-label-hardware text-label-hardware text-tertiary-container">
+<span>Voc_Chop_Phrase_A</span>
+<span class="bg-tertiary-container/30 px-1 rounded text-on-tertiary-container font-bold">+2 ST</span>
+</div>
+<!-- Chopped Audio Wave with Fade Handles -->
+<div class="relative w-full h-10 flex items-center">
+<div class="absolute left-0 top-0 w-2 h-2 rounded-full bg-primary-fixed shadow-sm"></div>
+<div class="absolute right-0 top-0 w-2 h-2 rounded-full bg-primary-fixed shadow-sm"></div>
+<svg class="w-full h-10 text-tertiary-fixed-dim" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0,12 Q10,1 20,12 T40,12 T60,3 T80,12 T100,12" fill="none" stroke="currentColor" stroke-width="2"></path>
+</svg>
+</div>
+<div class="flex justify-between font-label-telemetry-sm text-label-telemetry-sm text-outline">
+<span>Formant: -12</span>
+<span>Delay 3/16</span>
+</div>
+</div>
+<!-- Vocal Chop 2 (Drop Hook) -->
+<div class="absolute left-[56%] w-[20%] h-20 bg-tertiary-container/20 rounded p-1.5 flex flex-col justify-between shadow-inner">
+<div class="flex items-center justify-between font-label-hardware text-label-hardware text-tertiary-container">
+<span>Voc_Main_Hook_Lead [Dry]</span>
+<span class="bg-tertiary-container/40 px-1 rounded text-on-tertiary-container font-bold">PITCH OK</span>
+</div>
+<svg class="w-full h-10 text-tertiary-fixed-dim" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0,12 Q8,0 16,12 T32,12 T48,2 T64,12 T80,1 T96,12" fill="none" stroke="currentColor" stroke-width="2"></path>
+</svg>
+<div class="flex justify-between font-label-telemetry-sm text-label-telemetry-sm text-tertiary-container">
+<span>Reverb Send: -6dB</span>
+<span>Autotune: High</span>
+</div>
+</div>
+</div>
+</div>
+<!-- TRACK 04: MIDI - Chord Synth / Pad with EXPANDED AUTOMATION SUB-LANE -->
+<div class="flex flex-col bg-surface-container-low rounded overflow-hidden shadow-sm">
+<!-- Main Track Lane -->
+<div class="flex h-20">
+<!-- Track Header -->
+<div class="w-56 flex-shrink-0 bg-surface-dim p-space-xs flex flex-col justify-between relative shadow-r">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-fixed"></div>
+<div class="flex items-center justify-between pl-2">
+<div class="flex items-center gap-1.5 truncate">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">04</span>
+<span class="font-headline-md text-headline-md text-primary font-bold truncate">Lush Poly Pad</span>
+</div>
+<span class="bg-primary-fixed/20 text-primary-fixed font-label-hardware text-label-hardware px-1 rounded">SERUM</span>
+</div>
+<!-- Controls -->
+<div class="pl-2 space-y-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="font-label-hardware text-label-hardware text-outline">VOL</span>
+<div class="w-16 h-2 bg-surface-container-lowest rounded-full overflow-hidden relative shadow-inner">
+<div class="w-2/3 h-full bg-primary-fixed rounded-full"></div>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface font-semibold">-3.4 dB</span>
+</div>
+<div class="flex items-center gap-0.5">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">R08</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-0.5">
+<div class="flex items-center gap-1">
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">M</button>
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">S</button>
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">R</button>
+<button class="px-1 h-5 rounded bg-primary-container text-on-primary-container font-label-hardware text-label-hardware font-bold">AUTO ON</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Track Lane: Sustained Chord Blocks -->
+<div class="flex-1 bg-surface-container p-1 relative flex items-center overflow-hidden">
+<!-- Sustained MIDI Chords -->
+<div class="absolute left-0 w-[56%] h-16 bg-surface-container-high rounded p-1.5 flex flex-col justify-between shadow-inner">
+<div class="flex items-center justify-between text-on-surface font-label-hardware text-label-hardware">
+<span>Harmonic Pad Progression (F#m - D - A - E)</span>
+<span class="text-outline">4 BARS LOOP</span>
+</div>
+<!-- 4 Sustained Chord Blocks -->
+<div class="flex gap-2 h-7 items-center">
+<div class="flex-1 h-full bg-primary-fixed/20 rounded flex flex-col justify-center px-1 border-l-2 border-primary-fixed">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold">F#min9</span>
+</div>
+<div class="flex-1 h-full bg-primary-fixed/20 rounded flex flex-col justify-center px-1 border-l-2 border-primary-fixed">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold">Dmaj7</span>
+</div>
+<div class="flex-1 h-full bg-primary-fixed/20 rounded flex flex-col justify-center px-1 border-l-2 border-primary-fixed">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold">Aadd9</span>
+</div>
+<div class="flex-1 h-full bg-primary-fixed/20 rounded flex flex-col justify-center px-1 border-l-2 border-primary-fixed">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold">E/G#</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Automation Sub-Lane: Cutoff Filter Freq (Hz) -->
+<div class="flex h-14 bg-surface-container-lowest">
+<!-- Automation Sub-Header -->
+<div class="w-56 flex-shrink-0 bg-surface-container p-space-xs flex items-center justify-between pl-4 shadow-r">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[13px] text-primary-container">tune</span>
+<div class="flex flex-col">
+<span class="font-label-hardware text-label-hardware text-primary-container uppercase font-bold">Cutoff Filter Freq</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface font-semibold">1,240 Hz</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="font-label-hardware text-label-hardware bg-surface-container-high px-1 rounded text-outline hover:text-on-surface">READ</button>
+<button class="font-label-hardware text-label-hardware bg-surface-container-high px-1 rounded text-outline hover:text-on-surface">TOUCH</button>
+</div>
+</div>
+<!-- Automation Curve Canvas with Breakpoint Nodes -->
+<div class="flex-1 bg-surface-dim/80 relative flex items-center px-2">
+<svg class="w-full h-12 text-primary-container" preserveaspectratio="none" viewbox="0 0 400 40">
+<!-- Subtle filled envelope -->
+<path d="M0,35 L144,35 L224,10 L300,5 L380,35 L400,35 L400,40 L0,40 Z" fill="currentColor" fill-opacity="0.12"></path>
+<!-- High contrast automation line -->
+<path d="M0,35 L144,35 L224,10 L300,5 L380,35 L400,35" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path>
+<!-- Breakpoint Nodes -->
+<circle class="cursor-pointer" cx="144" cy="35" fill="#C6F26A" r="3.5" stroke="#111318" stroke-width="1.5"></circle>
+<circle class="cursor-pointer" cx="224" cy="10" fill="#C6F26A" r="3.5" stroke="#111318" stroke-width="1.5"></circle>
+<circle class="cursor-pointer shadow-md" cx="300" cy="5" fill="#ffffff" r="4.5" stroke="#C6F26A" stroke-width="2"></circle>
+<circle class="cursor-pointer" cx="380" cy="35" fill="#C6F26A" r="3.5" stroke="#111318" stroke-width="1.5"></circle>
+</svg>
+<div class="absolute right-4 font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed bg-surface-container-high px-1 rounded shadow-sm">
+                  Node: 18.4kHz (Bar 33.1)
+                </div>
+</div>
+</div>
+</div>
+<!-- TRACK 05: Audio - FX & Risers -->
+<div class="flex h-20 bg-surface-container-low rounded overflow-hidden shadow-sm group">
+<!-- Track Header -->
+<div class="w-56 flex-shrink-0 bg-surface-dim p-space-xs flex flex-col justify-between relative shadow-r">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-outline"></div>
+<div class="flex items-center justify-between pl-2">
+<div class="flex items-center gap-1.5 truncate">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">05</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold truncate">FX & Sweeps</span>
+</div>
+<span class="bg-surface-container-highest text-outline font-label-hardware text-label-hardware px-1 rounded">AUDIO</span>
+</div>
+<!-- Controls -->
+<div class="pl-2 space-y-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="font-label-hardware text-label-hardware text-outline">VOL</span>
+<div class="w-16 h-2 bg-surface-container-lowest rounded-full overflow-hidden relative shadow-inner">
+<div class="w-1/2 h-full bg-outline rounded-full"></div>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface font-semibold">-4.1 dB</span>
+</div>
+<div class="flex items-center gap-0.5">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">C</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-0.5">
+<div class="flex items-center gap-1">
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">M</button>
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">S</button>
+<button class="w-5 h-5 rounded bg-surface-container text-outline font-label-hardware text-label-hardware">R</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Track Lane: Reverse Cymbal & Sweep Risers -->
+<div class="flex-1 bg-surface-container p-1 relative flex items-center overflow-hidden">
+<!-- Reverse Crash & Tension Riser leading directly into Bar 33 -->
+<div class="absolute left-[46%] w-[10%] h-16 bg-surface-container-high rounded p-1.5 flex flex-col justify-between shadow-inner">
+<div class="flex items-center justify-between font-label-hardware text-label-hardware text-outline">
+<span>WhiteNoise_Riser_8B</span>
+<span class="text-primary-fixed">BUILD</span>
+</div>
+<svg class="w-full h-8 text-on-surface-variant" preserveaspectratio="none" viewbox="0 0 100 20">
+<path d="M0,19 Q50,18 80,8 T100,0" fill="none" stroke="currentColor" stroke-width="1.8"></path>
+</svg>
+<div class="font-label-telemetry-sm text-label-telemetry-sm text-outline truncate">
+                  HighPass: 300Hz → 16kHz
+                </div>
+</div>
+<!-- Sub Drop Impact on Bar 33 -->
+<div class="absolute left-[56%] w-[12%] h-16 bg-surface-container-high rounded p-1.5 flex flex-col justify-between shadow-inner">
+<div class="flex items-center justify-between font-label-hardware text-label-hardware text-primary-fixed">
+<span>808_Sub_Drop_Hit</span>
+<span class="bg-primary-container/20 text-primary-container px-1 rounded">IMPACT</span>
+</div>
+<svg class="w-full h-8 text-primary-container" preserveaspectratio="none" viewbox="0 0 100 20">
+<path d="M0,0 Q10,18 30,19 T100,20" fill="none" stroke="currentColor" stroke-width="1.8"></path>
+</svg>
+<div class="font-label-telemetry-sm text-label-telemetry-sm text-outline">
+                  Pitch Decay: 120ms
+                </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Drawer Tab Switcher & Master Audio Out Telemetry Strip -->
+<div class="h-10 bg-surface-container-low px-space-md flex items-center justify-between shadow-md">
+<!-- DAW Views Tab Switcher -->
+<div class="flex items-center gap-space-xs font-label-hardware text-label-hardware uppercase">
+<button class="px-space-md py-1.5 rounded bg-primary-container text-on-primary-container font-bold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[13px]">view_timeline</span>
+<span>Arrangement View</span>
+</button>
+<button class="px-space-md py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[13px]">equalizer</span>
+<span>Studio Mixer (08B)</span>
+</button>
+<button class="px-space-md py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[13px]">piano</span>
+<span>MIDI Piano Roll Editor</span>
+</button>
+<button class="px-space-md py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[13px]">graphic_eq</span>
+<span>Audio Clip Detail & Warp</span>
+</button>
+</div>
+<!-- Master Output Level Meter & Audio Engine Hardware Gauge -->
+<div class="flex items-center gap-space-md">
+<!-- Master Stereo VU Meter -->
+<div class="flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-1 rounded shadow-inner">
+<span class="font-label-hardware text-label-hardware text-outline uppercase">MST OUT:</span>
+<div class="flex flex-col gap-0.5">
+<!-- Left Channel Meter -->
+<div class="w-20 h-1.5 bg-surface-dim rounded-full overflow-hidden flex">
+<div class="w-3/4 h-full bg-primary-container"></div>
+<div class="w-1/6 h-full bg-secondary"></div>
+<div class="w-1/12 h-full bg-surface-dim"></div>
+</div>
+<!-- Right Channel Meter -->
+<div class="w-20 h-1.5 bg-surface-dim rounded-full overflow-hidden flex">
+<div class="w-2/3 h-full bg-primary-container"></div>
+<div class="w-1/5 h-full bg-secondary"></div>
+<div class="w-2/15 h-full bg-surface-dim"></div>
+</div>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary font-bold">-0.8 dBFS</span>
+</div>
+<!-- DSP Gauge & Performance -->
+<div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant bg-surface-container px-space-sm py-1 rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
+<span class="text-primary-fixed font-semibold">DSP: 7.4%</span>
+<span class="text-outline">|</span>
+<span>64-Bit Float</span>
+<span class="text-outline">|</span>
+<span>48kHz / 128 spl</span>
+</div>
+</div>
+</div>
+</div></main></div><footer class="fixed bottom-0 left-0 right-0 h-6 bg-surface-dim z-50 px-margin flex items-center justify-between shadow-[0_-1px_4px_rgba(0,0,0,0.3)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant"><span class="w-1.5 h-1.5 rounded-full bg-error"></span><span>REC 00:42:19.04</span></div><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant"><span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span><span>AUDIO: 128 spl @ 48kHz</span></div><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-secondary"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span><span>MIDI IN: CH 01-16 ACTIVE</span></div></div><div class="flex items-center gap-space-md font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant"><span class="text-outline">LATENCY: 2.67ms RT</span><span class="bg-surface-container px-space-xs rounded text-on-surface">ASIO / CoreAudio OK</span></div></footer></body></html>

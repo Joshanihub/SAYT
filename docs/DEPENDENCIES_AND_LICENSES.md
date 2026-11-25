@@ -2,8 +2,8 @@
 
 **Status:** PROPOSED inventory; owner and legal review pending<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-25<br>
-**Version:** 0.1.0
+**Date:** 2026-11-26<br>
+**Version:** 0.2.0
 
 ## SAYT license decision
 
@@ -15,9 +15,9 @@ The direct Rust and npm dependencies, exact pins, recorded license strings, tool
 
 Current owner-review items:
 
-- The npm development dependency inventory includes two packages reported as `BlueOak-1.0.0`.
-- The RustSec scan recorded five unmaintained transitive crates and one unsoundness advisory for `glib 0.18.5`; reachability in SAYT was not established.
-- `cargo deny check` reports an unmaintained `proc-macro-error` advisory; Cargo deny bans, license, and source checks passed in the prior local audit.
+- `corepack pnpm audit` passed on 2026-11-26 with no known vulnerabilities. `corepack pnpm licenses list --recursive` still reports two development packages as `BlueOak-1.0.0`: `@isaacs/nonrecursive-glob-match` and `minimatch`. Their license terms remain for owner review; no allowlist change was made.
+- `cargo audit` refreshed the RustSec advisory database on 2026-11-26 and exited successfully with six allowed warnings: five unmaintained crates (`chrono`, `proc-macro-error`, `zbus_names`, `zvariant`, and `zvariant_derive`) and unsoundness advisory `RUSTSEC-2024-0429` for transitive `glib 0.18.5`. It reported no vulnerability advisories. Reachability and practical impact of the warnings in SAYT were not established.
+- `cargo deny check --hide-inclusion-graph bans licenses sources` passed on 2026-11-26. It emitted duplicate-lockfile-entry warnings; no dependency-policy allowlist was widened.
 - A full SBOM and legal review are required before distributing binaries.
 
 Do not silently widen license allowlists or describe scanner output as legal approval.

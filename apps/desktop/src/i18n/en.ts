@@ -1,7 +1,7 @@
 export const copy = {
   productName: "SAYT",
   workspaceLabel: "Local-first music workstation",
-  milestoneStatus: "M0 repository and CI scaffold",
+  milestoneStatus: "M1 desktop foundation — in progress",
   mission:
-    "The shell is ready for measured engineering spikes. Audio playback is experimental and has not been verified.",
+    "Load local WAV files into two independently controlled decks and mix them through one selected output. Physical audio verification is still pending.",
 } as const;
