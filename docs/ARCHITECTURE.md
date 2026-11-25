@@ -9,23 +9,24 @@
 
 ```mermaid
 flowchart LR
-  UI[React and TypeScript webview] -->|Tauri control commands and 100 ms snapshots| APP[Rust Tauri application]
-  APP -->|decode selected local WAV off callback| DEC[Bounded PCM decoder]
-  APP -->|bounded SPSC commands| RT[CPAL output callback]
-  RT -->|atomic position and meter telemetry| APP
+  UI[React and TypeScript webview] -->|Tauri controls and 100 ms snapshots| APP[Rust Tauri application]
+  APP -->|bounded request/reply queue| ACTOR[Dedicated audio control thread]
+  ACTOR -->|decode selected local WAV off callback| DEC[Bounded PCM decoder]
+  ACTOR -->|bounded SPSC commands| RT[CPAL output callback]
+  RT -->|atomic position and meter telemetry| ACTOR
   RT --> DSP[Per-deck biquad EQ, gain, crossfader, master limiter]
   DSP --> DEVICE[Selected OS audio output]
 ```
 
-The UI sends control values and receives snapshots; sample buffers never cross ordinary Tauri IPC. The nonblocking native file picker supplies the local path through an async command. WAV decoding and filter coefficient calculation occur outside the audio callback. The callback renders both decks into one selected output stream.
+The UI sends control values and receives snapshots; sample buffers never cross ordinary Tauri IPC. The nonblocking native file picker supplies the local path through an async command. WAV decoding and filter coefficient calculation occur outside the audio callback. A dedicated Rust control thread owns `Engine` and the CPAL stream. Tauri state contains a bounded control-channel sender and its shutdown handle; this keeps the CoreAudio stream on its owner thread instead of requiring an unsafe `Send` implementation. A full 64-command mailbox returns an actionable error instead of reporting an unapplied command as successful. The callback renders both decks into one selected output stream.
 
 ## Real-time ownership
 
-- The Tauri side owns `EngineSettings`, command production, output-device lifecycle, snapshot serialization, and destruction of retired tracks.
+- The dedicated control thread owns `EngineSettings`, command production, output-device lifecycle, snapshot serialization, and destruction of retired tracks.
 - The callback owns playback cursors and filter state. It consumes from a bounded SPSC command ring (64 entries), processing no more than 16 commands per callback.
 - Replaced `Arc<Track>` values go through a bounded callback-to-control return ring (128 entries). If it is full, replacement remains pending rather than freeing a track in the callback.
 - Position, playing state, meter, and output-error signals cross the boundary through atomics. Track generations prevent snapshots from applying telemetry from a replaced track.
-- Tauri commands use a mutex around the control-side `Engine`; the audio callback never accesses that mutex.
+- Tauri commands use a bounded 64-entry request/reply mailbox to reach the control thread; the audio callback never accesses that mailbox or a mutex.
 - The callback writes equilibrium to any incomplete trailing output frame.
 
 ## Signal path
