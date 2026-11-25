@@ -1,0 +1,54 @@
+# SAYT design system
+
+**Status:** PROPOSED implementation guide reconciled to Stitch v1<br>
+**Owner:** SAYT project owner<br>
+**Date:** 2026-11-26<br>
+**Version:** 0.1.0
+
+## Authority and preservation
+
+The immutable design reference is [`design/reference/exports/SAYT-Stitch-v1.zip`](../design/reference/exports/SAYT-Stitch-v1.zip), SHA-256 `E97F43E20EDE4BC3993CFB8E4177BB53C3AF6296C58AEE11E0E1DAA347A4B2F1`. Its shared specification is `design/reference/SAYT-Stitch-v1/stitch_sayt_dj_audio_studio/sayt_audio_performance_engine/DESIGN.md`; its 13 screen references are indexed in [`design/reference/README.md`](../design/reference/README.md). Preserve reference images at their native proportions. Generated `code.html` is a reference, not production implementation. Never copy its fictitious telemetry or track data.
+
+## Visual direction and tokens
+
+Precision dark-mode music hardware: dense and tactile, readable in low light, with high-contrast active signals, hairline dividers, recessed controls, and restrained glow. Keep visual telemetry subordinate to real engine state.
+
+| Semantic role            | Canonical value | Current CSS token / use                             |
+| ------------------------ | --------------- | --------------------------------------------------- |
+| Canvas                   | `#08090B`       | `--canvas`; window/workspace surround               |
+| Surface                  | `#111318`       | `--surface`; base containers                        |
+| Secondary surface        | `#191D23`       | `--surface-2`; strips and panels                    |
+| Recessed / elevated well | `#242830`       | `--well`; controls and wells                        |
+| Main text                | `#F5F6F2`       | `--text`                                            |
+| Secondary text           | `#A7ADB5`       | `--muted`                                           |
+| Subtle / inactive text   | `#747C86`       | `--subtle`                                          |
+| Primary lime             | `#C7F36B`       | `--lime`; active transport and Deck A identity      |
+| Electric cyan            | `#38BDF8`       | `--cyan`; Deck B identity and secondary signal      |
+| Coral                    | `#F43F5E`       | `--coral`; warning/hot-cue semantics where approved |
+| Amber                    | `#FB923C`       | `--amber`; warning/cue semantics where approved     |
+
+Current CSS already uses the Stitch coral and amber values. No `#EF4444` or `#F59E0B` competing tokens were found in application/docs. Keep Deck A lime and Deck B cyan identity stable. The source specification states WCAG AA intent; actual text/control contrast still needs measurement by component and state before accessibility acceptance.
+
+## Typography
+
+The Stitch roles are Space Grotesk for display/hardware labels, Inter for body/navigation, and JetBrains Mono for telemetry with tabular figures. The current application CSS requests Inter and then local system sans-serif fallbacks; dedicated font files are not present in the app. Stitch HTML references remote Google Fonts and Material Symbols, but the app does not load those remote resources. Do not fetch or bundle fonts/icons until their exact assets and licence provenance are recorded in [`DECISION_REGISTER.md`](DECISION_REGISTER.md). Until then, preserve the role hierarchy and use local fallbacks; do not claim exact font rendering.
+
+## Layout, spacing, shape, elevation
+
+- Base spacing grid: 4 px; compact margins and gutters should use multiples where the reference permits.
+- Reference desktop comparison baseline: 1440×900. DJ composition has two balanced deck areas, central mixer, waveform/transport hierarchy, and lower crate/browser; simplify only when the feature is unavailable, and label that state truthfully.
+- Standard module/button radius: 4 px; telemetry tags: 2 px; rotary controls remain circular.
+- Elevation uses recessed grooves, fine borders, active edge highlights, and restrained shadow. Avoid generic floating-card treatment.
+- Reference active control minimum is 44×36 px; verify pointer, keyboard and touch targets in the actual application before marking accessible.
+
+## Motion and interaction
+
+Reference motion is short and purposeful: active controls gain a visible state, hot-cue flashes decay quickly, and waveform motion follows real playback. The shared Stitch specification describes 60 fps waveform rendering as a target; current evidence does not measure it. Current CSS has a 100 ms width transition and focus-visible outlines; it does not establish that all motion follows `prefers-reduced-motion`. Never animate a playhead, level, latency or device state independently of engine data. Reduced-motion, hover, focus, active, disabled, loading, error, empty, and success states need explicit component-level acceptance.
+
+## Responsive rules and open comparison
+
+The shared Stitch spec describes mixer adaptation below 1280 px and crate minimisation below 1024 px. Current `apps/desktop/src/styles.css` uses media queries at 1279, 1060, 720, and 480 px. This difference is recorded; do not silently change it. Compare actual Tauri views at 1440×900, 1280×800, and narrow width against the reference before settling the breakpoints. Runtime screenshots at those sizes are not yet recorded.
+
+## Screen-level fidelity
+
+Per-screen references, production components, backend contracts, and limitations are mapped in [`DESIGN_IMPLEMENTATION_MAP.md`](DESIGN_IMPLEMENTATION_MAP.md); acceptance status is in [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md). A screen is not visually accepted until its running Tauri view is compared at a matching viewport and all available states are exercised. New approved Stitch archives are versioned and compared screen by screen without replacing earlier references.

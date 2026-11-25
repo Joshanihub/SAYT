@@ -3,7 +3,18 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.2.0
+**Version:** 0.3.0
+
+## 2026-11-26 — PR #2 audio-validation consolidation
+
+- Audited PR #2 at `57bbe6234842a4cd9f3ff05de8049301055cacbe` through GitHub/FETCH_HEAD without checking out its branch or touching the separate validation checkout. Reviewed the generator, verifier, FFT/Goertzel frequency tests, path tests, device guide and results template.
+- Imported only the reviewed `tools/audio-validation/` and `docs/audio-validation/` files. Preserved PR #1's CI setup and ALSA fixes; added a Linux-only Python test step so Linux executes the symlink escape regression.
+- Fixed Windows console encoding failure by using ASCII CLI status messages. Hardened output paths against symlink redirection and partial directory collisions; fixture, sentinel and manifest writes now use atomic replacement to avoid writing through symlinks or hard links.
+- Added three regression tests for symlink output rejection, preflight directory rejection, and hard-link-safe replacement. Existing verifier tests retain Windows/POSIX absolute, drive-relative, traversal and symlink confinement checks.
+- Reproduced 52 Python tests: 50 passed and 2 symlink cases skipped under Windows privilege policy. Generated seven fixtures in `%TEMP%\SAYT-Audio-Fixtures`; verification passed all 77 checks. SHA-256 of `manifest.json`: `1FA8F84E47C17F6FC017F99D5023AC8CE4C683B400BE788BE98C5E6E586A4701`.
+- Re-ran Rust and frontend checks; Rust format/check/Clippy/tests passed, and frontend frozen install/format/lint/typecheck/20 tests/build passed under pinned Node 24.22.3 and pnpm 12.23.0.
+- Committed and pushed `853e51477e56593471c7126378d290524be391af` (`test(m1): consolidate audio validation toolkit`) to `feat/stitch-m1-dj-workspace`; PR #1 remains open and unmerged; PR #2 remains open/draft. Push run `45721302725` and PR run `45721308789` passed Windows, macOS, and Ubuntu; the PR run's Linux log shows all 52 tests and the symlink regression passing.
+- M1 hardware/runtime gates remain open. The physical-device guide is ready, but native loading, actual Tauri IPC, audible output, device recovery and shutdown during playback were not exercised in this increment.
 
 ## 2026-11-26 — M1 closeout preparation
 
