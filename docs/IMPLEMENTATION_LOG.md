@@ -3,7 +3,12 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.12
+**Version:** 0.4.13
+
+## 2026-11-26 — Owner keyboard shortcut report
+
+- The owner reports PASS for F1, Alt+2, and Ctrl+Alt+2 in the SAYT feature window. This is owner-reported runtime evidence, not an independent reproduction. The reply did not include per-key visible state changes, viewport dimensions, or error text.
+- Focused-deck transport/EQ shortcut behavior, edited-mapping persistence over restart, and macOS runtime remain open. No source code changed for this report.
 
 ## 2026-11-26 — Keyboard-command CI status correction
 
