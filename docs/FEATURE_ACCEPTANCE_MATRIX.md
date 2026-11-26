@@ -3,13 +3,13 @@
 **Status:** ACTIVE; M1 acceptance is incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-27<br>
-**Version:** 0.1.25
+**Version:** 0.1.26
 
 ## Evidence states
 
 Use the highest state with evidence for each row: **Planned**, **Designed**, **Implemented**, **Automated verified**, **Integration verified**, **Runtime verified**, **Hardware/provider verified**, **Accessibility/performance verified**, **Documented**, **Reviewed/released**. Do not compress these into one green check. `NOT RUN`, `BLOCKED`, and `FAIL` are open states, not passes. Full M1 criteria are in [`REQUIREMENTS.md`](REQUIREMENTS.md); supplied screen assets and component mapping are in [`DESIGN_IMPLEMENTATION_MAP.md`](DESIGN_IMPLEMENTATION_MAP.md).
 
-Keyboard-command implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` and subsequent device-discovery fix are pushed to `feat/dj-command-system`. Earlier exact source head `df430f06ee8f13463ee4e7bab5ce7531cea93182` passed Actions run [45891309370](https://github.com/Joshanihub/SAYT/actions/runs/45891309370) on Windows, macOS, and Ubuntu, including dependency audits. Hot Cues are pushed as `11fe1be207ea6eede738ad5f54ef42a8ebbcc3ae`; the Manual Loop slice is committed locally and awaits push and exact-head CI. No PR or merge was created.
+Keyboard-command implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` and subsequent device-discovery fix are pushed to `feat/dj-command-system`. Earlier exact source head `df430f06ee8f13463ee4e7bab5ce7531cea93182` passed Actions run [45891309370](https://github.com/Joshanihub/SAYT/actions/runs/45891309370) on Windows, macOS, and Ubuntu, including dependency audits. Hot Cues are pushed as `11fe1be207ea6eede738ad5f54ef42a8ebbcc3ae`; Manual Loops are pushed as `809b3461dc1a80be991b134f08d63d60826a3cfb`, with exact-head CI and runtime acceptance pending. No PR or merge was created.
 
 ## M1 exit criteria
 

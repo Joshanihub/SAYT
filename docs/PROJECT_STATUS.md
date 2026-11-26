@@ -3,12 +3,12 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-27<br>
-**Version:** 0.4.26
+**Version:** 0.4.27
 
 ## Current verified position — M1 closeout and keyboard-command expansion
 
 - **M1 source branch:** `feat/stitch-m1-dj-workspace` is based on unchanged `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Responsive correction and decoder rejection coverage are pushed as `ee137e288b324a50e6f9b1574c4aee9d4eee1c09`; exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) both passed Windows, macOS, and Ubuntu. GitHub currently shows PR #1 open and PR #2 still draft. No merge into `main` is authorized.
-- **DJ expansion branch:** the current isolated worktree is `feat/dj-command-system`, based on pushed Hot Cue commit `11fe1be207ea6eede738ad5f54ef42a8ebbcc3ae`; `main` remains `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Manual Loops add Rust engine, Tauri actor, and shared command-dispatch support. All required local checks pass; push/exact-head remote CI and loop runtime acceptance remain pending. The user-owned track in the running SAYT window was left untouched. No PR or merge is created.
+- **DJ expansion branch:** Manual Loop implementation commit `809b3461dc1a80be991b134f08d63d60826a3cfb` is pushed to `feat/dj-command-system`, based on pushed Hot Cue commit `11fe1be207ea6eede738ad5f54ef42a8ebbcc3ae`; `main` remains `1d0323799d0a833a40b20cd58b1c79e43a11044b`. All required local checks pass; exact-head remote CI and loop runtime acceptance remain pending. The user-owned track in the running SAYT window was left untouched. No PR or merge is created.
 - **Stitch typography and icons:** 16 local variable WOFF2 text-font subsets and a 66-ligature Material Symbols subset are integrated. Four upstream license notices are present under `apps/desktop/public/licenses`; runtime font loading makes no network request. Exact sources, hashes, sizes, Unicode ranges, and build-tool pins are recorded in the asset manifest and dependency inventory.
 - **Local verification:** Rust format, Clippy, 46 engine tests plus 10 desktop actor/cue-store tests, and the locked all-target check pass. Frontend format, lint, typecheck, 61 tests, and production web build pass. The Windows Tauri release build also passes in `%TEMP%\SAYT-ManualLoop-Release-Target` without touching the running app's executable. Dependency scans from the Hot Cue batch still report duplicate versions and existing allowed unmaintained/GLib advisories; no dependencies changed in the loop slice. Exact commands and limits are in `docs/VERIFICATION_EVIDENCE.md`.
 - **M1 device discovery state:** the Settings surface now distinguishes loading, an empty device list, enumeration failure, and a selected system default. The React tests verify these states; real device enumeration and recovery still require hardware verification.

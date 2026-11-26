@@ -164,7 +164,7 @@ Track identity is exact decoded-PCM identity with sample rate, channel count, bi
 
 ## Manual Loops — local implementation verification (2026-11-27)
 
-**Source state:** Manual Loop changes are committed on `feat/dj-command-system`, based on pushed Hot Cue commit `11fe1be207ea6eede738ad5f54ef42a8ebbcc3ae`. Push and exact-head GitHub Actions are pending. `main` remains unchanged.
+**Source state:** Manual Loop implementation commit `809b3461dc1a80be991b134f08d63d60826a3cfb` is pushed on `feat/dj-command-system`, based on pushed Hot Cue commit `11fe1be207ea6eede738ad5f54ef42a8ebbcc3ae`. GitHub Actions run [#51](https://github.com/Joshanihub/SAYT/actions/runs/45908337659) started for that exact source commit; its final result is not yet verified. `main` remains unchanged.
 
 | Check                       | Command                                                                                                                 | Result                                                                                                                                                                          |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
