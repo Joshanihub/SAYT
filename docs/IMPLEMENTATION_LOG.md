@@ -3,7 +3,13 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.0
+**Version:** 0.4.0
+
+## 2026-11-26 — Current-head desktop launch for owner verification
+
+- Launched `corepack pnpm desktop dev` from commit `17693ba8341817e9152b8f66f55a07009f6139ad` with Node.js 24.22.3 and pnpm 12.23.0. Vite became ready, Rust compilation finished, and `sayt-desktop.exe` remained alive at the last process check.
+- Cargo printed a non-fatal output filename collision warning for `sayt_desktop.pdb` shared by the binary and library targets; launch did not fail.
+- No native picker, UI control, Tauri IPC, viewport, or physical audio interaction was executed by the agent. The app is left running for owner-operated M1 verification. Do not infer that launch proves playback or device behavior.
 
 ## 2026-11-26 — PR #2 audio-validation consolidation
 

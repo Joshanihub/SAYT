@@ -3,7 +3,7 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.0
+**Version:** 0.4.0
 
 ## Current verified position — audio-validation integration
 
@@ -13,6 +13,7 @@
 - **Toolkit:** accepted source/docs from PR #2 were reviewed and imported. PR #2's `.github/workflows/ci.yml` was excluded; the proven PR #1 workflow was preserved and only gained the Linux Python test step. The generator/verifier received symlink/hard-link-safe atomic writes and Windows-compatible ASCII output.
 - **Local evidence:** Rust format/check/Clippy/tests passed on rustc/cargo 1.100.0. Frontend frozen install/format/lint/typecheck/20 tests/build passed on Node 24.22.3 and pnpm 12.23.0. Python 3.14.5 toolkit suite: 52 total, 50 passed, 2 symlink tests skipped because Windows host permissions disallow symlink creation. Seven fixtures were generated and verified: 77 checks passed, 0 failed; manifest SHA-256 `1FA8F84E47C17F6FC017F99D5023AC8CE4C683B400BE788BE98C5E6E586A4701`.
 - **M1 remains IN PROGRESS:** actual native-picker load, real Tauri control IPC, exact target-size comparisons, audible dual playback, physical gain/EQ/crossfader, device recovery, and shutdown during playback remain NOT RUN. Previous actual Tauri evidence is only the initial Windows render and connected engine snapshot at 1920×1032. Owner/manual interaction is required after the prior UI helper was blocked.
+- **Current-head launch:** `corepack pnpm desktop dev` on `17693ba8341817e9152b8f66f55a07009f6139ad` compiled and started `sayt-desktop.exe` with Node.js 24.22.3/pnpm 12.23.0. It remains available for owner operation. Cargo emitted a non-fatal `sayt_desktop.pdb` output filename collision warning; picker, controls, IPC and physical output have not been exercised in this launch.
 - Detailed current commands, test results, runtime boundary, rollback and CI evidence are in [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md); feature states are in [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md).
 
 ## Current milestone

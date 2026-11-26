@@ -3,7 +3,7 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.1.0
+**Version:** 0.2.0
 
 This file records reproduced evidence separately from historical agent reports. The current code integration is commit `853e51477e56593471c7126378d290524be391af` on `feat/stitch-m1-dj-workspace`, base `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and unmerged. PR #2 remains open/draft. Both push and PR-triggered Windows/macOS/Ubuntu matrices passed for head `853e51477e56593471c7126378d290524be391af`. The PR run's Ubuntu log shows the complete toolkit suite and symlink regression passing; GitHub checked merge ref `198d769fb8439a5a1471441e50c29cb0b07711cb`, which includes that head.
 
@@ -37,7 +37,8 @@ The passing PR run's Ubuntu log records `Ran 52 tests`, `test_symlink_escape_rej
 ## Desktop runtime and hardware
 
 - Historical Codex Tauri run: Windows desktop rendered the initial empty DJ workspace and connected engine snapshot at 1920×1032. Two decks were empty. This is a window/render check only.
-- Actual native picker, WAV load, real Tauri transport/mixer IPC, 1440×900/1280×800/narrow responsive screenshots, and current-head runtime commands are NOT RUN. Previous UI automation was blocked by detected concurrent input; the master goal requires switching to owner-operated manual interaction rather than retrying that automation.
+- Current-head launch: on `17693ba8341817e9152b8f66f55a07009f6139ad`, `corepack pnpm desktop dev` ran with Node.js 24.22.3/pnpm 12.23.0; Vite became ready on `127.0.0.1:1420`, Cargo finished, and `sayt-desktop.exe` started and remained alive at the last process check. Cargo emitted a non-fatal output filename collision warning for `sayt_desktop.pdb` between the library and binary targets.
+- Actual native picker, WAV load, real Tauri transport/mixer IPC, 1440×900/1280×800/narrow responsive screenshots, and physical playback remain NOT RUN. No UI automation was retried after the prior helper detected concurrent input; owner-operated manual interaction is now pending with the dev process left running.
 - Physical dual playback, independent audible control, EQ/gain/crossfader, device disconnect/recovery, and shutdown during playback are NOT RUN. A screenshot, UI meter, moving waveform, or engine snapshot is not hardware evidence. See [`audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md`](audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md) and its blank [`RESULTS_TEMPLATE.md`](audio-validation/RESULTS_TEMPLATE.md).
 
 ## Scope, security, dependency and rollback notes

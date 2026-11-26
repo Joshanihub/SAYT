@@ -3,7 +3,7 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.0
+**Version:** 0.5.0
 
 ## Current increment — PR #2 audio-validation consolidation
 
@@ -14,7 +14,7 @@
 - **Fixtures:** generated seven files at `%TEMP%\SAYT-Audio-Fixtures`; verifier returned `ALL CHECKS PASSED`, 77 passed, 0 failed. Manifest SHA-256: `1FA8F84E47C17F6FC017F99D5023AC8CE4C683B400BE788BE98C5E6E586A4701`. Generated WAVs are not committed.
 - **Full local checks:** Rust `fmt`, `check`, Clippy, and workspace tests passed with rustc/cargo 1.100.0. Frontend frozen install, format, lint, typecheck, 20 tests, and build passed on exact Node 24.22.3 / pnpm 12.23.0. The first frontend invocation used Node 24.16.0 and was superseded by the exact-pinned rerun.
 - **GitHub:** push run [45721302725](https://github.com/Joshanihub/SAYT/actions/runs/45721302725) and PR run [45721308789](https://github.com/Joshanihub/SAYT/actions/runs/45721308789) passed on Windows, macOS, and Ubuntu for PR head `853e51477e56593471c7126378d290524be391af` (the PR event checked merge ref `198d769fb8439a5a1471441e50c29cb0b07711cb`). Its Ubuntu log records all 52 Python tests, including `test_symlink_escape_rejected`, and 77/77 fixture checks.
-- **Runtime/hardware:** no new Tauri interaction was performed in this increment. Native picker, load, real Tauri IPC, responsive target screenshots, and physical-device listening/recovery/shutdown remain NOT RUN. Previous actual app evidence remains limited to an empty workspace render and connected initial engine snapshot at 1920×1032.
+- **Runtime/hardware:** current-head `corepack pnpm desktop dev` launched from commit `17693ba8341817e9152b8f66f55a07009f6139ad` using Node 24.22.3/pnpm 12.23.0; Vite was ready, Rust compilation completed, and the desktop process remained alive at the last check. Cargo emitted a non-fatal PDB output filename collision warning for the library and binary targets. No picker, control, IPC, visual-size, or physical-device interaction was performed by the agent. Owner/manual checks are pending; prior screenshot evidence remains only the initial empty workspace at 1920×1032.
 - **Rollback/migration:** no database, persistence schema, dependency, or lockfile changes. Revert commit `853e51477e56593471c7126378d290524be391af` on the feature branch if required; do not reset or merge `main`.
 
 See [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md) and [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md) for the complete evidence states and open M1 gates.
