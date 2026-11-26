@@ -3,9 +3,9 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.19
+**Version:** 0.3.20
 
-This file records reproduced evidence separately from historical agent reports. Remote `main` remains at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and PR #2 remains draft. The M1 feature branch head `ee137e288b324a50e6f9b1574c4aee9d4eee1c09` passed exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) on Windows, macOS, and Ubuntu. Keyboard-command implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` is pushed to `feat/dj-command-system`; its exact-head Actions run [45883560745](https://github.com/Joshanihub/SAYT/actions/runs/45883560745) is in progress. No PR or merge was created for the expansion branch.
+This file records reproduced evidence separately from historical agent reports. Remote `main` remains at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and PR #2 remains draft. The M1 feature branch head `ee137e288b324a50e6f9b1574c4aee9d4eee1c09` passed exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) on Windows, macOS, and Ubuntu. Keyboard-command implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` and status commit `2706945e62b25573cc4d4b44af2248011b878d5c` are pushed to `feat/dj-command-system`; exact-head Actions run [45884170431](https://github.com/Joshanihub/SAYT/actions/runs/45884170431) completed successfully with all 3 matrix jobs. No PR or merge was created for the expansion branch.
 
 ## Keyboard-command expansion — local checks and Windows runtime observation
 
@@ -22,7 +22,7 @@ The expansion is isolated in `C:\Dev\SAYT-dj-feature-expansion` on `feat/dj-comm
 
 The feature worktree launched as a Windows Tauri app from `C:\Dev\SAYT-dj-feature-expansion\target\debug\sayt-desktop.exe` at `http://127.0.0.1:1421`. The observed window measured 1282×832 logical pixels and rendered the M1 workspace with empty decks and the system-default output. The footer opened the shortcut dialog; searching `crossfader` showed the three matching commands; the Done button closed it. No shortcut mapping was edited or reset.
 
-Global keyboard operation is not verified: automation presses for F1, Alt+2, Ctrl+Alt+2, Ctrl+Alt+Up and Alt+Shift+Q returned without a visible command-state change. This does not identify whether the input automation failed to deliver page key events or the app failed to handle them. A human physical-key check is required before marking shortcut actuation runtime verified. No WAV was loaded in this runtime session and no playback, audible output, remapping persistence, or audio-device behavior is claimed. The original M1 app window was left untouched. Exact-head remote CI is tracked by [run 45883560745](https://github.com/Joshanihub/SAYT/actions/runs/45883560745) and was in progress when this snapshot was written.
+Global keyboard operation is not yet verified: automation presses for F1, Alt+2, Ctrl+Alt+2, Ctrl+Alt+Up and Alt+Shift+Q returned without a visible command-state change. This does not identify whether the input automation failed to deliver page key events or the app failed to handle them. The owner is physically checking F1, Alt+2 and Ctrl+Alt+2 in the feature window; record the result before marking shortcut actuation runtime verified. No WAV was loaded in this runtime session and no playback, audible output, remapping persistence, or audio-device behavior is claimed. The original M1 app window was left untouched. Exact-head remote CI run [45884170431](https://github.com/Joshanihub/SAYT/actions/runs/45884170431) completed successfully with all 3 matrix jobs on branch-status commit `2706945e62b25573cc4d4b44af2248011b878d5c`.
 
 ## M1 responsive workspace correction — local runtime verification
 

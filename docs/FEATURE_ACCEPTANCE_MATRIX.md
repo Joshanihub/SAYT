@@ -3,13 +3,13 @@
 **Status:** ACTIVE; M1 acceptance is incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.1.18
+**Version:** 0.1.19
 
 ## Evidence states
 
 Use the highest state with evidence for each row: **Planned**, **Designed**, **Implemented**, **Automated verified**, **Integration verified**, **Runtime verified**, **Hardware/provider verified**, **Accessibility/performance verified**, **Documented**, **Reviewed/released**. Do not compress these into one green check. `NOT RUN`, `BLOCKED`, and `FAIL` are open states, not passes. Full M1 criteria are in [`REQUIREMENTS.md`](REQUIREMENTS.md); supplied screen assets and component mapping are in [`DESIGN_IMPLEMENTATION_MAP.md`](DESIGN_IMPLEMENTATION_MAP.md).
 
-Keyboard-command implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` is pushed to `feat/dj-command-system`. Exact-head Actions run [45883560745](https://github.com/Joshanihub/SAYT/actions/runs/45883560745) is in progress. No PR or merge was created.
+Keyboard-command implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` and branch-status commit `2706945e62b25573cc4d4b44af2248011b878d5c` are pushed to `feat/dj-command-system`. Exact-head Actions run [45884170431](https://github.com/Joshanihub/SAYT/actions/runs/45884170431) completed successfully with all 3 matrix jobs. No PR or merge was created.
 
 ## M1 exit criteria
 

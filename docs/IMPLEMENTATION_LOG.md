@@ -3,7 +3,12 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.11
+**Version:** 0.4.12
+
+## 2026-11-26 — Keyboard-command CI status correction
+
+- GitHub Actions run `45883560745` for the implementation commit was canceled when the follow-up status commit superseded it on the branch. Exact-head run [45884170431](https://github.com/Joshanihub/SAYT/actions/runs/45884170431) for branch head `2706945e62b25573cc4d4b44af2248011b878d5c` subsequently completed successfully; GitHub reports all 3 matrix jobs completed. The physical-key acceptance check remains open pending owner observation.
+- No source code, dependency, or lockfile changed in this status correction.
 
 ## 2026-11-26 — First DJ expansion: keyboard command system
 
