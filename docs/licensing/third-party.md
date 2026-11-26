@@ -2,7 +2,8 @@
 
 **Status:** Direct inventory, pnpm transitive license output, and RustSec scan recorded; owner and legal review pending.<br>
 **Owner:** SAYT project owner<br>
-**Checked:** 2026-11-25
+**Checked:** 2026-11-26<br>
+**Version:** 0.1.0
 
 Every direct dependency is pinned exactly in its manifest. The lockfiles are the resolution record. CI runs Cargo bans/license/source checks and RustSec advisories separately, plus pnpm's license inventory command. M1 remains partial until the transitive report is reviewed.
 
@@ -38,8 +39,12 @@ The project owner has not selected a license. No SAYT license grant is included 
 | npm       | `prettier`             |                3.10.1 | MIT               | Formatting                                                                                              |
 | npm       | `vitest`               |                 5.1.1 | MIT               | UI shell test runner; 5.1.2 was inside the configured 24-hour release hold                              |
 | npm       | `pnpm`                 |               12.23.0 | MIT               | Workspace package manager                                                                               |
+| Python    | `fonttools`            |                4.68.0 | MIT               | Optional, pinned Material Symbols subset build tool                                                     |
+| Python    | `Brotli`               |                 1.2.1 | MIT               | Optional WOFF2 compression dependency for the subset build                                              |
 | CI        | `actions/checkout`     | v7.0.1, commit-pinned | MIT               | Checkout; immutable SHA in workflow                                                                     |
 | CI        | `actions/setup-node`   | v7.1.0, commit-pinned | MIT               | Pinned Node runtime; immutable SHA in workflow                                                          |
+
+On 2026-11-26, the optional font build requirements were scanned with `pip-audit 2.10.1` in an isolated Python 3.14.5 environment. It reported no known vulnerabilities. The auditor and its transitive dependencies were installed under `%TEMP%`; they are not project dependencies. This is an advisory scan of the two pinned build-tool requirements, not a security clearance.
 
 Toolchain pins: Node.js 24.22.3 (Active LTS as checked on 2026-11-25), Rust 1.100.0, and pnpm 12.23.0. These are exact build-time versions; the Rust crate `rust-version` remains the minimum 1.90.0 needed by the selected Tauri line.
 

@@ -70,11 +70,7 @@ pub(crate) fn decode_track(path: &Path) -> Result<Track, String> {
         } else {
             left_sample
         };
-        if frames.len() >= MAX_TRACK_FRAMES {
-            return Err(format!(
-                "WAV track exceeds the decoded-frame limit of {MAX_TRACK_FRAMES}"
-            ));
-        }
+        ensure_frame_capacity(frames.len())?;
         frames.push(StereoFrame {
             left: left_sample as f32 / scale,
             right: right_sample as f32 / scale,
@@ -99,6 +95,15 @@ pub(crate) fn decode_track(path: &Path) -> Result<Track, String> {
         filename,
         waveform: Arc::from(waveform),
     })
+}
+
+fn ensure_frame_capacity(frame_count: usize) -> Result<(), String> {
+    if frame_count >= MAX_TRACK_FRAMES {
+        return Err(format!(
+            "WAV track exceeds the decoded-frame limit of {MAX_TRACK_FRAMES}"
+        ));
+    }
+    Ok(())
 }
 
 fn read_sample(
@@ -183,6 +188,36 @@ mod tests {
     }
 
     #[test]
+    fn decodes_stereo_24_and_32_bit_pcm_with_normalized_samples() {
+        const NORMALIZATION_TOLERANCE: f32 = 0.000_001;
+        let fixtures = [
+            (24_u16, 4_194_304_i32, -8_388_608_i32),
+            (32_u16, 1_073_741_824_i32, i32::MIN),
+        ];
+
+        for (bits_per_sample, left_sample, right_sample) in fixtures {
+            let temp = TempWav::new("wav");
+            let spec = hound::WavSpec {
+                channels: 2,
+                sample_rate: 48_000,
+                bits_per_sample,
+                sample_format: hound::SampleFormat::Int,
+            };
+            let mut writer = hound::WavWriter::create(temp.path(), spec).unwrap();
+            writer.write_sample(left_sample).unwrap();
+            writer.write_sample(right_sample).unwrap();
+            writer.finalize().unwrap();
+
+            let track = decode_track(temp.path()).unwrap();
+            assert_eq!(track.channels, 2);
+            assert_eq!(track.frames.len(), 1);
+            assert!((track.frames[0].left - 0.5).abs() <= NORMALIZATION_TOLERANCE);
+            assert!((track.frames[0].right + 1.0).abs() <= NORMALIZATION_TOLERANCE);
+            assert!((track.waveform[0] - 0.75).abs() <= NORMALIZATION_TOLERANCE);
+        }
+    }
+
+    #[test]
     fn rejects_float_wav_with_actionable_message() {
         let temp = TempWav::new("wav");
         let spec = hound::WavSpec {
@@ -201,6 +236,83 @@ mod tests {
     }
 
     #[test]
+    fn rejects_truncated_pcm_sample_data_with_actionable_message() {
+        let temp = TempWav::new("wav");
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: 48_000,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let mut writer = hound::WavWriter::create(temp.path(), spec).unwrap();
+        writer.write_sample(12_345_i16).unwrap();
+        writer.finalize().unwrap();
+
+        let complete_length = fs::metadata(temp.path()).unwrap().len();
+        fs::OpenOptions::new()
+            .write(true)
+            .open(temp.path())
+            .unwrap()
+            .set_len(complete_length - 1)
+            .unwrap();
+
+        let error = decode_track(temp.path()).unwrap_err();
+        assert!(error.contains("Invalid WAV sample data"), "{error}");
+    }
+
+    #[test]
+    fn rejects_empty_wav_with_actionable_message() {
+        let temp = TempWav::new("wav");
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: 48_000,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let writer = hound::WavWriter::create(temp.path(), spec).unwrap();
+        writer.finalize().unwrap();
+
+        let error = decode_track(temp.path()).unwrap_err();
+        assert!(error.contains("contains no audio frames"), "{error}");
+    }
+
+    #[test]
+    fn rejects_unsupported_channel_count_with_actionable_message() {
+        const UNSUPPORTED_CHANNEL_COUNT: u16 = 3;
+
+        let temp = TempWav::new("wav");
+        let spec = hound::WavSpec {
+            channels: UNSUPPORTED_CHANNEL_COUNT,
+            sample_rate: 48_000,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let writer = hound::WavWriter::create(temp.path(), spec).unwrap();
+        writer.finalize().unwrap();
+
+        let error = decode_track(temp.path()).unwrap_err();
+        assert!(error.contains("use mono or stereo"), "{error}");
+    }
+
+    #[test]
+    fn rejects_sample_rates_outside_the_supported_range() {
+        for sample_rate in [MIN_SAMPLE_RATE_HZ - 1, MAX_SAMPLE_RATE_HZ + 1] {
+            let temp = TempWav::new("wav");
+            let spec = hound::WavSpec {
+                channels: 1,
+                sample_rate,
+                bits_per_sample: 16,
+                sample_format: hound::SampleFormat::Int,
+            };
+            let writer = hound::WavWriter::create(temp.path(), spec).unwrap();
+            writer.finalize().unwrap();
+
+            let error = decode_track(temp.path()).unwrap_err();
+            assert!(error.contains("Unsupported WAV sample rate"), "{error}");
+        }
+    }
+
+    #[test]
     fn rejects_oversized_file_before_parsing_its_header() {
         let temp = TempWav::new("wav");
         let file = File::create(temp.path()).unwrap();
@@ -208,6 +320,14 @@ mod tests {
 
         let error = decode_track(temp.path()).unwrap_err();
         assert!(error.contains("supported file-size limit"));
+    }
+
+    #[test]
+    fn frame_limit_allows_the_last_supported_frame_and_rejects_the_next() {
+        assert!(ensure_frame_capacity(MAX_TRACK_FRAMES - 1).is_ok());
+
+        let error = ensure_frame_capacity(MAX_TRACK_FRAMES).unwrap_err();
+        assert!(error.contains("decoded-frame limit"), "{error}");
     }
 
     #[test]

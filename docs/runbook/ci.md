@@ -2,7 +2,7 @@
 
 **Status:** Proposed<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-25
+**Date:** 2026-11-26
 
 ## Local sequence
 
@@ -10,6 +10,8 @@
 2. Install pnpm `12.23.0`, then run `pnpm install --frozen-lockfile`.
 3. On Linux, install Tauri's documented GTK/WebKit prerequisites.
 4. Run the commands listed under `Checks` in the root README. The advisory scan reports known unmaintained/unsound transitive components; review `docs/DEPENDENCIES_AND_LICENSES.md` rather than suppressing them.
+
+For UI motion changes, the desktop stylesheet test checks the declared button/select transitions and reduced-motion override. Also enable the operating-system reduced-motion preference in the running desktop app and confirm transitions are suppressed while keyboard focus remains visible; the stylesheet test alone does not verify WebView behavior.
 
 ## Failure triage
 
@@ -19,4 +21,4 @@
 - Frontend checks: confirm Node and pnpm match the pinned files; then run the failing script from `apps/desktop` to retain package-local context.
 - Dependency policy: inspect the exact crate/package and lockfile version before adding a license exception. Do not widen the global allow-list to silence one dependency. Run `cargo deny check --hide-inclusion-graph bans licenses sources`; run `cargo audit` separately for RustSec advisories.
 
-CI is not yet verified. The runbook becomes operational only after a green three-OS run.
+The last fully CI-verified source revision, `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`, passed exact-head push and pull-request workflows on Windows, macOS, and Ubuntu. Re-run CI after every source change; later feature-branch commits remain pending exact-head cross-platform results.

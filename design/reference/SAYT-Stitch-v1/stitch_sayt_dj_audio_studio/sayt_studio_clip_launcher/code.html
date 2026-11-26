@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;family=Space+Grotesk:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-container":"#c51640","error-container":"#93000a","tertiary":"#ffffff","outline-variant":"#444938","on-secondary-container":"#00374d","on-primary-container":"#506e00","inverse-surface":"#e2e2e9","on-surface":"#e2e2e9","secondary-fixed-dim":"#7bd0ff","on-secondary-fixed":"#001e2c","primary-container":"#c6f26a","on-secondary":"#00354a","surface-container-lowest":"#0c0e13","on-primary":"#253600","surface-dim":"#111318","secondary-container":"#00a6e0","surface-container-low":"#1a1b21","secondary":"#7bd0ff","tertiary-container":"#ffdadb","outline":"#8e937f","primary":"#ffffff","on-primary-fixed-variant":"#374e00","on-secondary-fixed-variant":"#004c69","inverse-primary":"#4b6700","error":"#ffb4ab","on-primary-fixed":"#141f00","on-background":"#e2e2e9","surface-container-highest":"#33353a","tertiary-fixed-dim":"#ffb2b7","surface":"#111318","primary-fixed":"#c6f26a","surface-tint":"#abd551","on-surface-variant":"#c4c9b3","tertiary-fixed":"#ffdadb","on-error":"#690005","primary-fixed-dim":"#abd551","on-tertiary":"#67001b","inverse-on-surface":"#2e3036","on-tertiary-fixed":"#40000d","background":"#111318","surface-container":"#1e2025","surface-container-high":"#282a2f","on-tertiary-fixed-variant":"#92002a","secondary-fixed":"#c4e7ff","on-error-container":"#ffdad6","surface-bright":"#37393f","surface-variant":"#33353a"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"margin-mobile":"0.5rem",margin:"0.75rem","space-xs":"0.25rem",gutter:"0.5rem","space-sm":"0.5rem","space-md":"0.75rem","space-lg":"1rem","gutter-compact":"0.25rem","space-xl":"1.5rem"},fontFamily:{"headline-xl":["Space Grotesk"],"body-md":["Inter"],"headline-lg":["Space Grotesk"],"body-sm":["Inter"],"label-telemetry-lg":["JetBrains Mono"],"label-telemetry-md":["JetBrains Mono"],"body-lg":["Inter"],"headline-md":["Space Grotesk"],"label-telemetry-sm":["JetBrains Mono"],"label-hardware":["Space Grotesk"]},fontSize:{"headline-xl":["28px",{lineHeight:"34px",letterSpacing:"-0.02em",fontWeight:"700"}],"body-md":["12px",{lineHeight:"16px",fontWeight:"400"}],"headline-lg":["22px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"600"}],"body-sm":["11px",{lineHeight:"14px",fontWeight:"400"}],"label-telemetry-lg":["20px",{lineHeight:"24px",letterSpacing:"-0.03em",fontWeight:"700"}],"label-telemetry-md":["13px",{lineHeight:"16px",letterSpacing:"-0.01em",fontWeight:"600"}],"body-lg":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-md":["16px",{lineHeight:"22px",fontWeight:"600"}],"label-telemetry-sm":["10px",{lineHeight:"12px",letterSpacing:"0.02em",fontWeight:"500"}],"label-hardware":["9px",{lineHeight:"10px",letterSpacing:"0.08em",fontWeight:"700"}]}}}};</script></head><body class="bg-surface-container-lowest text-on-surface font-body-md select-none"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-dim/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-7 w-full px-margin flex items-center justify-between bg-surface-container-lowest"><div class="flex items-center gap-space-sm"><div class="flex items-center gap-space-xs"><span class="w-2.5 h-2.5 rounded-full bg-error inline-block"></span><span class="w-2.5 h-2.5 rounded-full bg-primary-fixed-dim inline-block"></span><span class="w-2.5 h-2.5 rounded-full bg-secondary inline-block"></span></div><span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase tracking-wider pl-space-xs">SAYT — Open Music Creation &amp; Performance Platform</span></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant bg-surface-container px-space-sm py-0.5 rounded"><span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span><span>DSP: 4.2%</span><span class="text-outline">|</span><span>48kHz</span><span class="text-outline">|</span><span>128 spl • 2.67ms buffer time</span></div><div class="flex items-center gap-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-on-surface">horizontal_rule</span><span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-on-surface">crop_square</span><span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-on-surface">close</span></div></div></div><div class="h-11 w-full px-margin flex items-center justify-between bg-surface-container-low"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm"><img alt="SAYT Open Music Platform Logo" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCDrQexQvTy-pr3yp21JOX42oEneZ5oOuLNBukodJ0cxvA33IHCl598hTHUAX2ANmJhjEbJLWEfbKBiauAfoAyNf2iLAui2eLuOIE0RFK7DmpirdjMRacp1FS3rxwiokx_GCJVNAcTDnQYxxxoc-TREA1yWwF3BLmvF2AlkxyfUc3g0CyvY6-RwbamG8jFIOvANLq3Gi3SwkOaZ-DTjMtRVamiof8YwfevsFfFAB7I"/><span class="font-headline-md text-headline-md text-primary tracking-tight font-bold hidden xl:inline">SAYT</span></div><nav class="flex items-center gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-bold rounded"><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="sayt-open" href="#">SAYT Open</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="sayt-dj" href="#">SAYT DJ</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="library" href="#">Library</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="bridge" href="#">Bridge</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="preparation" href="#">Preparation</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="fx-sampler" href="#">FX &amp; Sampler</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="studio" href="#">Studio</a><a class="px-space-md py-1 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="settings" href="#">Settings</a></nav></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-highest px-space-sm py-1 rounded"><span class="w-2 h-2 rounded-full bg-primary-fixed animate-ping"></span><span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface">CoreAudio • Built-in Output (0.0dB)</span></div><div class="flex items-center gap-space-xs px-space-sm py-1 bg-surface-container rounded"><div class="flex flex-col gap-0.5"><div class="w-12 h-1 bg-surface-dim rounded-full overflow-hidden flex"><div class="w-3/4 h-full bg-primary-container"></div><div class="w-1/4 h-full bg-secondary-container"></div></div><div class="w-12 h-1 bg-surface-dim rounded-full overflow-hidden flex"><div class="w-2/3 h-full bg-primary-container"></div><div class="w-1/4 h-full bg-secondary-container"></div></div></div><span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">MST</span></div><div class="flex items-center gap-space-xs font-label-telemetry-md text-label-telemetry-md text-secondary bg-surface-container px-space-sm py-1 rounded"><span class="material-symbols-outlined text-[14px]">sync</span><span>124.00</span><span class="font-label-hardware text-label-hardware text-outline">BPM</span></div><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant bg-surface-container px-space-sm py-1 rounded cursor-pointer hover:bg-surface-container-high"><span class="w-2 h-2 rounded-full bg-error-container"></span><span>REC</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div><div class="h-8 w-full px-margin flex items-center justify-between bg-surface-container border-t border-surface-variant/40"><div class="flex items-center gap-space-sm"><span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase tracking-wider">STUDIO WORKSPACES:</span><nav class="flex items-center gap-space-xs" data-active-classes="bg-surface-container-highest text-primary-fixed font-semibold rounded"><a class="px-space-sm py-0.5 font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="studio-arrangement" href="#">Arrangement</a><a class="px-space-sm py-0.5 font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="studio-mixer" href="#">Mixer</a><a class="px-space-sm py-0.5 font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="studio-piano-roll" href="#">Piano Roll</a><a class="px-space-sm py-0.5 font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="studio-clip-launcher" href="#">Clip Launcher</a><a class="px-space-sm py-0.5 font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="studio-step-sequencer" href="#">Step Sequencer</a></nav></div><div class="flex items-center gap-space-sm"><a class="px-space-sm py-0.5 font-label-hardware text-label-hardware text-secondary hover:text-primary-fixed uppercase transition-colors flex items-center gap-1" data-path="onboarding-modal" href="#"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Guide / Quickstart</a></div></div></header><aside class="fixed left-0 top-26 bottom-6 w-16 bg-surface-container-lowest z-40 flex flex-col items-center py-space-md justify-between shadow-[1px_0_4px_rgba(0,0,0,0.3)]"><nav class="flex flex-col items-center gap-space-sm" data-active-classes="bg-primary-container text-on-primary-container rounded"><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="deck-control" href="#"><span class="material-symbols-outlined text-[18px]">album</span><span class="font-label-hardware text-label-hardware mt-0.5">DECKS</span></a><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="mixer-strip" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-label-hardware text-label-hardware mt-0.5">MIX</span></a><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="sampler-racks" href="#"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="font-label-hardware text-label-hardware mt-0.5">PADS</span></a><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="fx-chain" href="#"><span class="material-symbols-outlined text-[18px]">waves</span><span class="font-label-hardware text-label-hardware mt-0.5">FX</span></a><a class="w-10 h-10 flex flex-col items-center justify-center rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="midi-map" href="#"><span class="material-symbols-outlined text-[18px]">piano</span><span class="font-label-hardware text-label-hardware mt-0.5">MIDI</span></a></nav><div class="flex flex-col items-center gap-space-xs text-on-surface-variant"><div class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container hover:text-on-surface cursor-pointer"><span class="material-symbols-outlined text-[16px]">fullscreen</span></div><div class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container hover:text-on-surface cursor-pointer"><span class="material-symbols-outlined text-[16px]">help_outline</span></div></div></aside><div class="pl-16"><main class="w-full pt-26 pb-6 bg-surface-container-lowest min-h-screen"><div class="flex flex-col w-full text-on-surface">
+<!-- Transport & Matrix Control Strip -->
+<section class="flex flex-wrap items-center justify-between gap-space-md px-margin py-space-sm bg-surface-container-low shadow-sm">
+<div class="flex items-center gap-space-lg">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase tracking-wider">PROJECT TRANSPORT</span>
+<div class="flex items-center gap-1.5 px-space-sm py-1 bg-surface-container-lowest rounded shadow-inner">
+<span class="font-label-telemetry-lg text-label-telemetry-lg text-primary tracking-tight font-bold" id="playhead-counter">017.2.00</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed-dim uppercase">BAR</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-1 rounded">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed-dim">speed</span>
+<span class="font-label-telemetry-md text-label-telemetry-md font-bold text-on-surface">124.00</span>
+<span class="font-label-hardware text-label-hardware text-outline">BPM</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-1 rounded">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">GLOBAL QUANT:</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary font-bold">1 BAR</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant cursor-pointer">arrow_drop_down</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-high px-space-sm py-1 rounded shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary-fixed font-bold">LINK 4 PEERS</span>
+</div>
+</div>
+</div>
+<!-- Right Controls: Master Clip Control & View Options -->
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-1 bg-surface-container-lowest px-1 py-1 rounded">
+<button class="flex items-center gap-1 px-space-sm py-1 rounded bg-primary-container text-on-primary-container font-headline-md text-headline-md shadow hover:brightness-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span class="font-label-hardware text-label-hardware uppercase">PLAY SCENE</span>
+</button>
+<button class="flex items-center gap-1 px-space-sm py-1 rounded bg-surface-container text-on-surface-variant hover:text-error hover:bg-error-container/20 transition-all group" title="Panic: Stop all clips immediately">
+<span class="material-symbols-outlined text-[16px] group-hover:text-error">stop</span>
+<span class="font-label-hardware text-label-hardware uppercase group-hover:text-error font-bold">STOP ALL CLIPS</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-1 rounded">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">REC QUANT:</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed">1/16 BEAT</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<button class="p-1 rounded bg-surface-container-highest text-primary-fixed shadow-sm" title="Matrix View"><span class="material-symbols-outlined text-[16px]">grid_view</span></button>
+<button class="p-1 rounded bg-surface-container hover:text-on-surface" title="Follow Playhead"><span class="material-symbols-outlined text-[16px]">vertical_align_center</span></button>
+</div>
+</div>
+</section>
+<!-- Main Clip Matrix Canvas with Scene Launch Columns -->
+<div class="flex-1 flex overflow-x-auto bg-surface-container-lowest select-none">
+<!-- Tracks Columns Container -->
+<div class="flex-1 grid grid-cols-6 min-w-[1040px] gap-gutter-compact p-space-sm bg-surface-container-lowest">
+<!-- TRACK 01: DRUM BUS -->
+<div class="flex flex-col bg-surface-container-low rounded shadow-sm overflow-hidden">
+<!-- Track Header -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-hardware text-label-hardware text-secondary uppercase font-bold">TRK 01</span>
+<span class="font-label-hardware text-label-hardware px-1 rounded bg-surface-container-highest text-on-surface-variant">AUDIO</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary font-bold truncate">Drum Bus</span>
+</div>
+<div class="w-2.5 h-2.5 rounded-full bg-secondary-fixed shadow-[0_0_8px_rgba(123,208,255,0.6)]"></div>
+</div>
+<!-- Clip Slots List -->
+<div class="flex flex-col gap-gutter-compact p-space-xs">
+<!-- Scene 1: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Intro 909 Beat</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">8 B</span>
+</div>
+<div class="h-6 w-full flex items-center gap-0.5 opacity-60">
+<svg class="w-full h-full text-secondary" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 Q 5 2, 10 12 T 20 12 T 30 5 T 40 12 T 50 1 T 60 12 T 70 8 T 80 12 T 90 3 T 100 12" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 2: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Build Snare Roll</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">16 B</span>
+</div>
+<div class="h-6 w-full flex items-center gap-0.5 opacity-60">
+<svg class="w-full h-full text-secondary" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 L 20 12 L 25 8 L 30 16 L 40 12 L 60 12 L 70 4 L 80 20 L 90 2 L 100 22" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 3: Playing Slot (Active) -->
+<div class="h-20 bg-surface-container-high rounded p-space-xs flex flex-col justify-between shadow-[0_0_12px_rgba(198,242,106,0.3)] relative overflow-hidden cursor-pointer">
+<div class="absolute inset-0 bg-primary-container/10 pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold truncate">Drop Heavy 4x4</span>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold">BAR 18.2</span>
+</div>
+<!-- Waveform Canvas animation state -->
+<div class="h-6 w-full relative flex items-center z-10">
+<svg class="w-full h-full text-primary-fixed" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 L 5 3 L 10 21 L 15 12 L 25 1 L 30 23 L 35 12 L 50 0 L 55 24 L 60 12 L 75 2 L 80 22 L 85 12 L 100 12" fill="none" stroke="currentColor" stroke-width="1.8"></path>
+</svg>
+<!-- Progress playhead bar -->
+<div class="absolute top-0 bottom-0 left-[54%] w-0.5 bg-primary shadow-[0_0_6px_#ffffff]"></div>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-primary-fixed uppercase tracking-wider">LOOP 32B</span>
+<span class="material-symbols-outlined text-[18px] text-primary-fixed hover:text-error" style="font-variation-settings: 'FILL' 1;">stop_circle</span>
+</div>
+</div>
+<!-- Scene 4: Queued Slot -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between shadow-[0_0_8px_rgba(123,208,255,0.4)] relative cursor-pointer">
+<div class="absolute inset-0 bg-secondary-container/10 animate-pulse pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary truncate font-bold">Sub Kick Half</span>
+<span class="px-1 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-hardware text-label-hardware font-bold">QUEUED</span>
+</div>
+<div class="flex items-center justify-center relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary-fixed font-bold">NEXT BAR (2 BTS)</span>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-secondary">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">hourglass_top</span>
+</div>
+</div>
+<!-- Scene 5: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Drop Re-entry Perc</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">32 B</span>
+</div>
+<div class="h-6 w-full flex items-center gap-0.5 opacity-40">
+<svg class="w-full h-full text-secondary" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 Q 25 0, 50 12 T 100 12" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 6: Empty Slot -->
+<div class="h-20 bg-surface-container-lowest/60 rounded p-space-xs flex flex-col items-center justify-center hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-[20px] text-outline/40 group-hover:text-outline">add_circle</span>
+<span class="font-label-hardware text-label-hardware text-outline/60 mt-1">DROP CLIP</span>
+</div>
+</div>
+<!-- Track Column Bottom Strip: Controls & Stop -->
+<div class="mt-auto p-space-xs bg-surface-container flex flex-col gap-space-xs shadow-sm">
+<button class="w-full py-1 rounded bg-surface-container-high hover:bg-surface-container-highest flex items-center justify-center gap-1 text-on-surface-variant hover:text-error transition-colors" title="Stop Drum Bus">
+<span class="material-symbols-outlined text-[14px]">stop</span>
+<span class="font-label-hardware text-label-hardware">STOP CLIP</span>
+</button>
+<div class="grid grid-cols-3 gap-0.5">
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-on-surface">M</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-secondary">S</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-error">●</button>
+</div>
+<div class="flex items-center justify-between px-1">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<div class="w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-fixed font-label-telemetry-sm text-[8px]">C</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm font-bold text-primary">-1.4 dB</span>
+</div>
+<!-- Fader Groove -->
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-primary-fixed-dim" style="width: 78%;"></div>
+</div>
+</div>
+</div>
+<!-- TRACK 02: ACID BASS 303 (Selected Focus) -->
+<div class="flex flex-col bg-surface-container-low rounded shadow-[0_0_12px_rgba(198,242,106,0.15)] overflow-hidden">
+<!-- Track Header -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-hardware text-label-hardware text-primary-fixed uppercase font-bold">TRK 02</span>
+<span class="font-label-hardware text-label-hardware px-1 rounded bg-primary-container text-on-primary-container font-bold">VITAL</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary font-bold truncate">Acid Bass 303</span>
+</div>
+<div class="w-2.5 h-2.5 rounded-full bg-primary-fixed shadow-[0_0_8px_rgba(198,242,106,0.8)]"></div>
+</div>
+<!-- Clip Slots List -->
+<div class="flex flex-col gap-gutter-compact p-space-xs">
+<!-- Scene 1: Loaded MIDI -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Intro Low Drone</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">8 B</span>
+</div>
+<div class="h-6 w-full flex items-center justify-around opacity-50">
+<span class="w-4 h-1.5 bg-primary-fixed rounded-xs"></span>
+<span class="w-6 h-1.5 bg-primary-fixed rounded-xs"></span>
+<span class="w-8 h-1.5 bg-primary-fixed rounded-xs"></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-primary-fixed">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 2: Loaded MIDI -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Reso Sweep Bass</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">16 B</span>
+</div>
+<div class="h-6 w-full flex items-center justify-around opacity-50">
+<span class="w-2 h-2 bg-primary-fixed rounded-xs"></span>
+<span class="w-3 h-2 bg-primary-fixed rounded-xs"></span>
+<span class="w-2 h-2 bg-primary-fixed rounded-xs"></span>
+<span class="w-4 h-2 bg-primary-fixed rounded-xs"></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-primary-fixed">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 3: Playing Slot (Selected Clip: Main Drop Acid Lead) -->
+<div class="h-20 bg-surface-container-high rounded p-space-xs flex flex-col justify-between shadow-[0_0_16px_rgba(198,242,106,0.4)] relative overflow-hidden cursor-pointer ring-1 ring-primary-container">
+<div class="absolute inset-0 bg-primary-container/15 pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary font-bold truncate">Main Drop Acid Lead</span>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold">BAR 18.2</span>
+</div>
+<!-- MIDI piano roll preview pattern -->
+<div class="h-6 w-full relative flex items-center justify-around px-1 z-10">
+<span class="w-2 h-1.5 bg-primary-fixed rounded-xs shadow"></span>
+<span class="w-3 h-1.5 bg-primary-fixed rounded-xs shadow"></span>
+<span class="w-1.5 h-1.5 bg-primary-fixed rounded-xs shadow"></span>
+<span class="w-4 h-1.5 bg-primary-fixed rounded-xs shadow"></span>
+<span class="w-2 h-1.5 bg-primary-fixed rounded-xs shadow"></span>
+<span class="w-3 h-1.5 bg-primary-fixed rounded-xs shadow"></span>
+<!-- Scrubber Needle -->
+<div class="absolute top-0 bottom-0 left-[54%] w-0.5 bg-primary shadow-[0_0_6px_#ffffff]"></div>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-primary-fixed uppercase tracking-wider font-bold">4.0 B (LOOP)</span>
+<span class="material-symbols-outlined text-[18px] text-primary-fixed hover:text-error" style="font-variation-settings: 'FILL' 1;">stop_circle</span>
+</div>
+</div>
+<!-- Scene 4: Queued Slot -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between shadow-[0_0_8px_rgba(123,208,255,0.4)] relative cursor-pointer">
+<div class="absolute inset-0 bg-secondary-container/10 animate-pulse pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary truncate font-bold">Acid Filter Drop</span>
+<span class="px-1 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-hardware text-label-hardware font-bold">QUEUED</span>
+</div>
+<div class="flex items-center justify-center relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary-fixed font-bold">NEXT BAR (2 BTS)</span>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-secondary">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">hourglass_top</span>
+</div>
+</div>
+<!-- Scene 5: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Acid Overdrive Var</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">32 B</span>
+</div>
+<div class="h-6 w-full flex items-center justify-around opacity-40">
+<span class="w-3 h-1 bg-primary-fixed rounded-xs"></span>
+<span class="w-5 h-1 bg-primary-fixed rounded-xs"></span>
+<span class="w-2 h-1 bg-primary-fixed rounded-xs"></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 6: Empty Slot -->
+<div class="h-20 bg-surface-container-lowest/60 rounded p-space-xs flex flex-col items-center justify-center hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-[20px] text-outline/40 group-hover:text-outline">add_circle</span>
+<span class="font-label-hardware text-label-hardware text-outline/60 mt-1">NEW MIDI CLIP</span>
+</div>
+</div>
+<!-- Track Column Bottom Strip -->
+<div class="mt-auto p-space-xs bg-surface-container flex flex-col gap-space-xs shadow-sm">
+<button class="w-full py-1 rounded bg-surface-container-high hover:bg-surface-container-highest flex items-center justify-center gap-1 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[14px]">stop</span>
+<span class="font-label-hardware text-label-hardware">STOP CLIP</span>
+</button>
+<div class="grid grid-cols-3 gap-0.5">
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-on-surface">M</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-secondary">S</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-error">●</button>
+</div>
+<div class="flex items-center justify-between px-1">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<div class="w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-fixed font-label-telemetry-sm text-[8px]">L12</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm font-bold text-primary">-2.8 dB</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-primary-fixed-dim" style="width: 72%;"></div>
+</div>
+</div>
+</div>
+<!-- TRACK 03: VOCAL CHOPS -->
+<div class="flex flex-col bg-surface-container-low rounded shadow-sm overflow-hidden">
+<!-- Track Header -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-hardware text-label-hardware text-secondary uppercase font-bold">TRK 03</span>
+<span class="font-label-hardware text-label-hardware px-1 rounded bg-surface-container-highest text-on-surface-variant">AUDIO</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary font-bold truncate">Vocal Chops</span>
+</div>
+<div class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed shadow-[0_0_8px_rgba(255,218,219,0.5)]"></div>
+</div>
+<!-- Clip Slots List -->
+<div class="flex flex-col gap-gutter-compact p-space-xs">
+<!-- Scene 1: Empty -->
+<div class="h-20 bg-surface-container-lowest/60 rounded p-space-xs flex flex-col items-center justify-center hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-[20px] text-outline/40 group-hover:text-outline">add_circle</span>
+<span class="font-label-hardware text-label-hardware text-outline/60 mt-1">EMPTY</span>
+</div>
+<!-- Scene 2: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Rise Chops Pitch</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">16 B</span>
+</div>
+<div class="h-6 w-full flex items-center gap-0.5 opacity-60">
+<svg class="w-full h-full text-tertiary-fixed" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 Q 20 6, 40 12 T 80 8 T 100 2" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 3: Recording Slot -->
+<div class="h-20 bg-surface-container-high rounded p-space-xs flex flex-col justify-between shadow-[0_0_12px_rgba(255,180,171,0.3)] relative overflow-hidden cursor-pointer">
+<div class="absolute inset-0 bg-error/10 animate-pulse pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-error font-bold truncate">REC TAKE 04</span>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-error font-bold">18.2 B</span>
+</div>
+<div class="h-6 w-full flex items-center justify-center relative z-10">
+<div class="w-full bg-surface-container-lowest h-2 rounded-full overflow-hidden">
+<div class="h-full bg-error animate-pulse" style="width: 58%;"></div>
+</div>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-error uppercase font-bold">RECORDING AUDIO</span>
+<span class="material-symbols-outlined text-[18px] text-error" style="font-variation-settings: 'FILL' 1;">radio_button_checked</span>
+</div>
+</div>
+<!-- Scene 4: Queued Slot -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between shadow-[0_0_8px_rgba(123,208,255,0.4)] relative cursor-pointer">
+<div class="absolute inset-0 bg-secondary-container/10 animate-pulse pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary truncate font-bold">Vocal Solitude Dry</span>
+<span class="px-1 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-hardware text-label-hardware font-bold">QUEUED</span>
+</div>
+<div class="flex items-center justify-center relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary-fixed font-bold">NEXT BAR (2 BTS)</span>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-secondary">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">hourglass_top</span>
+</div>
+</div>
+<!-- Scene 5: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Drop Re-chop Stutter</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">32 B</span>
+</div>
+<div class="h-6 w-full flex items-center gap-0.5 opacity-40">
+<svg class="w-full h-full text-tertiary-fixed" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 L 20 4 L 40 16 L 60 8 L 80 20 L 100 12" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 6: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Outro Reverb Echo</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">16 B</span>
+</div>
+<div class="h-6 w-full flex items-center gap-0.5 opacity-30">
+<svg class="w-full h-full text-tertiary-fixed" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 Q 50 18, 100 12" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+</div>
+<!-- Track Column Bottom Strip -->
+<div class="mt-auto p-space-xs bg-surface-container flex flex-col gap-space-xs shadow-sm">
+<button class="w-full py-1 rounded bg-surface-container-high hover:bg-surface-container-highest flex items-center justify-center gap-1 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[14px]">stop</span>
+<span class="font-label-hardware text-label-hardware">STOP CLIP</span>
+</button>
+<div class="grid grid-cols-3 gap-0.5">
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-on-surface">M</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-secondary">S</button>
+<button class="py-1 rounded bg-error text-on-error font-label-hardware text-label-hardware font-bold">●</button>
+</div>
+<div class="flex items-center justify-between px-1">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<div class="w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-fixed font-label-telemetry-sm text-[8px]">R24</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm font-bold text-primary">-4.0 dB</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-primary-fixed-dim" style="width: 64%;"></div>
+</div>
+</div>
+</div>
+<!-- TRACK 04: LUSH POLY PAD (SERUM) -->
+<div class="flex flex-col bg-surface-container-low rounded shadow-sm overflow-hidden">
+<!-- Track Header -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-hardware text-label-hardware text-secondary-fixed uppercase font-bold">TRK 04</span>
+<span class="font-label-hardware text-label-hardware px-1 rounded bg-surface-container-highest text-on-surface-variant font-bold">SERUM</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary font-bold truncate">Lush Poly Pad</span>
+</div>
+<div class="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_8px_rgba(123,208,255,0.6)]"></div>
+</div>
+<!-- Clip Slots List -->
+<div class="flex flex-col gap-gutter-compact p-space-xs">
+<!-- Scene 1: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Chords A Minor</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">8 B</span>
+</div>
+<div class="h-6 w-full flex items-center justify-around opacity-50">
+<div class="flex flex-col gap-0.5"><span class="w-6 h-1 bg-secondary rounded-xs"></span><span class="w-6 h-1 bg-secondary rounded-xs"></span></div>
+<div class="flex flex-col gap-0.5"><span class="w-6 h-1 bg-secondary rounded-xs"></span><span class="w-6 h-1 bg-secondary rounded-xs"></span></div>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 2: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Bright Stabs Open</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">16 B</span>
+</div>
+<div class="h-6 w-full flex items-center justify-around opacity-50">
+<span class="w-2 h-3 bg-secondary rounded-xs"></span>
+<span class="w-2 h-3 bg-secondary rounded-xs"></span>
+<span class="w-2 h-3 bg-secondary rounded-xs"></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 3: Loaded (Muted in Scene) -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant truncate font-semibold">Drop Pad Silent</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">32 B</span>
+</div>
+<div class="flex items-center justify-center">
+<span class="font-label-hardware text-label-hardware text-outline">MUTED FOR DROP</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-outline">play_arrow</span>
+</div>
+</div>
+<!-- Scene 4: Queued Slot -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between shadow-[0_0_8px_rgba(123,208,255,0.4)] relative cursor-pointer">
+<div class="absolute inset-0 bg-secondary-container/10 animate-pulse pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary truncate font-bold">Lush Re-Warm Pad</span>
+<span class="px-1 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-hardware text-label-hardware font-bold">QUEUED</span>
+</div>
+<div class="flex items-center justify-center relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary-fixed font-bold">NEXT BAR (2 BTS)</span>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-secondary">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">hourglass_top</span>
+</div>
+</div>
+<!-- Scene 5: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Extended Pad Layer</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">32 B</span>
+</div>
+<div class="h-6 w-full flex items-center justify-around opacity-40">
+<span class="w-8 h-2 bg-secondary rounded-xs"></span>
+<span class="w-8 h-2 bg-secondary rounded-xs"></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 6: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Ambient Drone Out</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">16 B</span>
+</div>
+<div class="h-6 w-full flex items-center justify-around opacity-30">
+<span class="w-12 h-1 bg-secondary rounded-xs"></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">MIDI</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+</div>
+<!-- Track Column Bottom Strip -->
+<div class="mt-auto p-space-xs bg-surface-container flex flex-col gap-space-xs shadow-sm">
+<button class="w-full py-1 rounded bg-surface-container-high hover:bg-surface-container-highest flex items-center justify-center gap-1 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[14px]">stop</span>
+<span class="font-label-hardware text-label-hardware">STOP CLIP</span>
+</button>
+<div class="grid grid-cols-3 gap-0.5">
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-on-surface">M</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-secondary">S</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-error">●</button>
+</div>
+<div class="flex items-center justify-between px-1">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<div class="w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-fixed font-label-telemetry-sm text-[8px]">C</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm font-bold text-primary">-5.2 dB</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-primary-fixed-dim" style="width: 55%;"></div>
+</div>
+</div>
+</div>
+<!-- TRACK 05: PERC & GLITCH -->
+<div class="flex flex-col bg-surface-container-low rounded shadow-sm overflow-hidden">
+<!-- Track Header -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-hardware text-label-hardware text-secondary uppercase font-bold">TRK 05</span>
+<span class="font-label-hardware text-label-hardware px-1 rounded bg-surface-container-highest text-on-surface-variant">AUDIO</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary font-bold truncate">Perc &amp; Glitch</span>
+</div>
+<div class="w-2.5 h-2.5 rounded-full bg-primary-fixed-dim shadow-[0_0_8px_rgba(171,213,81,0.5)]"></div>
+</div>
+<!-- Clip Slots List -->
+<div class="flex flex-col gap-gutter-compact p-space-xs">
+<!-- Scene 1: Empty -->
+<div class="h-20 bg-surface-container-lowest/60 rounded p-space-xs flex flex-col items-center justify-center hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-[20px] text-outline/40 group-hover:text-outline">add_circle</span>
+<span class="font-label-hardware text-label-hardware text-outline/60 mt-1">EMPTY</span>
+</div>
+<!-- Scene 2: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Tension Shaker</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">16 B</span>
+</div>
+<div class="h-6 w-full flex items-center gap-0.5 opacity-60">
+<svg class="w-full h-full text-secondary" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 L 10 9 L 20 15 L 30 10 L 40 14 L 50 8 L 60 16 L 70 6 L 80 18 L 90 4 L 100 20" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 3: Playing Slot (Active) -->
+<div class="h-20 bg-surface-container-high rounded p-space-xs flex flex-col justify-between shadow-[0_0_12px_rgba(198,242,106,0.3)] relative overflow-hidden cursor-pointer">
+<div class="absolute inset-0 bg-primary-container/10 pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold truncate">Modular Glitch Top</span>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold">BAR 18.2</span>
+</div>
+<div class="h-6 w-full relative flex items-center z-10">
+<svg class="w-full h-full text-primary-fixed" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 L 8 2 L 16 22 L 24 12 L 32 6 L 40 18 L 48 12 L 56 1 L 64 23 L 72 12 L 80 4 L 88 20 L 96 12 L 100 12" fill="none" stroke="currentColor" stroke-width="1.6"></path>
+</svg>
+<div class="absolute top-0 bottom-0 left-[54%] w-0.5 bg-primary shadow-[0_0_6px_#ffffff]"></div>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-primary-fixed uppercase tracking-wider">LOOP 16B</span>
+<span class="material-symbols-outlined text-[18px] text-primary-fixed hover:text-error" style="font-variation-settings: 'FILL' 1;">stop_circle</span>
+</div>
+</div>
+<!-- Scene 4: Queued Slot -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between shadow-[0_0_8px_rgba(123,208,255,0.4)] relative cursor-pointer">
+<div class="absolute inset-0 bg-secondary-container/10 animate-pulse pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary truncate font-bold">Micro Click Perc</span>
+<span class="px-1 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-hardware text-label-hardware font-bold">QUEUED</span>
+</div>
+<div class="flex items-center justify-center relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary-fixed font-bold">NEXT BAR (2 BTS)</span>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-secondary">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">hourglass_top</span>
+</div>
+</div>
+<!-- Scene 5: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Industrial Metal Hit</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">32 B</span>
+</div>
+<div class="h-6 w-full flex items-center gap-0.5 opacity-40">
+<svg class="w-full h-full text-secondary" preserveaspectratio="none" viewbox="0 0 100 24">
+<path d="M0 12 L 15 2 L 30 22 L 45 12 L 100 12" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">AUDIO</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 6: Empty Slot -->
+<div class="h-20 bg-surface-container-lowest/60 rounded p-space-xs flex flex-col items-center justify-center hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-[20px] text-outline/40 group-hover:text-outline">add_circle</span>
+<span class="font-label-hardware text-label-hardware text-outline/60 mt-1">EMPTY</span>
+</div>
+</div>
+<!-- Track Column Bottom Strip -->
+<div class="mt-auto p-space-xs bg-surface-container flex flex-col gap-space-xs shadow-sm">
+<button class="w-full py-1 rounded bg-surface-container-high hover:bg-surface-container-highest flex items-center justify-center gap-1 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[14px]">stop</span>
+<span class="font-label-hardware text-label-hardware">STOP CLIP</span>
+</button>
+<div class="grid grid-cols-3 gap-0.5">
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-on-surface">M</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-secondary">S</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-error">●</button>
+</div>
+<div class="flex items-center justify-between px-1">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<div class="w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-fixed font-label-telemetry-sm text-[8px]">R38</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm font-bold text-primary">-6.0 dB</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-primary-fixed-dim" style="width: 48%;"></div>
+</div>
+</div>
+</div>
+<!-- TRACK 06: MASTER FX RETURN -->
+<div class="flex flex-col bg-surface-container-low rounded shadow-sm overflow-hidden">
+<!-- Track Header -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1">
+<span class="font-label-hardware text-label-hardware text-outline uppercase font-bold">RETURN A</span>
+<span class="font-label-hardware text-label-hardware px-1 rounded bg-surface-container-highest text-on-surface-variant">BUS</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary font-bold truncate">Master FX Return</span>
+</div>
+<div class="w-2.5 h-2.5 rounded-full bg-outline shadow-sm"></div>
+</div>
+<!-- Return / Send Clip Automation Slots -->
+<div class="flex flex-col gap-gutter-compact p-space-xs">
+<!-- Scene 1: Reverb Wash -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Huge Hall 4.2s</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">AUTO</span>
+</div>
+<div class="flex items-center justify-center">
+<span class="font-label-hardware text-label-hardware text-outline">VERB SEND 40%</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">FX CLIP</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 2: Build Sweep -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">HPF Auto Sweep</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">16 B</span>
+</div>
+<div class="flex items-center justify-center">
+<span class="font-label-hardware text-label-hardware text-secondary">DELAY FEEDBACK RAMP</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">FX CLIP</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 3: Active Dry Drop Scene -->
+<div class="h-20 bg-surface-container-high rounded p-space-xs flex flex-col justify-between shadow-[0_0_12px_rgba(198,242,106,0.3)] relative overflow-hidden cursor-pointer">
+<div class="absolute inset-0 bg-primary-container/10 pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold truncate">Sidechain Pump Duck</span>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed font-bold">ACTIVE</span>
+</div>
+<div class="h-6 w-full flex items-center justify-center relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed">SC RATIO 4:1 (PUMP)</span>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-primary-fixed uppercase tracking-wider">LOOP 32B</span>
+<span class="material-symbols-outlined text-[18px] text-primary-fixed hover:text-error" style="font-variation-settings: 'FILL' 1;">stop_circle</span>
+</div>
+</div>
+<!-- Scene 4: Queued Slot -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between shadow-[0_0_8px_rgba(123,208,255,0.4)] relative cursor-pointer">
+<div class="absolute inset-0 bg-secondary-container/10 animate-pulse pointer-events-none"></div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary truncate font-bold">Tape Stop Freeze</span>
+<span class="px-1 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-hardware text-label-hardware font-bold">QUEUED</span>
+</div>
+<div class="flex items-center justify-center relative z-10">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary-fixed font-bold">NEXT BAR (2 BTS)</span>
+</div>
+<div class="flex items-center justify-between relative z-10">
+<span class="font-label-hardware text-label-hardware text-secondary">FX CLIP</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">hourglass_top</span>
+</div>
+</div>
+<!-- Scene 5: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">Gated Glitch FX</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">32 B</span>
+</div>
+<div class="flex items-center justify-center">
+<span class="font-label-hardware text-label-hardware text-outline">CHOPPER 1/32</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">FX CLIP</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+<!-- Scene 6: Loaded -->
+<div class="h-20 bg-surface-container rounded p-space-xs flex flex-col justify-between hover:bg-surface-container-high cursor-pointer transition-colors group">
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface truncate font-semibold">End Infinite Tail</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">16 B</span>
+</div>
+<div class="flex items-center justify-center">
+<span class="font-label-hardware text-label-hardware text-outline">SHIMMER 80%</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-outline">FX CLIP</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary-fixed">play_circle</span>
+</div>
+</div>
+</div>
+<!-- Track Column Bottom Strip -->
+<div class="mt-auto p-space-xs bg-surface-container flex flex-col gap-space-xs shadow-sm">
+<button class="w-full py-1 rounded bg-surface-container-high hover:bg-surface-container-highest flex items-center justify-center gap-1 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[14px]">stop</span>
+<span class="font-label-hardware text-label-hardware">STOP CLIP</span>
+</button>
+<div class="grid grid-cols-3 gap-0.5">
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-on-surface">M</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-on-surface-variant hover:text-secondary">S</button>
+<button class="py-1 rounded bg-surface-container-high font-label-hardware text-label-hardware font-bold text-outline">●</button>
+</div>
+<div class="flex items-center justify-between px-1">
+<span class="font-label-hardware text-label-hardware text-outline">PAN</span>
+<div class="w-5 h-5 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-fixed font-label-telemetry-sm text-[8px]">C</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm font-bold text-primary">0.0 dB</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-primary-fixed-dim" style="width: 80%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Master Scene Launchers Column (Right Panel) -->
+<div class="w-72 bg-surface-container-low p-space-sm flex flex-col gap-gutter-compact shadow-lg">
+<div class="p-space-sm bg-surface-container rounded flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed">play_circle</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">Master Scenes</span>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">6 ROWS</span>
+</div>
+<!-- Scene 01: Ambient Intro -->
+<div class="h-20 bg-surface-container rounded p-space-sm flex items-center justify-between hover:bg-surface-container-high transition-colors group cursor-pointer shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-hardware text-label-hardware text-secondary uppercase font-bold">SCENE 01</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">124 BPM</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">01 Ambient Intro</span>
+<span class="font-label-hardware text-label-hardware text-outline">8 BARS</span>
+</div>
+<button class="w-9 h-9 rounded bg-surface-container-highest text-on-surface hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+</div>
+<!-- Scene 02: Groove Build -->
+<div class="h-20 bg-surface-container rounded p-space-sm flex items-center justify-between hover:bg-surface-container-high transition-colors group cursor-pointer shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-hardware text-label-hardware text-secondary uppercase font-bold">SCENE 02</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">124 BPM</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">02 Groove Build</span>
+<span class="font-label-hardware text-label-hardware text-outline">16 BARS</span>
+</div>
+<button class="w-9 h-9 rounded bg-surface-container-highest text-on-surface hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+</div>
+<!-- Scene 03: Main Peak Drop (PLAYING NOW - Signal Lime Glow) -->
+<div class="h-20 bg-primary-container text-on-primary-container rounded p-space-sm flex items-center justify-between shadow-[0_0_16px_rgba(198,242,106,0.5)] cursor-pointer">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-on-primary-container animate-pulse"></span>
+<span class="font-label-hardware text-label-hardware uppercase font-bold text-on-primary-container">PLAYING NOW</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm font-bold">124 BPM</span>
+</div>
+<span class="font-headline-md text-headline-md font-bold truncate">03 Main Peak Drop</span>
+<span class="font-label-hardware text-label-hardware font-bold">32 BARS • BAR 18/32</span>
+</div>
+<button class="w-9 h-9 rounded bg-on-primary-container text-primary-container flex items-center justify-center shadow">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">pause</span>
+</button>
+</div>
+<!-- Scene 04: Vocal Breakdown (QUEUED - Flashing Cyan) -->
+<div class="h-20 bg-surface-container-high rounded p-space-sm flex items-center justify-between shadow-[0_0_12px_rgba(123,208,255,0.4)] ring-1 ring-secondary cursor-pointer relative overflow-hidden">
+<div class="absolute inset-0 bg-secondary-container/10 animate-pulse pointer-events-none"></div>
+<div class="flex flex-col min-w-0 relative z-10">
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-hardware text-label-hardware font-bold uppercase animate-pulse">QUEUED</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary font-bold">124 BPM</span>
+</div>
+<span class="font-headline-md text-headline-md text-secondary font-bold truncate">04 Vocal Breakdown</span>
+<span class="font-label-hardware text-label-hardware text-secondary-fixed">16 BARS • LAUNCH: NEXT BAR</span>
+</div>
+<button class="w-9 h-9 rounded bg-secondary-container text-on-secondary-container flex items-center justify-center shadow relative z-10">
+<span class="material-symbols-outlined text-[18px] animate-spin">sync</span>
+</button>
+</div>
+<!-- Scene 05: Re-Drop Extended -->
+<div class="h-20 bg-surface-container rounded p-space-sm flex items-center justify-between hover:bg-surface-container-high transition-colors group cursor-pointer shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-hardware text-label-hardware text-secondary uppercase font-bold">SCENE 05</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">124 BPM</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">05 Re-Drop Extended</span>
+<span class="font-label-hardware text-label-hardware text-outline">32 BARS</span>
+</div>
+<button class="w-9 h-9 rounded bg-surface-container-highest text-on-surface hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+</div>
+<!-- Scene 06: Outro Ambient -->
+<div class="h-20 bg-surface-container rounded p-space-sm flex items-center justify-between hover:bg-surface-container-high transition-colors group cursor-pointer shadow-sm">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-hardware text-label-hardware text-secondary uppercase font-bold">SCENE 06</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant">124 BPM</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">06 Outro Ambient</span>
+<span class="font-label-hardware text-label-hardware text-outline">16 BARS</span>
+</div>
+<button class="w-9 h-9 rounded bg-surface-container-highest text-on-surface hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+</div>
+<!-- Scene Add / Duplicate Quick Bar -->
+<div class="mt-auto pt-space-xs flex items-center justify-between text-on-surface-variant">
+<button class="flex-1 py-1 rounded bg-surface-container text-center hover:bg-surface-container-high font-label-hardware text-label-hardware uppercase">
+          + ADD NEW SCENE
+        </button>
+</div>
+</div>
+</div>
+<!-- Bottom Inspector Dock: Clip Properties for Selected Clip 'Main Drop Acid Lead' -->
+<section class="h-60 bg-surface-container-low shadow-[0_-4px_16px_rgba(0,0,0,0.5)] flex flex-col md:flex-row overflow-hidden">
+<!-- Inspector Title & Selected Clip Identity -->
+<div class="w-full md:w-64 p-space-md bg-surface-container flex flex-col justify-between shadow-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary-fixed"></span>
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase font-bold">CLIP INSPECTOR</span>
+</div>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-primary-fixed bg-surface-container-highest px-1.5 py-0.5 rounded">TRK 02 / ROW 03</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-primary font-bold truncate mt-1">Main Drop Acid Lead</h3>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary">Vital Synth MIDI Pattern</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-hardware text-label-hardware text-outline uppercase">COLOR:</span>
+<div class="w-4 h-4 rounded-full bg-primary-fixed shadow cursor-pointer"></div>
+<div class="w-4 h-4 rounded-full bg-secondary shadow cursor-pointer"></div>
+<div class="w-4 h-4 rounded-full bg-tertiary-fixed shadow cursor-pointer"></div>
+<div class="w-4 h-4 rounded-full bg-error shadow cursor-pointer"></div>
+</div>
+</div>
+<!-- Clip Parameters & Loop Engine -->
+<div class="flex-1 p-space-md flex flex-wrap items-center justify-between gap-space-lg bg-surface-container-low overflow-y-auto">
+<!-- Loop & Playback Matrix -->
+<div class="flex items-center gap-space-lg">
+<!-- Loop Button -->
+<div class="flex flex-col items-center gap-1">
+<button class="w-12 h-12 rounded-xl bg-primary-container text-on-primary-container flex flex-col items-center justify-center shadow-[0_0_12px_rgba(198,242,106,0.3)] hover:brightness-105 transition-all">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">repeat</span>
+<span class="font-label-hardware text-[8px] font-bold">LOOP ON</span>
+</button>
+<span class="font-label-hardware text-label-hardware text-outline uppercase">PLAY MODE</span>
+</div>
+<!-- Numerical Fields: Start, Length, Loop Pos -->
+<div class="grid grid-cols-2 gap-space-sm bg-surface-container p-space-sm rounded shadow-inner">
+<div class="flex flex-col">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">START POS</span>
+<div class="flex items-center gap-1 px-2 py-1 bg-surface-container-lowest rounded">
+<span class="font-label-telemetry-md text-label-telemetry-md text-primary font-bold">1.1.00</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">LENGTH</span>
+<div class="flex items-center gap-1 px-2 py-1 bg-surface-container-lowest rounded">
+<span class="font-label-telemetry-md text-label-telemetry-md text-primary-fixed font-bold">4.0.00</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">LOOP START</span>
+<div class="flex items-center gap-1 px-2 py-1 bg-surface-container-lowest rounded">
+<span class="font-label-telemetry-md text-label-telemetry-md text-on-surface font-bold">1.1.00</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">LOOP END</span>
+<div class="flex items-center gap-1 px-2 py-1 bg-surface-container-lowest rounded">
+<span class="font-label-telemetry-md text-label-telemetry-md text-on-surface font-bold">5.1.00</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Pitch / Transpose & Quantize Launch -->
+<div class="flex items-center gap-space-lg">
+<div class="flex flex-col gap-1">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">TRANSPOSE / PITCH</span>
+<div class="flex items-center gap-2 bg-surface-container p-space-sm rounded">
+<button class="w-7 h-7 rounded bg-surface-container-highest text-on-surface font-bold hover:bg-surface-bright">-</button>
+<span class="font-label-telemetry-lg text-label-telemetry-lg text-primary-fixed font-bold px-2">+2 st</span>
+<button class="w-7 h-7 rounded bg-surface-container-highest text-on-surface font-bold hover:bg-surface-bright">+</button>
+</div>
+<span class="font-label-hardware text-[8px] text-outline text-center">FINE: 0.0 CENT</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">LAUNCH MODE</span>
+<div class="flex items-center gap-1 bg-surface-container p-1 rounded">
+<button class="px-2 py-1 rounded bg-primary-container text-on-primary-container font-label-hardware text-label-hardware font-bold">TRIGGER</button>
+<button class="px-2 py-1 rounded bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-hardware text-label-hardware">GATE</button>
+<button class="px-2 py-1 rounded bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-hardware text-label-hardware">TOGGLE</button>
+</div>
+<div class="flex items-center justify-between text-outline px-1">
+<span class="font-label-hardware text-[8px]">QUANT: 1 BAR</span>
+<span class="font-label-hardware text-[8px]">LEGATO: OFF</span>
+</div>
+</div>
+</div>
+<!-- Interactive MIDI Velocity / Clip Preview Graphic -->
+<div class="flex flex-col flex-1 min-w-[220px] max-w-sm h-full justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-hardware text-label-hardware text-on-surface-variant uppercase">MINI PIANO ROLL EDITOR</span>
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-secondary">303 ACID PATTERN</span>
+</div>
+<div class="h-24 w-full bg-surface-container-lowest rounded p-1.5 flex flex-col justify-between shadow-inner relative overflow-hidden">
+<!-- MIDI Visual Pattern -->
+<div class="h-full w-full flex items-end gap-1 relative">
+<div class="w-1/12 h-3/4 bg-primary-container rounded-xs"></div>
+<div class="w-1/12 h-1/2 bg-primary-fixed-dim rounded-xs"></div>
+<div class="w-1/12 h-4/5 bg-primary-container rounded-xs"></div>
+<div class="w-1/12 h-2/3 bg-primary-fixed-dim rounded-xs"></div>
+<div class="w-1/12 h-full bg-primary-fixed rounded-xs shadow"></div>
+<div class="w-1/12 h-1/3 bg-primary-fixed-dim rounded-xs"></div>
+<div class="w-1/12 h-3/5 bg-primary-container rounded-xs"></div>
+<div class="w-1/12 h-5/6 bg-primary-fixed rounded-xs"></div>
+<div class="w-1/12 h-1/2 bg-primary-fixed-dim rounded-xs"></div>
+<div class="w-1/12 h-2/3 bg-primary-container rounded-xs"></div>
+<div class="w-1/12 h-4/5 bg-primary-fixed rounded-xs"></div>
+<div class="w-1/12 h-1/4 bg-primary-fixed-dim rounded-xs"></div>
+<!-- Playhead cursor -->
+<div class="absolute top-0 bottom-0 left-[54%] w-0.5 bg-primary shadow-[0_0_8px_#ffffff]"></div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-telemetry-sm text-label-telemetry-sm text-outline">16 NOTES • VELOCITY 112</span>
+<button class="font-label-hardware text-label-hardware text-secondary hover:text-primary-fixed uppercase font-bold flex items-center gap-0.5">
+            EDIT IN PIANO ROLL <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<script>
+  // Simple reactive timer micro-interaction for playback counter
+  (function() {
+    let bar = 17;
+    let beat = 2;
+    let tick = 0;
+    const counterEl = document.getElementById('playhead-counter');
+    if (!counterEl) return;
+    
+    setInterval(() => {
+      tick += 4;
+      if (tick >= 100) {
+        tick = 0;
+        beat += 1;
+        if (beat > 4) {
+          beat = 1;
+          bar += 1;
+          if (bar > 32) bar = 17;
+        }
+      }
+      const bStr = bar.toString().padStart(3, '0');
+      const tStr = tick.toString().padStart(2, '0');
+      counterEl.textContent = `${bStr}.${beat}.${tStr}`;
+    }, 120);
+  })();
+</script></main></div><footer class="fixed bottom-0 left-0 right-0 h-6 bg-surface-dim z-50 px-margin flex items-center justify-between shadow-[0_-1px_4px_rgba(0,0,0,0.3)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant"><span class="w-1.5 h-1.5 rounded-full bg-error"></span><span>REC 00:42:19.04</span></div><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant"><span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span><span>AUDIO: 128 spl @ 48kHz</span></div><div class="flex items-center gap-space-xs font-label-telemetry-sm text-label-telemetry-sm text-secondary"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span><span>MIDI IN: CH 01-16 ACTIVE</span></div></div><div class="flex items-center gap-space-md font-label-telemetry-sm text-label-telemetry-sm text-on-surface-variant"><span class="text-outline">LATENCY: 2.67ms RT</span><span class="bg-surface-container px-space-xs rounded text-on-surface">ASIO / CoreAudio OK</span></div></footer></body></html>
