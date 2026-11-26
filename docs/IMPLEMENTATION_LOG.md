@@ -3,7 +3,7 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.10
+**Version:** 0.4.11
 
 ## 2026-11-26 — First DJ expansion: keyboard command system
 
@@ -12,7 +12,7 @@
 - Added visible, remapping-aware key hints beside deck focus, transport, gain/EQ, mixer and help controls. Deck pointer/focus and successful load selection update the focused-deck target. Unsupported cue, stutter, pitch, sync, loop, effects, sampler, library search, recording and controller commands remain absent until their real systems exist.
 - Extracted the production keydown path into `dispatchShortcutKeydown` so shortcut matching, typed dispatch, repeat rules, modal/input exclusion and native Space handling can be exercised directly. The App window listener calls the same helper.
 - Verification checkpoint: frontend format, lint, typecheck, 46 tests and production build pass. Two intentional mutation canaries failed their expected assertions (platform default and typed command dispatch); restored focused tests passed. Rust format, Clippy, 25 engine tests plus 1 desktop actor test, and locked all-target check passed on this worktree.
-- Windows Tauri runtime launched from this worktree at `127.0.0.1:1421`, 1282×832 window. The initial DJ workspace, footer help button, shortcut dialog, crossfader search results and Done close action were observed. Global key actions sent via `sky.press_key` (F1, Alt+2, Ctrl+Alt+2, Ctrl+Alt+Up and Alt+Shift+Q) produced no visible command-state change; the cause is unresolved between this automation input path and the application. No physical keyboard, fixture load, audio output or remapping persistence claim is made. Exact-head CI is still pending and no commit or push has been made for this branch.
+- Windows Tauri runtime launched from this worktree at `127.0.0.1:1421`, 1282×832 window. The initial DJ workspace, footer help button, shortcut dialog, crossfader search results and Done close action were observed. Global key actions sent via `sky.press_key` (F1, Alt+2, Ctrl+Alt+2, Ctrl+Alt+Up and Alt+Shift+Q) produced no visible command-state change; the cause is unresolved between this automation input path and the application. No physical keyboard, fixture load, audio output or remapping persistence claim is made. Implementation commit `c5d4fa9` is pushed to `feat/dj-command-system`; exact-head Actions run [45883560745](https://github.com/Joshanihub/SAYT/actions/runs/45883560745) is in progress. No PR or merge was created.
 
 ## 2026-11-26 — M1 responsive workspace correction
 
