@@ -3,7 +3,7 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.5
+**Version:** 0.4.7
 
 ## 2026-11-26 — M1 output-switch recovery
 
@@ -24,9 +24,11 @@
 
 ## 2026-11-26 — M1 WAV decoder rejection coverage
 
-- Added tests for truncated PCM sample data, empty files, unsupported three-channel WAV, and sample rates outside both supported bounds. The decoder test subset passed 8 tests.
+- Added tests for truncated PCM sample data, empty files, unsupported three-channel WAV, sample rates outside both supported bounds, stereo PCM24/PCM32 normalization, and the decoded-frame boundary. The focused decoder suite passes 10 tests.
 - The truncated-sample test failed under a temporary mutation of the actionable error prefix; the original decoder message was restored and the test passed again.
-- Full local verification now passes: Rust format, Clippy, 23 engine tests plus 1 desktop actor test, locked all-target check, and repository formatting. Frontend lint, typecheck, 22 UI tests, and production build passed with the preceding motion commit; this update did not change frontend source. Valid stereo, 24-bit/32-bit PCM, and decoded-frame-boundary tests remain open in the acceptance matrix.
+- The frame-limit test failed when a temporary canary changed the rejection guard from `>=` to `>`; the original guard was restored and the boundary test passed.
+- A first waveform assertion expected the maximum channel magnitude; it failed because waveform bins intentionally average absolute left/right levels. The assertion was corrected to the implemented 0.75 result for 0.5 and 1.0 channel amplitudes.
+- Full local verification passes: Rust format, Clippy, 25 engine tests plus 1 desktop actor test, locked all-target check, and repository formatting. Frontend source remains unchanged since the motion commit.
 
 ## 2026-11-26 — Current-head desktop launch for owner verification
 

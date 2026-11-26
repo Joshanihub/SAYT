@@ -21,4 +21,4 @@ For UI motion changes, the desktop stylesheet test checks the declared button/se
 - Frontend checks: confirm Node and pnpm match the pinned files; then run the failing script from `apps/desktop` to retain package-local context.
 - Dependency policy: inspect the exact crate/package and lockfile version before adding a license exception. Do not widen the global allow-list to silence one dependency. Run `cargo deny check --hide-inclusion-graph bans licenses sources`; run `cargo audit` separately for RustSec advisories.
 
-The last committed source revision, `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`, passed exact-head push and pull-request workflows on Windows, macOS, and Ubuntu. Re-run CI after every source change; this motion update still needs exact-head CI before its cross-platform status is verified.
+The last fully CI-verified source revision, `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`, passed exact-head push and pull-request workflows on Windows, macOS, and Ubuntu. Re-run CI after every source change; later feature-branch commits remain pending exact-head cross-platform results.

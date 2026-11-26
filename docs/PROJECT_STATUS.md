@@ -3,14 +3,14 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.13
+**Version:** 0.4.15
 
 ## Current verified position — M1 motion, recovery, and owner-reported audio checks
 
-- **Repository and baseline:** `C:\Dev\SAYT`, branch `feat/stitch-m1-dj-workspace`, based on `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Source commit `14ea4d9f102e39860ee6ad76b10e44f04cb574a0` is pushed and matches the remote feature branch; the remote `main` ref is unchanged.
-- **GitHub review:** PR #1 and PR #2 are open and unmerged. Exact-head push run [45812052568](https://github.com/Joshanihub/SAYT/actions/runs/45812052568) and PR run [45812058496](https://github.com/Joshanihub/SAYT/actions/runs/45812058496) passed Windows, macOS, and Ubuntu for source commit `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`. No merge into `main` occurred.
+- **Repository and baseline:** `C:\Dev\SAYT`, branch `feat/stitch-m1-dj-workspace`, based on `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. The last fully CI-verified source commit is `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`; newer feature-branch source changes are pushed with exact-head CI pending. Remote `main` remains unchanged.
+- **GitHub review:** PR #1 and PR #2 are open and unmerged. Exact-head push run [45812052568](https://github.com/Joshanihub/SAYT/actions/runs/45812052568) and PR run [45812058496](https://github.com/Joshanihub/SAYT/actions/runs/45812058496) passed Windows, macOS, and Ubuntu for source commit `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`. The latest source head still needs all three OS jobs to complete. No merge into `main` occurred.
 - **Stitch typography and icons:** 16 local variable WOFF2 text-font subsets and a 66-ligature Material Symbols subset are integrated. Four upstream license notices are present under `apps/desktop/public/licenses`; runtime font loading makes no network request. Exact sources, hashes, sizes, Unicode ranges, and build-tool pins are recorded in the asset manifest and dependency inventory.
-- **Local verification:** the current working tree passes Rust format, Clippy, all 23 engine tests plus 1 desktop actor test, and the locked all-target check. Frontend format, lint, typecheck, 22 UI tests, and production build passed with the motion update; this follow-up changed only Rust tests and documentation.
+- **Local verification:** the current working tree passes Rust format, Clippy, all 25 engine tests plus 1 desktop actor test, locked all-target check, and repository formatting. Frontend format, lint, typecheck, 22 UI tests, and production build passed with the motion update; this follow-up changes only Rust tests and documentation.
 - **Output-switch recovery:** source now attempts the replacement stream after a pause error and restores the previous stream if replacement fails. Resume failure is reported in the command error and output-error snapshot. Four hardware-independent transition tests pass; CPAL/OS recovery remains unverified.
 - **Interaction motion:** button and select state changes, including navigation, transport, and load controls, use a named 120 ms ease-out transition. CSS honors `prefers-reduced-motion`; the stylesheet regression test passes and failed under an intentional canary edit. Runtime preference behavior and target-screen appearance remain unverified.
 - **Desktop render:** The current Windows Tauri DJ empty state was observed at a 1280×800 client viewport; the corrected typography and Material Symbols rendered. No target-size Stitch comparison has been completed.
@@ -47,8 +47,8 @@ The original Stitch export and extracted references are in `design/reference/`. 
 
 ## Outstanding exit gates
 
-1. Commit/push the decoder test update and verify exact-head CI; exact commands and results are recorded in `docs/VERIFICATION_EVIDENCE.md`.
-2. Record outcomes for unsupported-WAV, no-device, and failed-switch recovery cases; the owner's summary did not identify those failure scenarios separately.
+1. Commit/push the decoder coverage and verify exact-head CI; exact commands and results are recorded in `docs/VERIFICATION_EVIDENCE.md`.
+2. Record unsupported-WAV, no-device, and failed-switch recovery outcomes; the owner's summary did not identify those failure scenarios separately.
 3. Capture the live Tauri app at 1440×900, 1280×800, and a narrow viewport, compare each against the supplied Stitch PNGs, and record intentional deviations plus font/icon fallback behavior.
 4. Before a consequential release decision, assess reachability/impact of the five unmaintained Rust crates and `glib` unsoundness notice, review the two BlueOak npm license terms, and complete an SBOM/legal review. Fresh local scan results are recorded in `docs/DEPENDENCIES_AND_LICENSES.md`.
 5. SAYT's project license remains undecided; no license grant is added.
