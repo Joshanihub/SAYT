@@ -70,7 +70,10 @@ jobs:
 
       - name: Run audio validation tests on Linux
         if: runner.os == 'Linux'
-        run: python3 -m unittest discover -s tools/audio-validation/tests -v
+        run: |
+          python3 -m unittest discover -s tools/audio-validation/tests -v
+          python3 -m unittest discover -s tools/font-assets/tests -v
+          python3 tools/font-assets/verify_assets.py
 
       - name: Audit Rust dependency policy and advisories
         run: |

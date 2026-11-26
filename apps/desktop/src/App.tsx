@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState, type ReactNode } from "react";
+import { MaterialIcon } from "./MaterialIcon";
 
 type DeckSnapshot = {
   loaded: boolean;
@@ -223,7 +224,7 @@ export function DeckPanel({
             })
           }
         >
-          <span aria-hidden="true">{deck.playing ? "Ⅱ" : "▶"}</span>
+          <MaterialIcon name={deck.playing ? "pause" : "play_arrow"} />
           {deck.playing ? "Pause" : "Play"}
         </button>
         <button
@@ -232,6 +233,7 @@ export function DeckPanel({
           disabled={!deck.loaded || loading}
           onClick={() => onCommand("stop_track", { deck: deckIndex })}
         >
+          <MaterialIcon name="stop" />
           Stop
         </button>
         <output
@@ -492,7 +494,7 @@ export function LibraryEmptyState({
   return (
     <section className="empty-library" aria-labelledby="library-empty-heading">
       <div className="empty-library-icon" aria-hidden="true">
-        ♫
+        <MaterialIcon name="library_music" />
       </div>
       <p className="eyebrow">LOCAL MUSIC LIBRARY</p>
       <h2 id="library-empty-heading">Your library is empty</h2>
@@ -547,7 +549,7 @@ export function AudioSettings({
         <div className="settings-card-heading">
           <div>
             <span className="settings-icon" aria-hidden="true">
-              ◉
+              <MaterialIcon name="volume_up" />
             </span>
             <div>
               <h3>Output device</h3>

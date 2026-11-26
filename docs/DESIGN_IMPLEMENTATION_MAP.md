@@ -3,20 +3,20 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.2.0
+**Version:** 0.2.2
 
 This maps every screen in the supplied Stitch archive to the current product boundary. The task handoff identifies the designs as founder-approved; that provenance is recorded here without implying that the Stitch prototype or every screen's behavior was independently re-tested. Prototype simulations are reference material, not evidence of working SAYT features.
 
 ## Shared visual system and shell
 
-| Design element                                   | Reference                                                  | Current implementation                                                                                  |
-| ------------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Canvas / primary / secondary / elevated surfaces | `#08090B` / `#111318` / `#191D23` / `#242830`              | CSS tokens in `apps/desktop/src/styles.css`.                                                            |
-| Deck A / Deck B signals                          | Signal Lime `#C7F36B` / Ice Cyan `#38BDF8`                 | Used for deck identity, waveform, transport, and crate accents.                                         |
-| Text / warning                                   | Neutral text ramp / coral `#F43F5E` / amber `#FB923C`      | Applied to text, errors, and actual master-meter presentation.                                          |
-| Typography                                       | Space Grotesk, Inter, JetBrains Mono                       | Local system sans and monospace stacks; no remote font fetch.                                           |
-| Application shell                                | Dense desktop header, navigation, engine and device status | DJ, Library, and Settings routes work in source. Future navigation is disabled with an explanation.     |
-| Responsive layout                                | Desktop 1440×900, compact 1280, narrow stacked layout      | CSS breakpoints exist; only the 1920×1080 DJ empty state has been observed in a running desktop window. |
+| Design element                                   | Reference                                                  | Current implementation                                                                                                                                                                                                                                                            |
+| ------------------------------------------------ | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Canvas / primary / secondary / elevated surfaces | `#08090B` / `#111318` / `#191D23` / `#242830`              | CSS tokens in `apps/desktop/src/styles.css`.                                                                                                                                                                                                                                      |
+| Deck A / Deck B signals                          | Signal Lime `#C7F36B` / Ice Cyan `#38BDF8`                 | Used for deck identity, waveform, transport, and crate accents.                                                                                                                                                                                                                   |
+| Text / warning                                   | Neutral text ramp / coral `#F43F5E` / amber `#FB923C`      | Applied to text, errors, and actual master-meter presentation.                                                                                                                                                                                                                    |
+| Typography                                       | Space Grotesk, Inter, JetBrains Mono                       | 16 local variable text-font subsets and the 66-ligature Material Symbols subset are loaded via `fonts.css`; build manifest records sources and hashes. The corrected Windows render showed the roles/icons at a 1280×800 client viewport; matched Stitch comparison remains open. |
+| Application shell                                | Dense desktop header, navigation, engine and device status | DJ, Library, and Settings routes work in source. Future navigation is disabled with an explanation.                                                                                                                                                                               |
+| Responsive layout                                | Desktop 1440×900, compact 1280, narrow stacked layout      | The current Windows Tauri window rendered at a 1280×800 client viewport. 1440×900 and narrow captures, plus matched Stitch comparisons at all target sizes, remain NOT RUN.                                                                                                       |
 
 ## Screen-by-screen implementation record
 
@@ -27,7 +27,7 @@ This maps every screen in the supplied Stitch archive to the current product bou
 - **Required frontend:** Brand, implemented navigation, engine status, output-device selector, status bar, and responsive layout.
 - **Required backend:** Engine snapshot and device enumeration/selection.
 - **Current source:** `AppShell` in `apps/desktop/src/App.tsx`; CSS in `apps/desktop/src/styles.css`; `AudioService` in `apps/desktop/src-tauri/src/audio_service.rs`.
-- **Verification:** Design complete: yes. Design approved: yes, per supplied handoff. Prototype interaction complete: not verified; prototype specification contains simulated interactions. Implemented in source: yes. Automated: shell/future-navigation render assertion and output-device selector callback in `App.test.tsx` (20 tests passed). Running desktop: DJ workspace rendered at 1920×1080. Physical hardware: not applicable to shell.
+- **Verification:** Design complete: yes. Design approved: yes, per supplied handoff. Prototype interaction complete: not verified; prototype specification contains simulated interactions. Implemented in source: yes. Automated: shell/future-navigation render assertion and output-device selector callback in `App.test.tsx` (21 tests passed). Running desktop: DJ workspace rendered at a 1280×800 client viewport. Physical hardware: not applicable to shell.
 - **Manual requirements / limitations:** Exercise navigation and device selection in the running desktop app; verify compact/narrow sizes. Device operations still need physical output-device verification.
 
 ### Screen 01 — SAYT DJ Main Performance Workspace
@@ -37,7 +37,7 @@ This maps every screen in the supplied Stitch archive to the current product bou
 - **Required frontend:** Two deck panels, accurate loaded-audio waveforms and positions, transport, seek, gain/EQ controls, actual master meter, master level, crossfader, and two-slot quick crate.
 - **Required backend:** Existing `sayt-engine` deck/DSP/output behavior, mixer snapshots and commands, plus async native WAV picker. Tauri owns `Engine` on a bounded actor thread.
 - **Current source:** `DeckPanel`, `Waveform`, `MixerConsole`, and `QuickCrateBrowser` in `apps/desktop/src/App.tsx`; engine code remains in `crates/sayt-engine`; commands and actor are in `apps/desktop/src-tauri/src/`.
-- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified; simulations are not product evidence. Source: partial implementation. Automated: 20 frontend tests passed; `App.test.tsx` covers empty state, waveform peak/position mapping, deck-index command mapping, play/pause/stop, seek, gain/EQ, master level, crossfader, crate routing, and mocked native picker command name/arguments. Real Tauri IPC remains untested by frontend tests. Running desktop: empty DJ workspace rendered at 1920×1080. Physical hardware: not verified.
+- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified; simulations are not product evidence. Source: partial implementation. Automated: 21 frontend tests passed; `App.test.tsx` covers empty state, waveform peak/position mapping, deck-index command mapping, play/pause/stop, seek, gain/EQ, master level, crossfader, crate routing, and mocked native picker command name/arguments. Real Tauri IPC remains untested by frontend tests. Running desktop: empty DJ workspace rendered at a 1280×800 client viewport. Physical hardware: not verified.
 - **Manual requirements / limitations:** Follow the loaded-file, simultaneous playback, independent transport, audibility, gain/EQ/crossfader, device recovery, and shutdown checks in `docs/REQUIREMENTS.md`. One actual master meter is available; per-deck meters, cue routing, and advanced performance features are not.
 
 ### Screen 02 — SAYT Music Library Manager
@@ -47,7 +47,7 @@ This maps every screen in the supplied Stitch archive to the current product bou
 - **Required frontend:** Honest empty/loading/error states, track listing and collection controls when indexing exists.
 - **Required backend:** Persistent local index, metadata extraction, collection/playlist operations; not available in M1.
 - **Current source:** `LibraryEmptyState` in `apps/desktop/src/App.tsx`; direct native picker path targets Deck A.
-- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified. Source: empty state and load action only. Automated: 20 frontend tests passed; empty/loading markup, deck routing, and mocked `pick_track` command contract are tested, not real picker integration. Running desktop: not inspected. Physical: N/A. Deferred: full library/index.
+- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified. Source: empty state and load action only. Automated: 21 frontend tests passed; empty/loading markup, deck routing, and mocked `pick_track` command contract are tested, not real picker integration. Running desktop: not inspected. Physical: N/A. Deferred: full library/index.
 - **Manual requirements / limitations:** Confirm empty/loading display and native picker action in desktop. No scanning, index, search, sorting, playlists, persistence, or fabricated track data.
 
 ### Screen 03 — Playlist & Collection Bridge
@@ -77,7 +77,7 @@ This maps every screen in the supplied Stitch archive to the current product bou
 - **Required frontend:** Device list/selection, refresh, output error, retry, and truthful capabilities.
 - **Required backend:** Existing engine device enumeration/selection and output recovery attempt.
 - **Current source:** `AudioSettings`, top-bar selector, and output-error banner in `apps/desktop/src/App.tsx`; `AudioService` forwards device commands to the engine thread.
-- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified. Source: limited controls. Automated: 20 frontend tests passed; device listing/selection callback, error presentation, and refresh/retry handlers are covered. These component tests do not exercise device switching through real Tauri IPC. Running desktop: settings page not inspected. Physical: not verified.
+- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified. Source: limited controls. Automated: 21 frontend tests passed; device listing/selection callback, error presentation, and refresh/retry handlers are covered. These component tests do not exercise device switching through real Tauri IPC. Running desktop: settings page not inspected. Physical: not verified.
 - **Manual requirements / limitations:** Test physical-device selection, disconnect/reselect, recovery, and shutdown. Sample-rate, buffer, cue, and latency controls are not exposed and must not be implied.
 
 ### Screen 06 — Appearance & Customisation
@@ -170,4 +170,4 @@ This maps every screen in the supplied Stitch archive to the current product bou
 
 ## M1 verification boundary
 
-The UI test suite uses static rendering and direct component callback checks; it does not exercise Tauri IPC or the native picker end to end. The app's DJ empty state rendered at 1920×1080. Library and Settings runtime rendering, native picker interaction, 1440×900 / 1280×800 / narrow runtime layouts, and all physical output checks remain open. M1 stays **IN PROGRESS** until the CI and physical-device exit gates in `docs/REQUIREMENTS.md` pass.
+The UI test suite uses static rendering and direct component callback checks; it does not exercise Tauri IPC or the native picker end to end. The app's DJ empty state rendered at a 1280×800 client viewport. Library and Settings runtime rendering, native picker interaction, 1440×900 and narrow runtime layouts, matched Stitch comparisons at every target size, and all physical output checks remain open. M1 stays **IN PROGRESS** until the CI and physical-device exit gates in `docs/REQUIREMENTS.md` pass.

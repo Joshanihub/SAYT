@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
+import { M1_MATERIAL_ICON_NAMES, MaterialIcon } from "./MaterialIcon";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -80,6 +81,20 @@ const emptyMixer = {
 };
 
 describe("M1 desktop workspace", () => {
+  it("renders decorative Material Symbols without hiding transport labels", () => {
+    const markup = M1_MATERIAL_ICON_NAMES.map((name) =>
+      renderToStaticMarkup(<MaterialIcon name={name} />),
+    );
+
+    expect(markup).toHaveLength(5);
+    expect(markup.every((icon) => icon.includes('aria-hidden="true"'))).toBe(
+      true,
+    );
+    expect(markup.map((icon) => icon.match(/>([a-z_]+)<\/span>/)?.[1])).toEqual(
+      M1_MATERIAL_ICON_NAMES,
+    );
+  });
+
   it("renders the implemented navigation and two real deck surfaces", () => {
     const markup = renderToStaticMarkup(<App />);
 

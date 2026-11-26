@@ -3,7 +3,7 @@
 **Status:** PROPOSED implementation guide reconciled to Stitch v1<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.1.0
+**Version:** 0.1.1
 
 ## Authority and preservation
 
@@ -31,7 +31,7 @@ Current CSS already uses the Stitch coral and amber values. No `#EF4444` or `#F5
 
 ## Typography
 
-The Stitch roles are Space Grotesk for display/hardware labels, Inter for body/navigation, and JetBrains Mono for telemetry with tabular figures. The application currently has no local font files, `@font-face` rules, or Material Symbols integration; its CSS requests Inter and falls through to a local system font, and some icons render as text glyphs. Candidate WOFF2 byte hashes and official license sources have been recorded in [`DEPENDENCIES_AND_LICENSES.md`](DEPENDENCIES_AND_LICENSES.md) and [`DECISION_REGISTER.md`](DECISION_REGISTER.md). The candidate bytes are in `%TEMP%` only. Do not copy or bundle them until the owner confirms exact variants, icon set, Unicode coverage and notice handling. Do not claim exact font or icon rendering before runtime screenshot verification.
+The Stitch roles are Space Grotesk for display/hardware labels, Inter for body/navigation, and JetBrains Mono for telemetry with tabular figures. The owner's master implementation instruction approves implementing these roles and the supplied archive's Material Symbols Outlined icon style. Bundle locally versioned WOFF2 subsets with their upstream notices, include the scripts represented by each font's official CSS subsets, and retain system fallbacks for unsupported glyphs. Provenance and icon mapping are recorded in [`DEPENDENCIES_AND_LICENSES.md`](DEPENDENCIES_AND_LICENSES.md) and [`DECISION_REGISTER.md`](DECISION_REGISTER.md). Do not claim visual parity before runtime screenshot verification.
 
 ## Layout, spacing, shape, elevation
 
@@ -47,7 +47,7 @@ Reference motion is short and purposeful: active controls gain a visible state, 
 
 ## Responsive rules and open comparison
 
-The shared Stitch spec describes mixer adaptation below 1280 px and crate minimisation below 1024 px. Current `apps/desktop/src/styles.css` uses media queries at 1279, 1060, 720, and 480 px. This difference is recorded; do not silently change it. Compare actual Tauri views at 1440×900, 1280×800, and narrow width against the reference before settling the breakpoints. Runtime screenshots at those sizes are not yet recorded.
+The shared Stitch spec describes mixer adaptation below 1280 px and crate minimisation below 1024 px. Current `apps/desktop/src/styles.css` uses media queries at 1279, 1060, 720, and 480 px. This difference is recorded; do not silently change it. A Tauri render at 1280×800 is recorded, but it has not been compared with its reference; 1440×900 and narrow screenshots remain NOT RUN. Compare every captured target view against Stitch before settling the breakpoints.
 
 ## Screen-level fidelity
 
