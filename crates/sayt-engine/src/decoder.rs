@@ -201,6 +201,83 @@ mod tests {
     }
 
     #[test]
+    fn rejects_truncated_pcm_sample_data_with_actionable_message() {
+        let temp = TempWav::new("wav");
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: 48_000,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let mut writer = hound::WavWriter::create(temp.path(), spec).unwrap();
+        writer.write_sample(12_345_i16).unwrap();
+        writer.finalize().unwrap();
+
+        let complete_length = fs::metadata(temp.path()).unwrap().len();
+        fs::OpenOptions::new()
+            .write(true)
+            .open(temp.path())
+            .unwrap()
+            .set_len(complete_length - 1)
+            .unwrap();
+
+        let error = decode_track(temp.path()).unwrap_err();
+        assert!(error.contains("Invalid WAV sample data"), "{error}");
+    }
+
+    #[test]
+    fn rejects_empty_wav_with_actionable_message() {
+        let temp = TempWav::new("wav");
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: 48_000,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let writer = hound::WavWriter::create(temp.path(), spec).unwrap();
+        writer.finalize().unwrap();
+
+        let error = decode_track(temp.path()).unwrap_err();
+        assert!(error.contains("contains no audio frames"), "{error}");
+    }
+
+    #[test]
+    fn rejects_unsupported_channel_count_with_actionable_message() {
+        const UNSUPPORTED_CHANNEL_COUNT: u16 = 3;
+
+        let temp = TempWav::new("wav");
+        let spec = hound::WavSpec {
+            channels: UNSUPPORTED_CHANNEL_COUNT,
+            sample_rate: 48_000,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let writer = hound::WavWriter::create(temp.path(), spec).unwrap();
+        writer.finalize().unwrap();
+
+        let error = decode_track(temp.path()).unwrap_err();
+        assert!(error.contains("use mono or stereo"), "{error}");
+    }
+
+    #[test]
+    fn rejects_sample_rates_outside_the_supported_range() {
+        for sample_rate in [MIN_SAMPLE_RATE_HZ - 1, MAX_SAMPLE_RATE_HZ + 1] {
+            let temp = TempWav::new("wav");
+            let spec = hound::WavSpec {
+                channels: 1,
+                sample_rate,
+                bits_per_sample: 16,
+                sample_format: hound::SampleFormat::Int,
+            };
+            let writer = hound::WavWriter::create(temp.path(), spec).unwrap();
+            writer.finalize().unwrap();
+
+            let error = decode_track(temp.path()).unwrap_err();
+            assert!(error.contains("Unsupported WAV sample rate"), "{error}");
+        }
+    }
+
+    #[test]
     fn rejects_oversized_file_before_parsing_its_header() {
         let temp = TempWav::new("wav");
         let file = File::create(temp.path()).unwrap();

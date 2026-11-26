@@ -3,7 +3,7 @@
 **Status:** PROPOSED acceptance contract<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.1.2
+**Version:** 0.1.3
 
 ## Functional requirements
 
@@ -29,15 +29,15 @@ The configured maximum is a safety bound, not a promise that every machine can c
 
 ## Verification matrix
 
-| Requirement                           | Automated evidence                                                                                                    | Manual evidence required                                                                                      |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Decode actual PCM and derive waveform | Decoder unit tests use generated WAV fixtures                                                                         | Load two different user-selected WAV files in the desktop app                                                 |
-| Independent transport and seek        | Engine tests for state, bounds, and queue behavior                                                                    | Confirm A and B play, pause, stop, and seek independently                                                     |
-| Crossfader                            | Endpoint and equal-power math tests; rendered A-only test                                                             | Listen at left, center, and right positions                                                                   |
-| Three-band EQ                         | Frequency-response tests for low, mid, and high bands                                                                 | Sweep each band using test tones or known material and listen for change                                      |
-| Output-device selection               | Compile and command-path checks; transition-policy tests cover pause failure, replacement failure, and resume failure | Confirm output on a physical device; unplug/reselect and observe error recovery                               |
-| Error handling and shutdown           | Decoder error cases and native command tests                                                                          | Unsupported file, no-device, stream failure, and clean shutdown scenarios                                     |
-| Interaction motion and reduced motion | Stylesheet regression test checks short button/select transitions and the reduced-motion override                     | Enable the OS reduced-motion preference; verify transitions are suppressed and keyboard focus remains visible |
+| Requirement                           | Automated evidence                                                                                                                                           | Manual evidence required                                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Decode actual PCM and derive waveform | Decoder tests cover valid mono PCM, floating-point and three-channel rejection, sample-rate limits, empty/truncated data, missing paths, and over-size files | Load two different user-selected WAV files in the desktop app and confirm metadata/waveform                   |
+| Independent transport and seek        | Engine tests for state, bounds, and queue behavior                                                                                                           | Confirm A and B play, pause, stop, and seek independently                                                     |
+| Crossfader                            | Endpoint and equal-power math tests; rendered A-only test                                                                                                    | Listen at left, center, and right positions                                                                   |
+| Three-band EQ                         | Frequency-response tests for low, mid, and high bands                                                                                                        | Sweep each band using test tones or known material and listen for change                                      |
+| Output-device selection               | Compile and command-path checks; transition-policy tests cover pause failure, replacement failure, and resume failure                                        | Confirm output on a physical device; unplug/reselect and observe error recovery                               |
+| Error handling and shutdown           | Decoder error cases and native command tests                                                                                                                 | Unsupported file, no-device, stream failure, and clean shutdown scenarios                                     |
+| Interaction motion and reduced motion | Stylesheet regression test checks short button/select transitions and the reduced-motion override                                                            | Enable the OS reduced-motion preference; verify transitions are suppressed and keyboard focus remains visible |
 
 ## Manual hardware checklist
 

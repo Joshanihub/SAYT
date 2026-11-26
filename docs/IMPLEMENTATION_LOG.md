@@ -3,7 +3,7 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.4
+**Version:** 0.4.5
 
 ## 2026-11-26 — M1 output-switch recovery
 
@@ -19,8 +19,14 @@
 - The design-system audit found that control hover changes had no transition and the stylesheet did not honor `prefers-reduced-motion`.
 - Added a named 120 ms ease-out transition to button and select state changes, including navigation, transport, and load controls. Added a global reduced-motion media rule that removes CSS animation/transition duration and smooth scrolling while leaving keyboard focus outlines immediate. The master meter remains tied to engine snapshot values.
 - Added `apps/desktop/src/styles.test.ts` to assert the transition tokens/selectors and reduced-motion rules. The full UI suite passed 22 tests. A temporary 1 ms mutation to the reduced-motion animation rule made the regression test fail; the source was restored and the suite passed again.
-- Current local checks pass: Rust format, Clippy, all 20 workspace tests, locked all-target check, frontend format, lint, typecheck, 22 UI tests, and production build.
+- At the motion commit, local checks passed: Rust format, Clippy, all 20 workspace tests (19 engine and 1 desktop actor), locked all-target check, frontend format, lint, typecheck, 22 UI tests, and production build.
 - Runtime appearance at target sizes is still open because the desktop screenshot capture returned unrelated Chrome content twice.
+
+## 2026-11-26 — M1 WAV decoder rejection coverage
+
+- Added tests for truncated PCM sample data, empty files, unsupported three-channel WAV, and sample rates outside both supported bounds. The decoder test subset passed 8 tests.
+- The truncated-sample test failed under a temporary mutation of the actionable error prefix; the original decoder message was restored and the test passed again.
+- Full local verification now passes: Rust format, Clippy, 23 engine tests plus 1 desktop actor test, locked all-target check, and repository formatting. Frontend lint, typecheck, 22 UI tests, and production build passed with the preceding motion commit; this update did not change frontend source. Valid stereo, 24-bit/32-bit PCM, and decoded-frame-boundary tests remain open in the acceptance matrix.
 
 ## 2026-11-26 — Current-head desktop launch for owner verification
 

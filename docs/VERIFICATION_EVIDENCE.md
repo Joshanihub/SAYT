@@ -3,7 +3,7 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.12
+**Version:** 0.3.13
 
 This file records reproduced evidence separately from historical agent reports. The current source head is `14ea4d9f102e39860ee6ad76b10e44f04cb574a0` on `feat/stitch-m1-dj-workspace`, based on unchanged `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 and #2 are open and unmerged. Exact-head push run [45812052568](https://github.com/Joshanihub/SAYT/actions/runs/45812052568) and PR run [45812058496](https://github.com/Joshanihub/SAYT/actions/runs/45812058496) passed Windows, macOS, and Ubuntu for the output-switch recovery source.
 
@@ -32,7 +32,7 @@ Two Computer Use screenshot attempts returned unrelated Chrome content while the
 
 After restoring the intentional canary edit, `corepack pnpm --filter @sayt/desktop test -- src/styles.test.ts` passed the full desktop UI suite: 22 tests across 2 files. The test reads `styles.css` and checks the named 120 ms transition tokens, the shared button/select rule, the `prefers-reduced-motion` rule, and zero-duration animation/transition plus automatic scrolling. A temporary change from `animation-duration: 0ms` to `1ms` made the regression test fail at its expected assertion; the source was restored and the rerun passed. This verifies stylesheet rules, not Windows accessibility settings or visual parity.
 
-The complete current-tree verification then passed: `cargo fmt --all --check`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test --workspace` (19 engine and 1 desktop actor test); `cargo check --workspace --all-targets --locked`; `corepack pnpm format:check`; `corepack pnpm lint`; `corepack pnpm typecheck`; `corepack pnpm test` (22 tests); and `corepack pnpm build`. This local verification does not replace exact-head remote CI or the open visual/hardware checks.
+The complete working tree at the motion commit passed: `cargo fmt --all --check`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test --workspace` (19 engine and 1 desktop actor test); `cargo check --workspace --all-targets --locked`; `corepack pnpm format:check`; `corepack pnpm lint`; `corepack pnpm typecheck`; `corepack pnpm test` (22 tests); and `corepack pnpm build`. The later decoder-test update passed all 8 decoder tests and the full Rust suite: formatting, Clippy, 23 engine plus 1 desktop actor test, and locked all-target check. Frontend checks remain applicable because that update changed only Rust tests and documentation. Neither result replaces exact-head remote CI or the open visual/hardware checks.
 
 ## Reproduced locally on Windows
 
