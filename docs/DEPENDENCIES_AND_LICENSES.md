@@ -3,7 +3,7 @@
 **Status:** PROPOSED inventory; owner and legal review pending<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.2
+**Version:** 0.3.3
 
 ## SAYT license decision
 
@@ -12,6 +12,23 @@ The owner has not selected SAYT's project license. No project license grant or p
 ## Third-party inventory
 
 The direct Rust and npm dependencies, exact pins, recorded license strings, toolchain pins, and sources are listed in [`licensing/third-party.md`](licensing/third-party.md). The pnpm resolved-license output is [`licensing/npm-licenses.txt`](licensing/npm-licenses.txt). These inventories concern third-party components and do not license SAYT. Cargo deny skips workspace crates marked `publish = false` while the project-license decision is pending; it still checks the third-party dependency graph.
+
+## Stitch font and icon asset audit
+
+**Retrieved and byte-hashed:** 2026-11-26. Official Google Fonts metadata was pinned to `google/fonts` commit `6ebe737e44fd64ee736bbc6feed6136a6dbfd222`. It reports the following families as SIL Open Font License 1.1 (OFL); their pinned license files and Google Fonts' permission to bundle/redistribute fonts with software are linked here: [Inter OFL](https://github.com/google/fonts/blob/6ebe737e44fd64ee736bbc6feed6136a6dbfd222/ofl/inter/OFL.txt), [Space Grotesk OFL](https://github.com/google/fonts/blob/6ebe737e44fd64ee736bbc6feed6136a6dbfd222/ofl/spacegrotesk/OFL.txt), and [JetBrains Mono OFL](https://github.com/google/fonts/blob/6ebe737e44fd64ee736bbc6feed6136a6dbfd222/ofl/jetbrainsmono/OFL.txt). Material Symbols Outlined is identified as Apache 2.0 by [Google's Material Symbols guide](https://developers.google.com/fonts/docs/material_symbols?hl=en) and the official [`google/material-design-icons` LICENSE](https://github.com/google/material-design-icons/blob/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/LICENSE), pinned to commit `10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7`.
+
+The following WOFF2 candidates were downloaded from Google's versioned font CDN URLs matching the Stitch families/axes and SHA-256 hashed. The three text fonts are Latin subsets only; this is not yet an approved production subset for user-supplied, multilingual track metadata.
+
+| Family / role                               | Served asset                                                                                                             |     Bytes | SHA-256                                                            | License                                                                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------: | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Inter / body and navigation                 | `https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2`                                       |    48,256 | `3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62` | [OFL 1.1](https://github.com/google/fonts/blob/6ebe737e44fd64ee736bbc6feed6136a6dbfd222/ofl/inter/OFL.txt)          |
+| Space Grotesk / display and hardware labels | `https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4Cw.woff2`                                      |    22,288 | `0640890476fc1198ab4de571fb658de443c4d85b66466ec09534a8737ab1ce9d` | [OFL 1.1](https://github.com/google/fonts/blob/6ebe737e44fd64ee736bbc6feed6136a6dbfd222/ofl/spacegrotesk/OFL.txt)   |
+| JetBrains Mono / telemetry                  | `https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2` |    31,432 | `83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be` | [OFL 1.1](https://github.com/google/fonts/blob/6ebe737e44fd64ee736bbc6feed6136a6dbfd222/ofl/jetbrainsmono/OFL.txt)  |
+| Material Symbols Outlined / Stitch icons    | `https://fonts.gstatic.com/s/materialsymbolsoutlined/v387/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsI.woff2`             | 4,026,236 | `632a98f65389d16fa46d925092888d5bd3e0c4b7376da4bad74c398de6bd544f` | [Apache 2.0](https://github.com/google/material-design-icons/blob/10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7/LICENSE) |
+
+The inspected bytes are held only in `%TEMP%\SAYT-Font-Audit-8e38a43`; none were copied into the checkout. A live source audit found no app font files, `@font-face` rules, or Material Symbols integration; `App.tsx` currently uses the text marks `♫` and `◉`. Exact appearance parity is therefore not implemented or runtime verified. Before bundling: owner confirms the exact family/variant/icon set, the text-font subset strategy accounts for extended scripts and fallback, and the applicable OFL/Apache license and notice files are included. This technical provenance record is not owner or legal approval. SAYT's own project license remains undecided.
+
+**Audit-order variance:** `DESIGN_SYSTEM.md` required recording provenance in the decision register before fetching any font/icon. Candidate font bytes were fetched to the isolated `%TEMP%` directory before that register was updated, solely to hash the actual CDN bytes. No repository or app assets changed. Record the exact provenance before any later app use, and do not copy the temporary files into the project until the owner decision above is recorded.
 
 Current owner-review items:
 

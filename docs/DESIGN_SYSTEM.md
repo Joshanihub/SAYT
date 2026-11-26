@@ -31,7 +31,7 @@ Current CSS already uses the Stitch coral and amber values. No `#EF4444` or `#F5
 
 ## Typography
 
-The Stitch roles are Space Grotesk for display/hardware labels, Inter for body/navigation, and JetBrains Mono for telemetry with tabular figures. The current application CSS requests Inter and then local system sans-serif fallbacks; dedicated font files are not present in the app. Stitch HTML references remote Google Fonts and Material Symbols, but the app does not load those remote resources. Do not fetch or bundle fonts/icons until their exact assets and licence provenance are recorded in [`DECISION_REGISTER.md`](DECISION_REGISTER.md). Until then, preserve the role hierarchy and use local fallbacks; do not claim exact font rendering.
+The Stitch roles are Space Grotesk for display/hardware labels, Inter for body/navigation, and JetBrains Mono for telemetry with tabular figures. The application currently has no local font files, `@font-face` rules, or Material Symbols integration; its CSS requests Inter and falls through to a local system font, and some icons render as text glyphs. Candidate WOFF2 byte hashes and official license sources have been recorded in [`DEPENDENCIES_AND_LICENSES.md`](DEPENDENCIES_AND_LICENSES.md) and [`DECISION_REGISTER.md`](DECISION_REGISTER.md). The candidate bytes are in `%TEMP%` only. Do not copy or bundle them until the owner confirms exact variants, icon set, Unicode coverage and notice handling. Do not claim exact font or icon rendering before runtime screenshot verification.
 
 ## Layout, spacing, shape, elevation
 

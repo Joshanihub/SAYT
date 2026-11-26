@@ -3,9 +3,9 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.3
+**Version:** 0.3.4
 
-This file records reproduced evidence separately from historical agent reports. The audio-validation source integration is commit `853e51477e56593471c7126378d290524be391af`; the latest branch head is `6de029fbaa936d3e4c06c39a781a3143c77bec45` on `feat/stitch-m1-dj-workspace`, based on `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and unmerged; PR #2 remains open/draft. Exact-head push run [45733825348](https://github.com/Joshanihub/SAYT/actions/runs/45733825348) and PR run [45733831972](https://github.com/Joshanihub/SAYT/actions/runs/45733831972) both passed Windows, macOS, and Ubuntu. The PR Ubuntu log records 52 Python tests passing and 77/77 fixture checks. Some negative verifier tests intentionally print failed-verification output and assert that invalid manifests or missing files are rejected.
+This file records reproduced evidence separately from historical agent reports. The audio-validation source integration is commit `853e51477e56593471c7126378d290524be391af`; the latest branch head is `8e38a432f529f0b118bc3f804d7867e5a3f5dda7` on `feat/stitch-m1-dj-workspace`, based on `1d0323799d0a833a40b20cd58b1c79e43a11044b`. GitHub's PR connector confirms PR #1 is open/unmerged and PR #2 is open/draft/unmerged. Exact-head push run [45736072298](https://github.com/Joshanihub/SAYT/actions/runs/45736072298) and PR run [45736076490](https://github.com/Joshanihub/SAYT/actions/runs/45736076490) both passed Windows, macOS, and Ubuntu. The PR Ubuntu log records 52 Python tests passing and 77/77 fixture checks. Some negative verifier tests intentionally print failed-verification output and assert that invalid manifests or missing files are rejected.
 
 ## Reproduced locally on Windows
 
@@ -27,12 +27,29 @@ The first local toolkit run failed because CP1252 could not encode the contribut
 
 ## Latest exact-head CI — documentation/status commit
 
-Branch head `6de029fbaa936d3e4c06c39a781a3143c77bec45` passed both workflow events on all three operating systems:
+Branch head `8e38a432f529f0b118bc3f804d7867e5a3f5dda7` passed both workflow events on all three operating systems:
 
-- Push run [45733825348](https://github.com/Joshanihub/SAYT/actions/runs/45733825348): Windows, macOS, and Ubuntu passed.
-- Pull request run [45733831972](https://github.com/Joshanihub/SAYT/actions/runs/45733831972): Windows, macOS, and Ubuntu passed. Its Ubuntu job records `Ran 52 tests`, `test_symlink_escape_rejected ... ok`, and `77 checks passed, 0 checks failed` across seven fixtures.
+- Push run [45736072298](https://github.com/Joshanihub/SAYT/actions/runs/45736072298): Windows, macOS, and Ubuntu passed.
+- Pull request run [45736076490](https://github.com/Joshanihub/SAYT/actions/runs/45736076490): Windows, macOS, and Ubuntu passed. Its Ubuntu job records `Ran 52 tests`, `test_symlink_escape_rejected ... ok`, and `77 checks passed, 0 checks failed` across seven fixtures.
 
-The tested desktop source is unchanged from integration commit `853e51477e56593471c7126378d290524be391af`; intervening commits were documentation-only.
+The tested desktop source is unchanged from integration commit `853e51477e56593471c7126378d290524be391af`; intervening commits through `8e38a43` were documentation-only.
+
+## Typography and icon asset provenance audit
+
+**Audit date:** 2026-11-26. The supplied Stitch references specify Space Grotesk for display/hardware labels, Inter for body/navigation, JetBrains Mono for telemetry, and Material Symbols Outlined for icons. The app currently has no local font assets, `@font-face` declarations or Material Symbols integration; `App.tsx` renders text marks `♫` and `◉`. The audit found all three text font families absent from this Windows host, so the running app falls back to system fonts.
+
+The Google Fonts API CSS was retrieved for those four families/axes with a Chrome 131 user agent. The official `google/fonts` branch was pinned at commit `6ebe737e44fd64ee736bbc6feed6136a6dbfd222`; its family metadata reports OFL for Inter, Space Grotesk, and JetBrains Mono. The Material Symbols guide and `google/material-design-icons` license at commit `10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7` identify Apache 2.0. The exact candidate WOFF2 files served on this audit date were saved to `%TEMP%\SAYT-Font-Audit-8e38a43`, not the repository:
+
+| Candidate file            | Google CDN family/version      |     Bytes | SHA-256                                                            |
+| ------------------------- | ------------------------------ | --------: | ------------------------------------------------------------------ |
+| Inter Latin               | `inter/v20`                    |    48,256 | `3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62` |
+| Space Grotesk Latin       | `spacegrotesk/v22`             |    22,288 | `0640890476fc1198ab4de571fb658de443c4d85b66466ec09534a8737ab1ce9d` |
+| JetBrains Mono Latin      | `jetbrainsmono/v24`            |    31,432 | `83c005d49d8a6a50474c73a5a36ac0468076e9c4a29da7bdb14995d80560a5be` |
+| Material Symbols Outlined | `materialsymbolsoutlined/v387` | 4,026,236 | `632a98f65389d16fa46d925092888d5bd3e0c4b7376da4bad74c398de6bd544f` |
+
+The text font binaries are Latin subsets only; music metadata may contain characters outside Latin, so full text coverage and fallback behaviour must be decided before selecting the production subset. WOFF2 hashes pin the inspected bytes but are not proof of visual parity. The exact CDN URLs, fixed license sources, owner decision, and remaining artwork/logo provenance are in [`DEPENDENCIES_AND_LICENSES.md`](DEPENDENCIES_AND_LICENSES.md) and [`DECISION_REGISTER.md`](DECISION_REGISTER.md).
+
+**Process-order variance:** `DESIGN_SYSTEM.md` required recording exact asset/license provenance before fetching. I fetched these four candidate binaries into the isolated temporary audit folder before the decision-register update. No candidate entered the checkout or app. This sequencing mistake is recorded here; provenance is now being written before any app bundling or use.
 
 ## GitHub Actions for exact integration commit
 
@@ -46,8 +63,8 @@ The passing PR run's Ubuntu log records `Ran 52 tests`, `test_symlink_escape_rej
 ## Desktop runtime and hardware
 
 - Historical Codex Tauri run: Windows desktop rendered the initial empty DJ workspace and connected engine snapshot at 1920×1032. Two decks were empty. This is a window/render check only.
-- Current running session: `corepack pnpm desktop dev` was launched with Node.js 24.22.3/pnpm 12.23.0 while the checkout was at documentation commit `c79a448b433f4f29f50236254621d8020105a126`; the product-code tree matches integration commit `853e51477e56593471c7126378d290524be391af`. Vite became ready on `127.0.0.1:1420`, Cargo finished, and `sayt-desktop.exe` remains alive. Cargo emitted a non-fatal output filename collision warning for `sayt_desktop.pdb` between the library and binary targets.
-- Actual native picker, WAV load, real Tauri transport/mixer IPC, 1440×900/1280×800/narrow responsive screenshots, and physical playback remain NOT RUN. No UI automation was retried after the prior helper detected concurrent input; owner-operated manual results have not yet been received, and the dev process remains available.
+- Current running session: `corepack pnpm desktop dev` was launched with Node.js 24.22.3/pnpm 12.23.0 while the checkout was at documentation commit `c79a448b433f4f29f50236254621d8020105a126`; the product-code tree matches integration commit `853e51477e56593471c7126378d290524be391af`. Vite became ready on `127.0.0.1:1420`, Cargo finished, and `sayt-desktop.exe` remains alive. On 2026-11-26 the process and both requested fixture paths were confirmed present. Cargo emitted a non-fatal output filename collision warning for `sayt_desktop.pdb` between the library and binary targets.
+- Actual native picker, WAV load, real Tauri transport/mixer IPC, 1440×900/1280×800/narrow responsive screenshots, and physical playback remain NOT RUN. The owner said they can run the manual check; results have not yet been received. No UI automation was retried after the prior helper detected concurrent input, and the dev process remains available.
 - Physical dual playback, independent audible control, EQ/gain/crossfader, device disconnect/recovery, and shutdown during playback are NOT RUN. A screenshot, UI meter, moving waveform, or engine snapshot is not hardware evidence. See [`audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md`](audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md) and its blank [`RESULTS_TEMPLATE.md`](audio-validation/RESULTS_TEMPLATE.md).
 
 ## Scope, security, dependency and rollback notes
@@ -56,4 +73,4 @@ The passing PR run's Ubuntu log records `Ran 52 tests`, `test_symlink_escape_rej
 - The reviewed PR #2 workflow was not copied. The PR #1 workflow's existing setup-node and Linux ALSA corrections remain; only the Linux Python toolkit test step was added.
 - Toolkit generator now rejects symbolic-link output destinations, preflights owned destinations before writing, and atomically replaces fixture, sentinel and manifest files so symlinks/hard links cannot redirect writes to an external file. Regression coverage includes symlink, directory, and hard-link output cases; Windows skipped the symlink case due host privilege policy.
 - No dependency, lockfile, database, persistence schema, user library or migration changed. Rollback is a normal revert of `853e51477e56593471c7126378d290524be391af` on the feature branch; `main` was not changed. Generated WAVs are outside the checkout.
-- Project licence remains undecided. Existing BlueOak package strings, Rust advisory warnings, and font/icon rights remain owner-review items in [`DEPENDENCIES_AND_LICENSES.md`](DEPENDENCIES_AND_LICENSES.md) and [`DECISION_REGISTER.md`](DECISION_REGISTER.md).
+- Project licence remains undecided. Existing BlueOak package strings and Rust advisory warnings remain owner-review items. Font family license sources are now recorded; the exact font/icon set, Unicode coverage, notices, and logo/artwork provenance remain owner decisions in [`DEPENDENCIES_AND_LICENSES.md`](DEPENDENCIES_AND_LICENSES.md) and [`DECISION_REGISTER.md`](DECISION_REGISTER.md).
