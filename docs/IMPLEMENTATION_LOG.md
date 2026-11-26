@@ -3,7 +3,15 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.0
+**Version:** 0.4.1
+
+## 2026-11-26 — M1 output-switch recovery
+
+- Source review found that `Engine::select_device` returned immediately when pausing the current CPAL stream failed, so the replacement device was never attempted. This contradicted M1 requirement 7's failed-switch recovery contract.
+- Updated the switch path to attempt the replacement despite a pause error. If opening the replacement fails, it best-effort resumes and retains the previous stream; a failed resume sets output-error telemetry and is included in the actionable error. No stream or command is silently discarded.
+- Added four hardware-independent tests for replacement after pause failure, successful restore, failed restore, and initial selection with no previous stream. They test transition policy only; no physical device behavior is claimed.
+- Updated `docs/REQUIREMENTS.md`, the audio-engine notes, and the physical device test guide. Local format, Clippy, workspace tests (19 engine tests and 1 audio-service test), locked all-target check, frontend format/lint/typecheck, 21 UI tests, and production build passed on the working tree based on `8ecbb9e3079c1b04848fa8480a515b08c4626c85`. Exact-head CI is pending commit and push.
+- `corepack pnpm desktop dev` rebuilt and launched the current working tree. No picker, device-control, visual comparison, or physical playback action has been performed by the agent.
 
 ## 2026-11-26 — Current-head desktop launch for owner verification
 

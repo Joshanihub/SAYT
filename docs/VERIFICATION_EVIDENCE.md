@@ -3,9 +3,24 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.7
+**Version:** 0.3.8
 
 This file records reproduced evidence separately from historical agent reports. At the start of the current batch, branch head `25c37aa414a90ad1b45d8bce39e9f8fbdaa36250` on `feat/stitch-m1-dj-workspace` was based on `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 was open and unmerged; PR #2 was open/draft/unmerged. Baseline PR run [45740252743](https://github.com/Joshanihub/SAYT/actions/runs/45740252743) passed. This batch adds local Stitch font/icon assets and code; exact-head CI for each push is tracked in GitHub Actions.
+
+## M1 output-switch recovery — local working-tree verification
+
+This change is based on pushed commit `8ecbb9e3079c1b04848fa8480a515b08c4626c85`; the recovery implementation and status updates below were locally verified before commit. Exact-head CI for this change is pending. The previous pushed head's Windows, macOS, and Ubuntu push/PR runs [45804224796](https://github.com/Joshanihub/SAYT/actions/runs/45804224796) and [45804236667](https://github.com/Joshanihub/SAYT/actions/runs/45804236667) passed.
+
+| Check                 | Command / environment                                                                                | Result                                                                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Rust format           | `cargo fmt --all --check`                                                                            | PASS, exit 0                                                                                                                        |
+| Rust lint             | `cargo clippy --workspace --all-targets -- -D warnings`                                              | PASS, exit 0                                                                                                                        |
+| Rust tests            | `cargo test --workspace`                                                                             | PASS, exit 0; 19 engine tests and 1 desktop audio-service actor test passed                                                         |
+| Rust all-target check | `cargo check --workspace --all-targets --locked`                                                     | PASS, exit 0                                                                                                                        |
+| Frontend checks       | `corepack pnpm format:check`, `lint`, `typecheck`, `test`, `build`; Node.js 24.22.3 and pnpm 12.23.0 | PASS, exit 0; 21 UI tests passed and the production build completed                                                                 |
+| Desktop dev launch    | `corepack pnpm desktop dev`                                                                          | Tauri window launched with the recovery change. Cargo emitted the existing non-fatal `sayt_desktop.pdb` filename-collision warning. |
+
+The engine tests exercise the transition policy for opening a replacement after a pause error, restoring the previous stream after a failed replacement, exposing a failed resume, and initial selection with no previous stream. They do not exercise CPAL, a real device switch, audibility, device hot-plug, or recovery under a physical device failure. No native picker or playback controls were operated in this verification pass; owner-operated manual acceptance remains open.
 
 ## Reproduced locally on Windows
 

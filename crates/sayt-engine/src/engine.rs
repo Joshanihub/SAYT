@@ -144,14 +144,34 @@ impl Engine {
         }
 
         self.drain_retired_tracks();
-        if let Some(stream) = &self.stream {
-            stream
-                .pause()
-                .map_err(|error| format!("Could not pause the current output device: {error}"))?;
+        let previous_stream = self.stream.take();
+        let pause_error = if let Some(stream) = &previous_stream {
+            let error = stream.pause().err();
             self.capture_playback_position();
-        }
+            error.map(|error| {
+                tracing::warn!(
+                    component = "audio-engine",
+                    check = "pause_current_output_stream",
+                    error = %error,
+                    "Could not pause the current output stream before switching devices"
+                );
+                format!("Could not pause the current output device: {error}")
+            })
+        } else {
+            None
+        };
 
-        match self.open_stream(requested_id) {
+        let opened = attempt_output_replacement(
+            previous_stream,
+            pause_error,
+            || self.open_stream(requested_id),
+            |stream| {
+                stream
+                    .play()
+                    .map_err(|error| format!("Could not resume the current output device: {error}"))
+            },
+        );
+        match opened {
             Ok((stream, command_sender, retired_tracks, sample_rate)) => {
                 self.stream = Some(stream);
                 self.command_sender = Some(command_sender);
@@ -164,11 +184,15 @@ impl Engine {
                     .store(false, Ordering::Release);
                 Ok(self.snapshot())
             }
-            Err(error) => {
-                if let Some(stream) = &self.stream {
-                    let _ = stream.play();
+            Err((failure, previous_stream)) => {
+                self.stream = previous_stream;
+                if !failure.previous_stream_usable {
+                    self.telemetry.output_error.store(true, Ordering::Release);
+                    self.telemetry
+                        .failure_logged
+                        .store(false, Ordering::Release);
                 }
-                Err(error)
+                Err(failure.message)
             }
         }
     }
@@ -484,6 +508,55 @@ fn enumerate_devices() -> Result<Vec<DeviceInfo>, String> {
                 .unwrap_or_else(|_| format!("Unnamed output device {index}")),
         })
         .collect())
+}
+
+#[derive(Debug)]
+struct DeviceSwitchFailure {
+    message: String,
+    previous_stream_usable: bool,
+}
+
+fn attempt_output_replacement<T, S>(
+    previous_stream: Option<S>,
+    pause_error: Option<String>,
+    open_replacement: impl FnOnce() -> Result<T, String>,
+    resume_previous: impl FnOnce(&S) -> Result<(), String>,
+) -> Result<T, (DeviceSwitchFailure, Option<S>)> {
+    let open_error = match open_replacement() {
+        Ok(next_stream) => return Ok(next_stream),
+        Err(error) => error,
+    };
+
+    let (previous_stream_usable, resume_error) = match previous_stream.as_ref() {
+        Some(stream) => match resume_previous(stream) {
+            Ok(()) => (true, None),
+            Err(error) => (false, Some(error)),
+        },
+        None => (false, None),
+    };
+
+    let mut messages = vec![open_error];
+    if let Some(error) = pause_error {
+        messages.push(error);
+    }
+    if let Some(error) = resume_error {
+        messages.push(error);
+    }
+    messages.push(if previous_stream_usable {
+        "The previous audio output stream was resumed.".to_string()
+    } else if previous_stream.is_some() {
+        "The previous audio output stream could not be resumed.".to_string()
+    } else {
+        "No previous audio output stream is available.".to_string()
+    });
+
+    Err((
+        DeviceSwitchFailure {
+            message: messages.join(" "),
+            previous_stream_usable,
+        },
+        previous_stream,
+    ))
 }
 
 fn validate_deck(deck: usize) -> Result<(), String> {
@@ -989,5 +1062,85 @@ mod tests {
         );
         assert_eq!(validate_deck(1), Ok(()));
         assert!(validate_deck(2).is_err());
+    }
+
+    #[test]
+    fn replacement_stream_is_attempted_after_pause_failure() {
+        let previous_stream = ();
+        let mut open_attempted = false;
+
+        let result = attempt_output_replacement(
+            Some(previous_stream),
+            Some("Could not pause the current output device".to_string()),
+            || {
+                open_attempted = true;
+                Ok("replacement")
+            },
+            |_| panic!("a successful replacement must not resume the previous stream"),
+        );
+
+        assert!(open_attempted);
+        assert_eq!(result.unwrap(), "replacement");
+    }
+
+    #[test]
+    fn failed_replacement_resumes_the_previous_stream_when_possible() {
+        let previous_stream = ();
+        let mut resume_attempted = false;
+
+        let (failure, previous_stream) = attempt_output_replacement::<(), _>(
+            Some(previous_stream),
+            None,
+            || Err("replacement unavailable".to_string()),
+            |_| {
+                resume_attempted = true;
+                Ok(())
+            },
+        )
+        .expect_err("failed replacement is reported");
+
+        assert!(resume_attempted);
+        assert!(previous_stream.is_some());
+        assert!(failure.previous_stream_usable);
+        assert!(failure.message.contains("replacement unavailable"));
+        assert!(failure
+            .message
+            .contains("previous audio output stream was resumed"));
+    }
+
+    #[test]
+    fn failed_replacement_reports_when_previous_stream_cannot_resume() {
+        let previous_stream = ();
+
+        let (failure, previous_stream) = attempt_output_replacement::<(), _>(
+            Some(previous_stream),
+            Some("pause failed".to_string()),
+            || Err("replacement unavailable".to_string()),
+            |_| Err("resume failed".to_string()),
+        )
+        .expect_err("failed replacement is reported");
+
+        assert!(previous_stream.is_some());
+        assert!(!failure.previous_stream_usable);
+        assert!(failure.message.contains("replacement unavailable"));
+        assert!(failure.message.contains("pause failed"));
+        assert!(failure.message.contains("resume failed"));
+        assert!(failure.message.contains("could not be resumed"));
+    }
+
+    #[test]
+    fn failed_initial_selection_reports_that_no_previous_stream_is_available() {
+        let (failure, previous_stream) = attempt_output_replacement::<(), ()>(
+            None,
+            None,
+            || Err("no default output device".to_string()),
+            |_| panic!("there is no previous stream to resume"),
+        )
+        .expect_err("failed initial selection is reported");
+
+        assert!(previous_stream.is_none());
+        assert!(!failure.previous_stream_usable);
+        assert!(failure.message.contains("no default output device"));
+        assert!(failure.message.contains("No previous audio output stream"));
     }
 }

@@ -14,6 +14,7 @@
 - Return replaced tracks through a bounded queue so their final destruction stays off the callback. A full return queue defers replacement.
 - Keep CPAL error reporting callback-safe: the callback sets an atomic error signal; the control side logs and displays it.
 - Compute EQ coefficients on the control side and run fixed-size biquad state in the callback.
+- Device replacement is attempted even if pausing the current stream fails. If the new stream cannot be opened, the control side attempts to resume and retains the previous stream; resume failure is exposed through the output-error snapshot. Unit tests cover this transition policy, not OS or hardware recovery.
 
 These properties are implemented in source and covered in part by unit tests. No allocator instrumentation or physical-device test has been run, so they are not a real-time safety or dropout guarantee.
 

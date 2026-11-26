@@ -160,14 +160,16 @@ Repeat for all three fixtures.
 > Do **not** unplug powered professional studio monitors under load unless
 > you know that is safe for your specific equipment.
 
-| Step | Action                                                                                   | Expected                                               |
-| ---- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| G.1  | With audio playing, note the selected output device.                                     | —                                                      |
-| G.2  | Disconnect or disable the device (e.g. unplug USB headphones or disable in OS settings). | SAYT should display an error message or status change. |
-| G.3  | Observe: does SAYT crash?                                                                | It should not crash.                                   |
-| G.4  | Reconnect or re-enable the device (or select another available device).                  | —                                                      |
-| G.5  | Resume or restart playback.                                                              | Audio resumes through the new/restored device.         |
-| G.6  | Record result: device recovery.                                                          | PASS / FAIL / BLOCKED                                  |
+| Step | Action                                                                                        | Expected                                               |
+| ---- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| G.1  | With audio playing, note the selected output device.                                          | —                                                      |
+| G.2  | Disconnect or disable the device (e.g. unplug USB headphones or disable in OS settings).      | SAYT should display an error message or status change. |
+| G.3  | Observe: does SAYT crash?                                                                     | It should not crash.                                   |
+| G.4  | Reconnect or re-enable the device, then refresh the output list.                              | Available output appears in the list.                  |
+| G.5  | Select the restored output or another available device; use Retry if output is still errored. | A clear error is shown if switching fails.             |
+| G.6  | If a switch fails, observe whether the previous stream remains usable and note the message.   | Previous stream resumes when the OS permits recovery.  |
+| G.7  | Resume or restart playback after a successful reselection.                                    | Audio resumes through the selected/restored device.    |
+| G.8  | Record result: device recovery.                                                               | PASS / FAIL / BLOCKED                                  |
 
 ---
 
