@@ -3,13 +3,13 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.1
+**Version:** 0.4.2
 
 ## Current verified position — audio-validation integration
 
 - **Repository/worktree:** `C:\Dev\SAYT`; branch `feat/stitch-m1-dj-workspace`; base `1d0323799d0a833a40b20cd58b1c79e43a11044b`; integration commit `853e51477e56593471c7126378d290524be391af`.
 - **Remote review:** [PR #1](https://github.com/Joshanihub/SAYT/pull/1) is open, unmerged, and contains the integrated toolkit. [PR #2](https://github.com/Joshanihub/SAYT/pull/2) is still open/draft as required; it was not merged or closed. `main` remains unchanged.
-- **Latest exact-head CI:** push run [45725687824](https://github.com/Joshanihub/SAYT/actions/runs/45725687824) and PR run [45725694284](https://github.com/Joshanihub/SAYT/actions/runs/45725694284) passed Windows, macOS, and Ubuntu for branch head `c79a448b433f4f29f50236254621d8020105a126`. Linux toolkit output records 52 passing tests and 77/77 checks on the valid fixtures; expected-failure checks deliberately exercise invalid paths.
+- **Latest exact-head CI:** push run [45729174758](https://github.com/Joshanihub/SAYT/actions/runs/45729174758) and PR run [45729179397](https://github.com/Joshanihub/SAYT/actions/runs/45729179397) passed Windows, macOS, and Ubuntu for branch head `9553c76f9b6b5d5c17b9dbae6b54742b13cf373b`. Linux toolkit output records 52 passing tests and 77/77 checks on the valid fixtures; expected-failure checks deliberately exercise invalid paths.
 - **Exact-head CI:** push run [45721302725](https://github.com/Joshanihub/SAYT/actions/runs/45721302725) and PR run [45721308789](https://github.com/Joshanihub/SAYT/actions/runs/45721308789) passed Windows, macOS, and Ubuntu for PR head `853e51477e56593471c7126378d290524be391af`; GitHub tested merge ref `198d769fb8439a5a1471441e50c29cb0b07711cb` on the PR event. The Ubuntu PR log records 52 toolkit tests, `test_symlink_escape_rejected ... ok`, and 77/77 fixture checks.
 - **Toolkit:** accepted source/docs from PR #2 were reviewed and imported. PR #2's `.github/workflows/ci.yml` was excluded; the proven PR #1 workflow was preserved and only gained the Linux Python test step. The generator/verifier received symlink/hard-link-safe atomic writes and Windows-compatible ASCII output.
 - **Local evidence:** Rust format/check/Clippy/tests passed on rustc/cargo 1.100.0. Frontend frozen install/format/lint/typecheck/20 tests/build passed on Node 24.22.3 and pnpm 12.23.0. Python 3.14.5 toolkit suite: 52 total, 50 passed, 2 symlink tests skipped because Windows host permissions disallow symlink creation. Seven fixtures were generated and verified: 77 checks passed, 0 failed; manifest SHA-256 `1FA8F84E47C17F6FC017F99D5023AC8CE4C683B400BE788BE98C5E6E586A4701`.

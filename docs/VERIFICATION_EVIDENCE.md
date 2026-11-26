@@ -3,9 +3,9 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.0
+**Version:** 0.3.1
 
-This file records reproduced evidence separately from historical agent reports. The audio-validation source integration is commit `853e51477e56593471c7126378d290524be391af`; the latest branch head is `c79a448b433f4f29f50236254621d8020105a126` on `feat/stitch-m1-dj-workspace`, based on `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and unmerged; PR #2 remains open/draft. The latest push run [45725687824](https://github.com/Joshanihub/SAYT/actions/runs/45725687824) and PR run [45725694284](https://github.com/Joshanihub/SAYT/actions/runs/45725694284) both passed Windows, macOS, and Ubuntu at the latest head. Linux CI confirms 52 Python tests pass and the valid manifest passes 77/77 fixture checks. Some negative verifier tests intentionally print failed-verification output and assert that invalid manifests or missing files are rejected.
+This file records reproduced evidence separately from historical agent reports. The audio-validation source integration is commit `853e51477e56593471c7126378d290524be391af`; the latest branch head is `9553c76f9b6b5d5c17b9dbae6b54742b13cf373b` on `feat/stitch-m1-dj-workspace`, based on `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and unmerged; PR #2 remains open/draft. The latest push run [45729174758](https://github.com/Joshanihub/SAYT/actions/runs/45729174758) and PR run [45729179397](https://github.com/Joshanihub/SAYT/actions/runs/45729179397) both passed Windows, macOS, and Ubuntu at the latest head. Linux CI confirms 52 Python tests pass and the valid manifest passes 77/77 fixture checks. Some negative verifier tests intentionally print failed-verification output and assert that invalid manifests or missing files are rejected.
 
 ## Reproduced locally on Windows
 
