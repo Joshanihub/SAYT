@@ -3,9 +3,21 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.21
+**Version:** 0.3.22
 
 This file records reproduced evidence separately from historical agent reports. Remote `main` remains at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and PR #2 remains draft. The M1 feature branch head `ee137e288b324a50e6f9b1574c4aee9d4eee1c09` passed exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) on Windows, macOS, and Ubuntu. Keyboard-command implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` and status commit `2706945e62b25573cc4d4b44af2248011b878d5c` are pushed to `feat/dj-command-system`; exact-head Actions run [45884170431](https://github.com/Joshanihub/SAYT/actions/runs/45884170431) completed successfully with all 3 matrix jobs. No PR or merge was created for the expansion branch.
+
+The subsequent documentation-only branch head `3ca5c517b4436447d7978c75cdaa80aecbbb138c` also passed exact-head Actions run [45886251516](https://github.com/Joshanihub/SAYT/actions/runs/45886251516) on all 3 matrix jobs.
+
+## M1 device discovery UI — local verification
+
+The Settings page now represents device discovery as `loading`, `loaded`, or `error`. It shows a checking state while the list request is pending, an actionable empty-list message only after a successful empty result, and a distinct message when enumeration fails. The output summary does not label a missing selection as the system default. A selected and active system default remains identified as such even if the enumerated list is empty.
+
+The regression test covers discovery loading, an empty list, a successfully selected system default, enumeration failure, a stale output error, and the initial workspace summary. A mutation that changed the empty-list label back to “System default output” caused the targeted test to fail; after restoration, the App component suite passed 24 tests and the full frontend suite passed 47 tests across 3 files.
+
+Full local checks passed on Windows: `cargo fmt --all --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked` (25 engine tests and 1 desktop actor test), `cargo check --workspace --all-targets --locked`, `corepack pnpm format:check`, `corepack pnpm lint`, `corepack pnpm typecheck`, `corepack pnpm test` (47 tests), and `corepack pnpm build`.
+
+These component tests verify presentation and state selection only. No physical no-device condition, real Tauri enumeration failure, output switch, playback, or audio recovery was exercised in this change.
 
 ## Keyboard-command expansion — local checks and Windows runtime observation
 

@@ -121,6 +121,8 @@ describe("M1 desktop workspace", () => {
       'disabled="" title="Bridge is not implemented in M1"',
     );
     expect(markup).toContain("No WAV loaded");
+    expect(markup).toContain("Output: Checking output devices");
+    expect(markup).not.toContain("Output: System default output");
   });
 
   it("renders an honest library empty state with a native-picker action", () => {
@@ -189,6 +191,7 @@ describe("M1 desktop workspace", () => {
     const markup = renderToStaticMarkup(
       <AudioSettings
         devices={[{ id: "system-out-1", name: "System Output" }]}
+        deviceListStatus="loaded"
         selectedDevice="system-out-1"
         outputError={false}
         onRefresh={() => undefined}
@@ -453,6 +456,7 @@ describe("M1 desktop workspace", () => {
     const onRetry = vi.fn();
     const tree = AudioSettings({
       devices: [],
+      deviceListStatus: "loaded",
       selectedDevice: "removed-device",
       outputError: true,
       onRefresh,
@@ -463,10 +467,72 @@ describe("M1 desktop workspace", () => {
     const buttons = controls.filter((element) => element.type === "button");
 
     expect(markup).toContain('role="alert"');
-    expect(markup).toContain("Audio output stopped");
+    expect(markup).toContain("No output devices are listed");
     buttons[0]?.props.onClick?.();
     buttons[1]?.props.onClick?.();
     expect(onRefresh).toHaveBeenCalledOnce();
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it("distinguishes device discovery, no devices, and device-list errors", () => {
+    const onRefresh = vi.fn();
+    const onRetry = vi.fn();
+    const loadingTree = AudioSettings({
+      devices: [],
+      deviceListStatus: "loading",
+      selectedDevice: null,
+      outputError: false,
+      onRefresh,
+      onRetry,
+    });
+    const loadingControls = findElements(loadingTree);
+    const loadingMarkup = renderToStaticMarkup(loadingTree);
+
+    expect(loadingMarkup).toContain("Searching for audio output devices");
+    expect(loadingMarkup).not.toContain('role="alert"');
+    expect(
+      loadingControls.find((element) => element.type === "button")?.props
+        .disabled,
+    ).toBe(true);
+
+    const emptyTree = AudioSettings({
+      devices: [],
+      deviceListStatus: "loaded",
+      selectedDevice: null,
+      outputError: false,
+      onRefresh,
+      onRetry,
+    });
+    const emptyMarkup = renderToStaticMarkup(emptyTree);
+
+    expect(emptyMarkup).toContain('role="alert"');
+    expect(emptyMarkup).toContain("No audio output devices are listed");
+    expect(emptyMarkup).not.toContain("System default output");
+
+    const defaultTree = AudioSettings({
+      devices: [],
+      deviceListStatus: "loaded",
+      selectedDevice: "default",
+      outputError: false,
+      onRefresh,
+      onRetry,
+    });
+    const defaultMarkup = renderToStaticMarkup(defaultTree);
+
+    expect(defaultMarkup).toContain("System default output");
+    expect(defaultMarkup).not.toContain("No audio output devices are listed");
+
+    const failedTree = AudioSettings({
+      devices: [],
+      deviceListStatus: "error",
+      selectedDevice: null,
+      outputError: false,
+      onRefresh,
+      onRetry,
+    });
+    const failedMarkup = renderToStaticMarkup(failedTree);
+
+    expect(failedMarkup).toContain("Could not refresh the audio device list");
+    expect(failedMarkup).not.toContain("No audio output devices are listed");
   });
 });

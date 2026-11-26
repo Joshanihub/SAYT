@@ -155,6 +155,17 @@ Repeat for all three fixtures.
 
 ## Test G — Device recovery
 
+### G.0 — No-device state
+
+Use only a test system that safely has no available audio output; do not
+disconnect powered monitors or disable a device that other work depends on.
+Open **Settings** and wait for discovery to finish. While discovery is pending,
+SAYT should show a checking state. If the completed list is empty, it should
+report that no output device is listed instead of claiming the system default
+is connected. Refresh remains available after the scan. Restore or enable an
+output only when safe, refresh the list, and retry selection. Record the
+displayed message and whether a device appears after recovery.
+
 > [!CAUTION]
 > Only perform this test if you can safely disconnect your output device.
 > Do **not** unplug powered professional studio monitors under load unless

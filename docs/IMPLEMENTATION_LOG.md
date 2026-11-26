@@ -3,7 +3,14 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.13
+**Version:** 0.4.14
+
+## 2026-11-26 — M1 truthful output-device discovery states
+
+- Added a typed device-list state (`loading`, `loaded`, or `error`) to the desktop UI. Settings now distinguishes an in-progress scan, an empty output list, enumeration failure, and output-stream errors. The workspace summary no longer calls an unselected output the system default.
+- Added regression coverage for loading, empty-list, default-selected, enumeration-error, output-error, and initial workspace-summary states. The device refresh action is disabled only while enumeration is in progress; retry remains available.
+- A deliberate mutation made the empty-list label claim “System default output”; the targeted UI test failed on that assertion. Restored the truthful label and the App component suite passed 24 tests; the full frontend suite passed 47 tests.
+- Full local verification passed: Rust fmt/Clippy/tests/check, frontend format/lint/typecheck/tests/build. These checks cover UI state only; physical no-device detection and real device recovery remain unverified.
 
 ## 2026-11-26 — Owner keyboard shortcut report
 

@@ -51,6 +51,7 @@ type MixerSnapshot = {
 };
 
 type DeviceInfo = { id: string; name: string };
+type DeviceListStatus = "loading" | "loaded" | "error";
 type Page = WorkspaceId;
 
 const SNAPSHOT_INTERVAL_MS = 100;
@@ -595,12 +596,14 @@ export function LibraryEmptyState({
 
 export function AudioSettings({
   devices,
+  deviceListStatus,
   selectedDevice,
   outputError,
   onRefresh,
   onRetry,
 }: {
   devices: DeviceInfo[];
+  deviceListStatus: DeviceListStatus;
   selectedDevice: string | null;
   outputError: boolean;
   onRefresh: () => void;
@@ -609,7 +612,48 @@ export function AudioSettings({
   const selectedName = devices.find(
     (device) => device.id === selectedDevice,
   )?.name;
-  const isSystemDefault = !selectedDevice || selectedDevice === "default";
+  const isSystemDefault = selectedDevice === "default";
+  const noOutputDevices =
+    deviceListStatus === "loaded" &&
+    devices.length === 0 &&
+    (!selectedDevice || outputError);
+  const deviceListFailed = deviceListStatus === "error";
+  const outputMessage = noOutputDevices
+    ? outputError
+      ? "No output devices are listed, and audio output is in an error state. Connect or enable an output, then refresh the device list."
+      : "No audio output devices are listed. Connect or enable an output, then refresh the device list."
+    : deviceListFailed
+      ? `Could not refresh the audio device list.${devices.length > 0 ? " Listed outputs may be out of date." : ""} Refresh to try again.`
+      : outputError
+        ? "Audio output stopped. Re-select an output device to retry."
+        : null;
+  const selectedOutputName =
+    deviceListStatus === "loading" && devices.length === 0
+      ? "Checking for audio output devices…"
+      : noOutputDevices
+        ? "No audio output devices found"
+        : deviceListFailed && devices.length === 0
+          ? "Audio device list unavailable"
+          : selectedName ||
+            (isSystemDefault
+              ? "System default output"
+              : selectedDevice === null
+                ? "No output selected"
+                : "Current output selection");
+  const statusLabel =
+    outputError && !noOutputDevices
+      ? "Output error"
+      : deviceListStatus === "loading"
+        ? "Checking devices"
+        : deviceListFailed
+          ? "List error"
+          : noOutputDevices
+            ? "No devices"
+            : selectedDevice === null
+              ? "No output selected"
+              : isSystemDefault
+                ? "System default"
+                : "Selected";
   return (
     <section className="settings-layout" aria-labelledby="settings-heading">
       <div className="settings-intro">
@@ -631,24 +675,22 @@ export function AudioSettings({
               <p>One shared master output</p>
             </div>
           </div>
-          <span className={`settings-state ${outputError ? "error" : ""}`}>
+          <span
+            className={`settings-state ${outputError || noOutputDevices || deviceListFailed ? "error" : ""}`}
+          >
             <span />
-            {outputError
-              ? "Output error"
-              : isSystemDefault
-                ? "System default"
-                : "Selected"}
+            {statusLabel}
           </span>
         </div>
-        <p className="selected-device-name">
-          {selectedName ||
-            (isSystemDefault
-              ? "System default output"
-              : "Current output selection")}
-        </p>
-        {outputError && (
+        <p className="selected-device-name">{selectedOutputName}</p>
+        {outputMessage && (
           <p className="settings-error" role="alert">
-            Audio output stopped. Re-select an output device to retry.
+            {outputMessage}
+          </p>
+        )}
+        {deviceListStatus === "loading" && devices.length === 0 && (
+          <p className="settings-help" role="status" aria-live="polite">
+            Searching for audio output devices…
           </p>
         )}
         <div className="settings-actions">
@@ -656,11 +698,16 @@ export function AudioSettings({
             className="transport-secondary"
             type="button"
             onClick={onRefresh}
+            disabled={deviceListStatus === "loading"}
           >
-            Refresh device list
+            {deviceListStatus === "loading"
+              ? "Checking devices…"
+              : "Refresh device list"}
           </button>
           <button className="load-button" type="button" onClick={onRetry}>
-            Retry selected output
+            {isSystemDefault || selectedDevice === null
+              ? "Retry system default"
+              : "Retry selected output"}
           </button>
         </div>
         <p className="settings-help">
@@ -808,6 +855,8 @@ export function AppShell({
 export function App() {
   const [mixer, setMixer] = useState<MixerSnapshot>(emptyMixer);
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
+  const [deviceListStatus, setDeviceListStatus] =
+    useState<DeviceListStatus>("loading");
   const [page, setPage] = useState<Page>("dj");
   const [error, setError] = useState("");
   const [loadingDeck, setLoadingDeck] = useState<number | null>(null);
@@ -879,9 +928,15 @@ export function App() {
     const initialize = async () => {
       try {
         const outputDevices = await invoke<DeviceInfo[]>("list_devices");
-        if (active) setDevices(outputDevices);
+        if (active) {
+          setDevices(outputDevices);
+          setDeviceListStatus("loaded");
+        }
       } catch (cause) {
-        if (active) setError(getErrorMessage(cause));
+        if (active) {
+          setError(getErrorMessage(cause));
+          setDeviceListStatus("error");
+        }
       }
       try {
         const snapshot = await invoke<MixerSnapshot>("select_device", {
@@ -925,11 +980,14 @@ export function App() {
   };
 
   const refreshDevices = async () => {
+    setDeviceListStatus("loading");
     setError("");
     try {
       setDevices(await invoke<DeviceInfo[]>("list_devices"));
+      setDeviceListStatus("loaded");
     } catch (cause) {
       setError(getErrorMessage(cause));
+      setDeviceListStatus("error");
     }
   };
 
@@ -1157,8 +1215,19 @@ export function App() {
   const selectedDeviceName = devices.find(
     (device) => device.id === mixer.selected_device,
   )?.name;
-  const isSystemDefault =
-    !mixer.selected_device || mixer.selected_device === "default";
+  const outputSummary =
+    selectedDeviceName ||
+    (mixer.selected_device === "default"
+      ? "System default output"
+      : mixer.selected_device
+        ? "Current selection"
+        : deviceListStatus === "loading"
+          ? "Checking output devices…"
+          : deviceListStatus === "error"
+            ? "Output device list unavailable"
+            : devices.length === 0
+              ? "No output device listed"
+              : "No output selected");
 
   return (
     <>
@@ -1192,13 +1261,7 @@ export function App() {
             </div>
             <div className="page-context">
               <span className="m1-pill">M1 · TWO DECKS</span>
-              <span className="output-summary">
-                Output:{" "}
-                {selectedDeviceName ||
-                  (isSystemDefault
-                    ? "System default output"
-                    : "Current selection")}
-              </span>
+              <span className="output-summary">Output: {outputSummary}</span>
             </div>
           </div>
 
@@ -1274,6 +1337,7 @@ export function App() {
           {page === "settings" && (
             <AudioSettings
               devices={devices}
+              deviceListStatus={deviceListStatus}
               selectedDevice={mixer.selected_device}
               outputError={mixer.output_error}
               onRefresh={() =>

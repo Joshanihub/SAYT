@@ -3,7 +3,7 @@
 **Status:** PROPOSED acceptance contract<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.1.6
+**Version:** 0.1.7
 
 ## Functional requirements
 
@@ -13,7 +13,7 @@
 4. Mix both decks to a selected output device. The crossfader routes A at its left endpoint and B at its right endpoint.
 5. Deck gain and low, mid, and high controls change the signal sent to the output.
 6. Display duration, sample rate, channel count, and waveform peaks derived from the selected recording.
-7. Return a clear error for absent devices, unsupported WAV formats, malformed data, and output stream failures. A device switch still attempts to open the replacement if pausing the current stream errors. If opening the replacement fails, attempt to resume and retain the previous stream; report whether recovery succeeded. A failed switch leaves the prior stream usable when the OS permits recovery.
+7. Return a clear error for absent devices, unsupported WAV formats, malformed data, and output stream failures. Distinguish device-list loading, an empty device list, and enumeration failure; never label an unselected output as connected. A device switch still attempts to open the replacement if pausing the current stream errors. If opening the replacement fails, attempt to resume and retain the previous stream; report whether recovery succeeded. A failed switch leaves the prior stream usable when the OS permits recovery.
 8. Release the stream and track resources on application shutdown.
 9. Give button and select state changes short visual feedback, honor the operating-system reduced-motion preference, and retain clear keyboard focus indicators.
 10. Keep both decks and the mixer in a deterministic, usable order at desktop, compact, and narrow window sizes; the resizable desktop window supports the existing 480 px narrow breakpoint.
@@ -36,7 +36,7 @@ The configured maximum is a safety bound, not a promise that every machine can c
 | Independent transport and seek        | Engine tests for state, bounds, and queue behavior                                                                                                                                                                          | Confirm A and B play, pause, stop, and seek independently                                                        |
 | Crossfader                            | Endpoint and equal-power math tests; rendered A-only test                                                                                                                                                                   | Listen at left, center, and right positions                                                                      |
 | Three-band EQ                         | Frequency-response tests for low, mid, and high bands                                                                                                                                                                       | Sweep each band using test tones or known material and listen for change                                         |
-| Output-device selection               | Compile and command-path checks; transition-policy tests cover pause failure, replacement failure, and resume failure                                                                                                       | Confirm output on a physical device; unplug/reselect and observe error recovery                                  |
+| Output-device selection               | Component tests cover device discovery loading, empty results, enumeration errors, output errors, refresh, and retry; transition-policy tests cover pause failure, replacement failure, and resume failure                  | Confirm output on a physical device; verify a real no-device state and safely test failed-switch recovery        |
 | Error handling and shutdown           | Decoder error cases and native command tests                                                                                                                                                                                | Unsupported file, no-device, stream failure, and clean shutdown scenarios                                        |
 | Interaction motion and reduced motion | Stylesheet regression test checks short button/select transitions and the reduced-motion override                                                                                                                           | Enable the OS reduced-motion preference; verify transitions are suppressed and keyboard focus remains visible    |
 | Responsive deck placement             | Stylesheet regression test checks desktop, compact, and narrow named grid areas                                                                                                                                             | Capture the running Tauri window at 1440×900, 1280×800, and 480×700; verify both decks and mixer appear in order |

@@ -3,7 +3,7 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.2.2
+**Version:** 0.2.3
 
 This maps every screen in the supplied Stitch archive to the current product boundary. The task handoff identifies the designs as founder-approved; that provenance is recorded here without implying that the Stitch prototype or every screen's behavior was independently re-tested. Prototype simulations are reference material, not evidence of working SAYT features.
 
@@ -74,10 +74,10 @@ This maps every screen in the supplied Stitch archive to the current product bou
 
 - **Reference / asset:** `design/reference/SAYT-Stitch-v1/stitch_sayt_dj_audio_studio/sayt_audio_device_settings/screen.png` and `code.html`.
 - **Workspace / target:** Shared audio settings; M1 limited output controls.
-- **Required frontend:** Device list/selection, refresh, output error, retry, and truthful capabilities.
+- **Required frontend:** Device list/selection, discovery loading, empty and enumeration-error states, refresh, output error, retry, and truthful capabilities.
 - **Required backend:** Existing engine device enumeration/selection and output recovery attempt.
-- **Current source:** `AudioSettings`, top-bar selector, and output-error banner in `apps/desktop/src/App.tsx`; `AudioService` forwards device commands to the engine thread.
-- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified. Source: limited controls. Automated: 21 frontend tests passed; device listing/selection callback, error presentation, and refresh/retry handlers are covered. These component tests do not exercise device switching through real Tauri IPC. Running desktop: settings page not inspected. Physical: not verified.
+- **Current source:** `AudioSettings`, top-bar selector, and output-error banner in `apps/desktop/src/App.tsx`; `AudioService` forwards device commands to the engine thread. Device discovery is represented as loading, loaded, or error so an empty initial state is not reported as an absent device.
+- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified. Source: limited controls. Automated: component tests cover discovery loading, empty results, enumeration failure, output errors, and refresh/retry handlers. These component tests do not exercise device switching through real Tauri IPC. Running desktop: settings page not inspected. Physical: not verified.
 - **Manual requirements / limitations:** Test physical-device selection, disconnect/reselect, recovery, and shutdown. Sample-rate, buffer, cue, and latency controls are not exposed and must not be implied.
 
 ### Screen 06 — Appearance & Customisation

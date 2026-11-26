@@ -3,14 +3,15 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.21
+**Version:** 0.4.22
 
 ## Current verified position — M1 closeout and keyboard-command expansion
 
 - **M1 source branch:** `feat/stitch-m1-dj-workspace` is based on unchanged `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Responsive correction and decoder rejection coverage are pushed as `ee137e288b324a50e6f9b1574c4aee9d4eee1c09`; exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) both passed Windows, macOS, and Ubuntu. GitHub currently shows PR #1 open and PR #2 still draft. No merge into `main` is authorized.
-- **DJ expansion branch:** implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` and status commits are pushed to `feat/dj-command-system` from the isolated worktree, based on the pushed M1 SHA above. Frontend format, lint, typecheck, 46 tests and production build pass locally; Rust format, Clippy, 25 engine plus 1 desktop actor test and locked all-target check pass. Exact-head push run [45884170431](https://github.com/Joshanihub/SAYT/actions/runs/45884170431) completed successfully with all 3 matrix jobs. No PR or merge was created. Windows runtime shows the shortcut dialog and search working at 1282×832. The owner reports F1, Alt+2, and Ctrl+Alt+2 passed; per-key visible outcomes and viewport were not supplied. Focused-deck transport/EQ commands, remapping persistence across restart, and macOS runtime remain unverified.
+- **DJ expansion branch:** implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` and status commits are pushed to `feat/dj-command-system` from the isolated worktree, based on the pushed M1 SHA above. Documentation commit `3ca5c51` passed Actions run [45886251516](https://github.com/Joshanihub/SAYT/actions/runs/45886251516), all 3 matrix jobs. No PR or merge was created. Windows runtime shows the shortcut dialog and search working at 1282×832. The owner reports F1, Alt+2, and Ctrl+Alt+2 passed; per-key visible outcomes and viewport were not supplied. Focused-deck transport/EQ commands, remapping persistence across restart, and macOS runtime remain unverified.
 - **Stitch typography and icons:** 16 local variable WOFF2 text-font subsets and a 66-ligature Material Symbols subset are integrated. Four upstream license notices are present under `apps/desktop/public/licenses`; runtime font loading makes no network request. Exact sources, hashes, sizes, Unicode ranges, and build-tool pins are recorded in the asset manifest and dependency inventory.
-- **Local verification:** Rust format, Clippy, all 25 engine tests plus 1 desktop actor test, and locked all-target check passed. Frontend format, lint, typecheck, 23 UI tests, and production build passed with the responsive correction.
+- **Local verification:** Rust format, Clippy, all 25 engine tests plus 1 desktop actor test, and locked all-target check passed. Frontend format, lint, typecheck, 47 tests, and production build pass on the current working tree.
+- **M1 device discovery state:** the Settings surface now distinguishes loading, an empty device list, enumeration failure, and a selected system default. The React tests verify these states; real device enumeration and recovery still require hardware verification.
 - **Output-switch recovery:** source now attempts the replacement stream after a pause error and restores the previous stream if replacement fails. Resume failure is reported in the command error and output-error snapshot. Four hardware-independent transition tests pass; CPAL/OS recovery remains unverified.
 - **Interaction motion:** button and select state changes, including navigation, transport, and load controls, use a named 120 ms ease-out transition. CSS honors `prefers-reduced-motion`; the stylesheet regression test passes and failed under an intentional canary edit. Runtime preference behavior and target-screen appearance remain unverified.
 - **Responsive workspace:** Fixed CSS auto-placement that put Deck B below the mixer between 721 px and 1060 px. Named grid areas now preserve deck order at desktop, compact, and narrow sizes; Tauri captures at 1440×900, 1280×800, 800×700, and 480×700 are committed in `docs/evidence/m1-responsive/`. Visual comparison confirms the M1 identity and core hierarchy while the supplied Screen 01 remains only partially implemented.
@@ -41,14 +42,14 @@ The original Stitch export and extracted references are in `design/reference/`. 
 - Decks, waveform, transport, seek, and controls: connected to existing Tauri commands. The owner reports loading both fixtures and the requested playback/control checks passed; fixture metadata and independent physical reproduction remain unavailable.
 - Mixer: actual master meter, master gain, and crossfader only; no invented independent channel meters.
 - Quick crate: two deck slots using the native picker; no directory scan or persistent library.
-- Audio settings: device list/selection, refresh, and retry only; unsupported prototype controls are identified as unavailable.
+- Audio settings: device list/selection, refresh, and retry only; discovery distinguishes loading, no listed outputs, and enumeration errors. Unsupported prototype controls remain identified as unavailable.
 - Library: explicit empty state because M1 has no index storage.
 - Future screens: disabled navigation; not implemented.
 
 ## Outstanding exit gates
 
 1. Recheck cross-platform CI after any later changes to the M1 branch; `ee137e2` currently passes exact-head push and PR runs.
-2. Record unsupported-WAV, no-device, and failed-switch recovery outcomes; the owner's summary did not identify those failure scenarios separately.
+2. Record physical unsupported-WAV, no-device, and failed-switch recovery outcomes; decoder, UI, and transition-policy tests cover software paths, but the owner's summary did not identify those physical failure scenarios separately.
 3. Implement the next accepted Screen 01 vertical slices and update the matched Stitch comparison after each delivery; do not mark the full Screen 01 accepted while cues, pads, FX, recording, or library browsing remain unavailable.
 4. Before a consequential release decision, assess reachability/impact of the five unmaintained Rust crates and `glib` unsoundness notice, review the two BlueOak npm license terms, and complete an SBOM/legal review. Fresh local scan results are recorded in `docs/DEPENDENCIES_AND_LICENSES.md`.
 5. SAYT's project license remains undecided; no license grant is added.
