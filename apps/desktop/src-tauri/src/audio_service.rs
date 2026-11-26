@@ -48,6 +48,10 @@ enum ServiceCommand {
         HotCueColor,
         EngineReply<MixerSnapshot>,
     ),
+    SetLoopIn(usize, String, EngineReply<MixerSnapshot>),
+    SetLoopOut(usize, String, EngineReply<MixerSnapshot>),
+    SetLoopSize(usize, String, f64, EngineReply<MixerSnapshot>),
+    ReleaseLoop(usize, String, EngineReply<MixerSnapshot>),
     Snapshot(EngineReply<MixerSnapshot>),
     Shutdown,
 }
@@ -188,6 +192,41 @@ impl AudioService {
         self.request(|reply| {
             ServiceCommand::SetHotCueColor(deck, slot, source_track_id, color, reply)
         })
+    }
+
+    pub fn set_loop_in(&self, deck: usize, source_track_id: &str) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::SetLoopIn(deck, source_track_id, reply))
+    }
+
+    pub fn set_loop_out(
+        &self,
+        deck: usize,
+        source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::SetLoopOut(deck, source_track_id, reply))
+    }
+
+    pub fn set_loop_size(
+        &self,
+        deck: usize,
+        source_track_id: &str,
+        size_seconds: f64,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| {
+            ServiceCommand::SetLoopSize(deck, source_track_id, size_seconds, reply)
+        })
+    }
+
+    pub fn release_loop(
+        &self,
+        deck: usize,
+        source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::ReleaseLoop(deck, source_track_id, reply))
     }
 
     pub fn snapshot(&self) -> Result<MixerSnapshot, String> {
@@ -341,6 +380,21 @@ fn run_engine_actor(
                         },
                     ),
                 );
+            }
+            ServiceCommand::SetLoopIn(deck, source_track_id, reply) => {
+                reply_with(reply, engine.set_loop_in(deck, &source_track_id));
+            }
+            ServiceCommand::SetLoopOut(deck, source_track_id, reply) => {
+                reply_with(reply, engine.set_loop_out(deck, &source_track_id));
+            }
+            ServiceCommand::SetLoopSize(deck, source_track_id, size_seconds, reply) => {
+                reply_with(
+                    reply,
+                    engine.set_loop_size(deck, &source_track_id, size_seconds),
+                );
+            }
+            ServiceCommand::ReleaseLoop(deck, source_track_id, reply) => {
+                reply_with(reply, engine.release_loop(deck, &source_track_id));
             }
             ServiceCommand::Snapshot(reply) => reply_with(reply, Ok(engine.snapshot())),
             ServiceCommand::Shutdown => break,
@@ -496,5 +550,35 @@ mod tests {
             )
             .expect_err("invalid deck index must be rejected");
         assert!(error.contains("Deck index"));
+    }
+
+    #[test]
+    fn actor_rejects_manual_loop_actions_without_a_loaded_track() {
+        let storage =
+            std::env::temp_dir().join(format!("sayt-manual-loop-actor-{}", std::process::id()));
+        let service = AudioService::new(storage).expect("audio control actor starts");
+        let source_track_id =
+            "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+
+        assert!(service
+            .set_loop_in(0, source_track_id)
+            .expect_err("an unloaded deck cannot set Loop In")
+            .contains("Load a WAV"));
+        assert!(service
+            .set_loop_out(0, source_track_id)
+            .expect_err("an unloaded deck cannot set Loop Out")
+            .contains("Load a WAV"));
+        assert!(service
+            .set_loop_size(0, source_track_id, 0.5)
+            .expect_err("an unloaded deck cannot activate a sized loop")
+            .contains("Load a WAV"));
+        assert!(service
+            .release_loop(0, source_track_id)
+            .expect_err("an unloaded deck cannot release a loop")
+            .contains("Load a WAV"));
+        assert!(service
+            .set_loop_size(2, source_track_id, 0.5)
+            .expect_err("invalid decks must be rejected")
+            .contains("Deck index"));
     }
 }

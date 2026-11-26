@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   createHotCueCommand,
+  createManualLoopCommand,
   createShortcutCommand,
   detectShortcutPlatform,
   dispatchShortcutKeydown,
@@ -284,6 +285,41 @@ describe("central keyboard command registry", () => {
       }
     },
   );
+
+  it.each([
+    ["setLoopIn", "setIn"],
+    ["setLoopOut", "setOut"],
+    ["releaseLoop", "release"],
+  ] as const)(
+    "routes the %s keyboard binding to the same typed manual-loop action as its pad",
+    (shortcutId, action) => {
+      const sourceTrackId = `sha256:${"d".repeat(64)}`;
+      const context = {
+        focusedDeck: 1 as const,
+        focusedTrackId: sourceTrackId,
+      };
+      expect(createShortcutCommand(shortcutId, context)).toEqual(
+        createManualLoopCommand(action, 1, sourceTrackId),
+      );
+    },
+  );
+
+  it("requires a positive finite manual-loop size when building a size command", () => {
+    const sourceTrackId = `sha256:${"e".repeat(64)}`;
+    expect(createManualLoopCommand("setSize", 0, sourceTrackId, 0.25)).toEqual({
+      id: "loop.setSize",
+      payload: { deck: 0, sourceTrackId, sizeSeconds: 0.25 },
+    });
+    expect(() => createManualLoopCommand("setSize", 0, sourceTrackId)).toThrow(
+      "positive finite seconds",
+    );
+    expect(() =>
+      createManualLoopCommand("setSize", 0, sourceTrackId, Number.NaN),
+    ).toThrow("positive finite seconds");
+    expect(() =>
+      createManualLoopCommand("setSize", 0, sourceTrackId, 0),
+    ).toThrow("positive finite seconds");
+  });
 
   it("persists and reloads valid local overrides", () => {
     const storage = new MemoryStorage();

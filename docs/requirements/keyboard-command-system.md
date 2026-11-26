@@ -9,7 +9,7 @@
 
 Provide reliable keyboard operation for commands that SAYT already implements. Keyboard shortcuts and interface controls use the same typed application command and dispatcher; native audio remains behind the existing Tauri control API and Rust engine.
 
-This slice covers the current two-deck transport, native track loading, seeking, deck gain/EQ, master level, crossfader, audio-device refresh/retry, workspace navigation and shortcut help. Cue, stutter, pitch, sync, loops, effects, sampler, recording, library search and controller commands are not advertised until their real behavior exists.
+This slice covers the current two-deck transport, native track loading, seeking, deck gain/EQ, master level, crossfader, audio-device refresh/retry, workspace navigation, shortcut help, Hot Cues, and manual loop in/out/release. Loop-size pads use seconds because BPM/beatgrid support is not implemented. Loop Roll, Beat Jump, stutter, pitch, sync, effects, sampler, recording, library search and controller commands remain absent until their real behavior exists.
 
 ## Functional requirements
 
@@ -32,6 +32,8 @@ This slice covers the current two-deck transport, native track loading, seeking,
 | Search, remapping, persistence and reset                 | Search and storage round-trip, corrupt/unsupported storage, conflict, storage failure and empty-reset tests                            | Search the overlay, change one mapping, restart, verify it remains, reset, and verify defaults                                            |
 | Inputs and accessibility                                 | Editable/native-space target tests; overlay semantic markup and focus-management implementation review                                 | Type into search and range controls without triggering app commands; use Tab, Shift+Tab, Escape and screen reader review                  |
 | Engine integration                                       | UI controls and shortcut definitions emit the same typed application command; dispatcher maps only to current Tauri engine commands    | Load distinct fixtures, operate both decks and mixer controls, observe positions/meters/errors; do not infer audible output from UI state |
+
+Manual-loop runtime acceptance uses two user-selected WAV fixtures. On each deck, verify a size-pad loop, Loop In/Out, release while playing and paused, seek outside the loop, stop, track replacement, and independence from the other deck. Listen for loop-seam artifacts; the current callback has no crossfade. Hardware sound quality remains NOT VERIFIED until this run is recorded.
 
 ## Boundaries
 

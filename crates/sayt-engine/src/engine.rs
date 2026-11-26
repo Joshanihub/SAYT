@@ -19,6 +19,7 @@ use crate::{
     decoder::{decode_track, StereoFrame, Track},
     dsp::{EqBank, EqCoefficients},
     hot_cue::{empty_hot_cue_slots, validate_hot_cue_slots, HotCueSlots},
+    manual_loop::{validate_manual_loop, DEFAULT_MANUAL_LOOP_SIZE_SECONDS},
 };
 
 const AUDIO_COMMAND_CAPACITY: usize = 64;
@@ -57,6 +58,11 @@ pub struct DeckSnapshot {
     pub hot_cues: HotCueSlots,
     pub hot_cue_warning: Option<String>,
     pub active_hot_cue_slot: Option<usize>,
+    pub loop_in_seconds: Option<f64>,
+    pub loop_out_seconds: Option<f64>,
+    pub loop_size_seconds: f64,
+    pub loop_active: bool,
+    pub loop_release_pending: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -83,6 +89,11 @@ struct DeckSettings {
     hot_cues: HotCueSlots,
     hot_cue_warning: Option<String>,
     active_hot_cue_slot: Option<usize>,
+    loop_in_seconds: Option<f64>,
+    loop_out_seconds: Option<f64>,
+    loop_size_seconds: f64,
+    loop_active: bool,
+    loop_release_pending: bool,
 }
 
 impl Default for DeckSettings {
@@ -99,6 +110,11 @@ impl Default for DeckSettings {
             hot_cues: empty_hot_cue_slots(),
             hot_cue_warning: None,
             active_hot_cue_slot: None,
+            loop_in_seconds: None,
+            loop_out_seconds: None,
+            loop_size_seconds: DEFAULT_MANUAL_LOOP_SIZE_SECONDS,
+            loop_active: false,
+            loop_release_pending: false,
         }
     }
 }
@@ -225,6 +241,11 @@ impl Engine {
         self.settings.decks[deck].active_hot_cue_slot = None;
         self.settings.decks[deck].hot_cues = empty_hot_cue_slots();
         self.settings.decks[deck].hot_cue_warning = None;
+        self.settings.decks[deck].loop_in_seconds = None;
+        self.settings.decks[deck].loop_out_seconds = None;
+        self.settings.decks[deck].loop_size_seconds = DEFAULT_MANUAL_LOOP_SIZE_SECONDS;
+        self.settings.decks[deck].loop_active = false;
+        self.settings.decks[deck].loop_release_pending = false;
         Ok(self.snapshot())
     }
 
@@ -246,8 +267,18 @@ impl Engine {
         self.settings.decks[deck].position_seconds = 0.0;
         self.settings.decks[deck].playing = false;
         self.settings.decks[deck].active_hot_cue_slot = None;
-        self.telemetry
-            .set_deck(deck, self.settings.decks[deck].generation, 0.0, false);
+        self.settings.decks[deck].loop_active = false;
+        self.settings.decks[deck].loop_release_pending = false;
+        self.telemetry.loop_active[deck].store(false, Ordering::Release);
+        self.telemetry.loop_release_pending[deck].store(false, Ordering::Release);
+        self.telemetry.set_deck(
+            deck,
+            self.settings.decks[deck].generation,
+            0.0,
+            false,
+            false,
+            false,
+        );
         Ok(self.snapshot())
     }
 
@@ -304,6 +335,133 @@ impl Engine {
         self.seek_internal(deck, cue.position_seconds, Some(slot))
     }
 
+    pub fn set_loop_in(
+        &mut self,
+        deck: usize,
+        expected_source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        validate_deck(deck)?;
+        let (generation, duration_seconds) =
+            self.validate_manual_loop_track(deck, expected_source_track_id)?;
+        let loop_in_seconds = self.current_position_seconds(deck)?;
+        let loop_out_seconds = self.settings.decks[deck].loop_out_seconds;
+        if let Some(loop_out_seconds) = loop_out_seconds {
+            validate_manual_loop(loop_in_seconds, loop_out_seconds, duration_seconds)?;
+            self.enqueue(AudioCommand::SetManualLoop {
+                deck,
+                generation,
+                loop_in_seconds,
+                loop_out_seconds,
+            })?;
+        }
+        let settings = &mut self.settings.decks[deck];
+        settings.loop_in_seconds = Some(loop_in_seconds);
+        if let Some(loop_out_seconds) = settings.loop_out_seconds {
+            settings.loop_size_seconds = loop_out_seconds - loop_in_seconds;
+        }
+        settings.loop_active = settings.loop_out_seconds.is_some();
+        settings.loop_release_pending = false;
+        self.telemetry.loop_active[deck].store(settings.loop_active, Ordering::Release);
+        self.telemetry.loop_release_pending[deck].store(false, Ordering::Release);
+        Ok(self.snapshot())
+    }
+
+    pub fn set_loop_out(
+        &mut self,
+        deck: usize,
+        expected_source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        validate_deck(deck)?;
+        let (generation, duration_seconds) =
+            self.validate_manual_loop_track(deck, expected_source_track_id)?;
+        let loop_out_seconds = self.current_position_seconds(deck)?;
+        let settings = &self.settings.decks[deck];
+        let Some(loop_in_seconds) = settings.loop_in_seconds else {
+            return Err("Set Loop In before setting Loop Out".to_string());
+        };
+        validate_manual_loop(loop_in_seconds, loop_out_seconds, duration_seconds)?;
+        self.enqueue(AudioCommand::SetManualLoop {
+            deck,
+            generation,
+            loop_in_seconds,
+            loop_out_seconds,
+        })?;
+        let settings = &mut self.settings.decks[deck];
+        settings.loop_out_seconds = Some(loop_out_seconds);
+        settings.loop_size_seconds = loop_out_seconds - loop_in_seconds;
+        settings.loop_active = true;
+        settings.loop_release_pending = false;
+        self.telemetry.loop_active[deck].store(true, Ordering::Release);
+        self.telemetry.loop_release_pending[deck].store(false, Ordering::Release);
+        Ok(self.snapshot())
+    }
+
+    pub fn set_loop_size(
+        &mut self,
+        deck: usize,
+        expected_source_track_id: &str,
+        size_seconds: f64,
+    ) -> Result<MixerSnapshot, String> {
+        validate_deck(deck)?;
+        let (generation, duration_seconds) =
+            self.validate_manual_loop_track(deck, expected_source_track_id)?;
+        if !size_seconds.is_finite() {
+            return Err("Loop size must be a finite number of seconds".to_string());
+        }
+        let loop_in_seconds = self.current_position_seconds(deck)?;
+        let loop_out_seconds = loop_in_seconds + size_seconds;
+        validate_manual_loop(loop_in_seconds, loop_out_seconds, duration_seconds)?;
+        self.enqueue(AudioCommand::SetManualLoop {
+            deck,
+            generation,
+            loop_in_seconds,
+            loop_out_seconds,
+        })?;
+        let settings = &mut self.settings.decks[deck];
+        settings.loop_in_seconds = Some(loop_in_seconds);
+        settings.loop_out_seconds = Some(loop_out_seconds);
+        settings.loop_size_seconds = size_seconds;
+        settings.loop_active = true;
+        settings.loop_release_pending = false;
+        self.telemetry.loop_active[deck].store(true, Ordering::Release);
+        self.telemetry.loop_release_pending[deck].store(false, Ordering::Release);
+        Ok(self.snapshot())
+    }
+
+    pub fn release_loop(
+        &mut self,
+        deck: usize,
+        expected_source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        validate_deck(deck)?;
+        let (generation, _) = self.validate_manual_loop_track(deck, expected_source_track_id)?;
+        let settings = &self.settings.decks[deck];
+        if settings.loop_in_seconds.is_none() || settings.loop_out_seconds.is_none() {
+            return Err("Set a loop region before releasing it".to_string());
+        }
+        let loop_active = if self.telemetry.track_generation[deck].load(Ordering::Acquire)
+            == settings.generation
+        {
+            self.telemetry.loop_active[deck].load(Ordering::Acquire)
+        } else {
+            settings.loop_active
+        };
+        if !loop_active {
+            return Err("This deck has no active loop to release".to_string());
+        }
+        self.enqueue(AudioCommand::ReleaseManualLoop { deck, generation })?;
+        let playing = self.current_playing(deck);
+        let settings = &mut self.settings.decks[deck];
+        settings.loop_release_pending = playing;
+        if !playing {
+            settings.loop_active = false;
+        }
+        self.telemetry.loop_active[deck].store(settings.loop_active, Ordering::Release);
+        self.telemetry.loop_release_pending[deck]
+            .store(settings.loop_release_pending, Ordering::Release);
+        Ok(self.snapshot())
+    }
+
     fn seek_internal(
         &mut self,
         deck: usize,
@@ -323,6 +481,12 @@ impl Engine {
         };
         let position = position_seconds.clamp(0.0, track.duration_seconds);
         let generation = self.settings.decks[deck].generation;
+        let loop_should_deactivate = self.settings.decks[deck]
+            .loop_in_seconds
+            .zip(self.settings.decks[deck].loop_out_seconds)
+            .is_some_and(|(loop_in_seconds, loop_out_seconds)| {
+                position < loop_in_seconds || position >= loop_out_seconds
+            });
         self.enqueue(AudioCommand::Seek {
             deck,
             generation,
@@ -330,8 +494,52 @@ impl Engine {
         })?;
         self.settings.decks[deck].position_seconds = position;
         self.settings.decks[deck].active_hot_cue_slot = active_hot_cue_slot;
+        if loop_should_deactivate {
+            self.settings.decks[deck].loop_active = false;
+            self.settings.decks[deck].loop_release_pending = false;
+            self.telemetry.loop_active[deck].store(false, Ordering::Release);
+            self.telemetry.loop_release_pending[deck].store(false, Ordering::Release);
+        }
         self.telemetry.position_seconds[deck].store(position.to_bits(), Ordering::Release);
         Ok(self.snapshot())
+    }
+
+    fn current_position_seconds(&self, deck: usize) -> Result<f64, String> {
+        let settings = &self.settings.decks[deck];
+        let Some(track) = &settings.track else {
+            return Err("Load a WAV into this deck before setting a loop".to_string());
+        };
+        let observed_generation = self.telemetry.track_generation[deck].load(Ordering::Acquire);
+        let position_seconds = if observed_generation == settings.generation {
+            f64::from_bits(self.telemetry.position_seconds[deck].load(Ordering::Acquire))
+        } else {
+            settings.position_seconds
+        };
+        Ok(position_seconds.clamp(0.0, track.duration_seconds))
+    }
+
+    fn current_playing(&self, deck: usize) -> bool {
+        let settings = &self.settings.decks[deck];
+        if self.telemetry.track_generation[deck].load(Ordering::Acquire) == settings.generation {
+            self.telemetry.playing[deck].load(Ordering::Acquire)
+        } else {
+            settings.playing
+        }
+    }
+
+    fn validate_manual_loop_track(
+        &self,
+        deck: usize,
+        expected_source_track_id: &str,
+    ) -> Result<(u64, f64), String> {
+        let settings = &self.settings.decks[deck];
+        let Some(track) = &settings.track else {
+            return Err("Load a WAV into this deck before using manual loops".to_string());
+        };
+        if track.source_track_id != expected_source_track_id {
+            return Err("This deck changed tracks. Select the loop control again.".to_string());
+        }
+        Ok((settings.generation, track.duration_seconds))
     }
 
     pub fn set_control(
@@ -423,6 +631,11 @@ impl Engine {
                 high: settings.high,
                 hot_cues: settings.hot_cues.clone(),
                 hot_cue_warning: settings.hot_cue_warning.clone(),
+                loop_in_seconds: settings.loop_in_seconds,
+                loop_out_seconds: settings.loop_out_seconds,
+                loop_size_seconds: settings.loop_size_seconds,
+                loop_active: settings.loop_active,
+                loop_release_pending: settings.loop_release_pending,
                 ..DeckSnapshot::default()
             };
         };
@@ -459,6 +672,19 @@ impl Engine {
             active_hot_cue_slot: settings
                 .active_hot_cue_slot
                 .filter(|slot| settings.hot_cues.get(*slot).is_some_and(Option::is_some)),
+            loop_in_seconds: settings.loop_in_seconds,
+            loop_out_seconds: settings.loop_out_seconds,
+            loop_size_seconds: settings.loop_size_seconds,
+            loop_active: if observed_generation == settings.generation {
+                self.telemetry.loop_active[deck].load(Ordering::Acquire)
+            } else {
+                settings.loop_active
+            },
+            loop_release_pending: if observed_generation == settings.generation {
+                self.telemetry.loop_release_pending[deck].load(Ordering::Acquire)
+            } else {
+                settings.loop_release_pending
+            },
         }
     }
 
@@ -569,6 +795,10 @@ impl Engine {
                 if self.telemetry.track_generation[deck].load(Ordering::Acquire) == generation {
                     self.settings.decks[deck].position_seconds = f64::from_bits(position);
                     self.settings.decks[deck].playing = playing;
+                    self.settings.decks[deck].loop_active =
+                        self.telemetry.loop_active[deck].load(Ordering::Acquire);
+                    self.settings.decks[deck].loop_release_pending =
+                        self.telemetry.loop_release_pending[deck].load(Ordering::Acquire);
                 }
             }
         }
@@ -695,6 +925,16 @@ enum AudioCommand {
         generation: u64,
         position: f64,
     },
+    SetManualLoop {
+        deck: usize,
+        generation: u64,
+        loop_in_seconds: f64,
+        loop_out_seconds: f64,
+    },
+    ReleaseManualLoop {
+        deck: usize,
+        generation: u64,
+    },
     SetDeckControls {
         deck: usize,
         gain: f32,
@@ -714,10 +954,34 @@ struct PlaybackDeck {
     playing: bool,
     gain: f32,
     eq: EqBank,
+    manual_loop: Option<PlaybackLoop>,
+}
+
+#[derive(Clone, Copy)]
+struct PlaybackLoop {
+    loop_in_frames: f64,
+    loop_out_frames: f64,
+    active: bool,
+    release_pending: bool,
 }
 
 impl PlaybackDeck {
     fn new(settings: &DeckSettings, sample_rate: u32) -> Self {
+        let manual_loop = match (
+            settings
+                .loop_in_seconds
+                .zip(settings.loop_out_seconds)
+                .filter(|_| settings.loop_active),
+            settings.track.as_ref(),
+        ) {
+            (Some((loop_in_seconds, loop_out_seconds)), Some(track)) => Some(PlaybackLoop {
+                loop_in_frames: loop_in_seconds * f64::from(track.sample_rate),
+                loop_out_frames: loop_out_seconds * f64::from(track.sample_rate),
+                active: true,
+                release_pending: settings.loop_release_pending,
+            }),
+            _ => None,
+        };
         Self {
             track: settings.track.clone(),
             generation: settings.generation,
@@ -737,6 +1001,7 @@ impl PlaybackDeck {
                 settings.mid,
                 settings.high,
             )),
+            manual_loop,
         }
     }
 }
@@ -794,6 +1059,7 @@ impl PlaybackState {
                 deck_state.generation = generation;
                 deck_state.position_frames = 0.0;
                 deck_state.playing = false;
+                deck_state.manual_loop = None;
                 Ok(())
             }
             AudioCommand::SetPlaying { deck, playing } => {
@@ -803,6 +1069,10 @@ impl PlaybackState {
             AudioCommand::Stop { deck } => {
                 self.decks[deck].playing = false;
                 self.decks[deck].position_frames = 0.0;
+                if let Some(manual_loop) = &mut self.decks[deck].manual_loop {
+                    manual_loop.active = false;
+                    manual_loop.release_pending = false;
+                }
                 Ok(())
             }
             AudioCommand::Seek {
@@ -815,6 +1085,49 @@ impl PlaybackState {
                     if let Some(track) = &deck_state.track {
                         deck_state.position_frames = position.clamp(0.0, track.duration_seconds)
                             * f64::from(track.sample_rate);
+                        if let Some(manual_loop) = &mut deck_state.manual_loop {
+                            if deck_state.position_frames < manual_loop.loop_in_frames
+                                || deck_state.position_frames >= manual_loop.loop_out_frames
+                            {
+                                manual_loop.active = false;
+                                manual_loop.release_pending = false;
+                            }
+                        }
+                    }
+                }
+                Ok(())
+            }
+            AudioCommand::SetManualLoop {
+                deck,
+                generation,
+                loop_in_seconds,
+                loop_out_seconds,
+            } => {
+                let deck_state = &mut self.decks[deck];
+                if deck_state.generation == generation {
+                    if let Some(track) = &deck_state.track {
+                        deck_state.manual_loop = Some(PlaybackLoop {
+                            loop_in_frames: loop_in_seconds * f64::from(track.sample_rate),
+                            loop_out_frames: loop_out_seconds * f64::from(track.sample_rate),
+                            active: true,
+                            release_pending: false,
+                        });
+                    }
+                }
+                Ok(())
+            }
+            AudioCommand::ReleaseManualLoop { deck, generation } => {
+                let deck_state = &mut self.decks[deck];
+                if deck_state.generation == generation {
+                    if let Some(manual_loop) = &mut deck_state.manual_loop {
+                        if manual_loop.active {
+                            if deck_state.playing {
+                                manual_loop.release_pending = true;
+                            } else {
+                                manual_loop.active = false;
+                                manual_loop.release_pending = false;
+                            }
+                        }
                     }
                 }
                 Ok(())
@@ -847,15 +1160,27 @@ struct Telemetry {
     position_seconds: [AtomicU64; 2],
     playing: [AtomicBool; 2],
     track_generation: [AtomicU64; 2],
+    loop_active: [AtomicBool; 2],
+    loop_release_pending: [AtomicBool; 2],
     master_meter: AtomicU32,
     output_error: AtomicBool,
     failure_logged: AtomicBool,
 }
 
 impl Telemetry {
-    fn set_deck(&self, deck: usize, generation: u64, position_seconds: f64, playing: bool) {
+    fn set_deck(
+        &self,
+        deck: usize,
+        generation: u64,
+        position_seconds: f64,
+        playing: bool,
+        loop_active: bool,
+        loop_release_pending: bool,
+    ) {
         self.position_seconds[deck].store(position_seconds.to_bits(), Ordering::Release);
         self.playing[deck].store(playing, Ordering::Release);
+        self.loop_active[deck].store(loop_active, Ordering::Release);
+        self.loop_release_pending[deck].store(loop_release_pending, Ordering::Release);
         self.track_generation[deck].store(generation, Ordering::Release);
     }
 }
@@ -944,7 +1269,20 @@ fn render<T>(
             .as_ref()
             .map(|track| deck_state.position_frames / f64::from(track.sample_rate))
             .unwrap_or(0.0);
-        telemetry.set_deck(deck, deck_state.generation, position, deck_state.playing);
+        let loop_active = deck_state
+            .manual_loop
+            .is_some_and(|manual_loop| manual_loop.active);
+        let loop_release_pending = deck_state
+            .manual_loop
+            .is_some_and(|manual_loop| manual_loop.release_pending);
+        telemetry.set_deck(
+            deck,
+            deck_state.generation,
+            position,
+            deck_state.playing,
+            loop_active,
+            loop_release_pending,
+        );
     }
     output[frame_count * channels..].fill(T::EQUILIBRIUM);
 }
@@ -978,12 +1316,46 @@ fn next_deck_frame(deck: &mut PlaybackDeck, output_sample_rate: f64) -> StereoFr
         deck.playing = false;
         return StereoFrame::default();
     };
+    if let Some(manual_loop) = &mut deck.manual_loop {
+        if manual_loop.active && deck.position_frames >= manual_loop.loop_out_frames {
+            if manual_loop.release_pending {
+                manual_loop.active = false;
+                manual_loop.release_pending = false;
+            } else {
+                let loop_length_frames = manual_loop.loop_out_frames - manual_loop.loop_in_frames;
+                if loop_length_frames > 0.0 {
+                    let overshoot_frames = deck.position_frames - manual_loop.loop_out_frames;
+                    deck.position_frames = manual_loop.loop_in_frames
+                        + overshoot_frames.rem_euclid(loop_length_frames);
+                }
+            }
+        }
+    }
     let Some(frame) = sample_track(track, deck.position_frames) else {
         deck.playing = false;
         return StereoFrame::default();
     };
     deck.position_frames += f64::from(track.sample_rate) / output_sample_rate;
-    if deck.position_frames >= track.frames.len() as f64 {
+    let reached_loop_out = deck.manual_loop.is_some_and(|manual_loop| {
+        manual_loop.active && deck.position_frames >= manual_loop.loop_out_frames
+    });
+    if reached_loop_out {
+        if let Some(manual_loop) = &mut deck.manual_loop {
+            if manual_loop.release_pending {
+                manual_loop.active = false;
+                manual_loop.release_pending = false;
+            } else {
+                let loop_length_frames = manual_loop.loop_out_frames - manual_loop.loop_in_frames;
+                let overshoot_frames = deck.position_frames - manual_loop.loop_out_frames;
+                deck.position_frames =
+                    manual_loop.loop_in_frames + overshoot_frames.rem_euclid(loop_length_frames);
+            }
+        }
+    }
+    let loop_is_active = deck
+        .manual_loop
+        .is_some_and(|manual_loop| manual_loop.active);
+    if !loop_is_active && deck.position_frames >= track.frames.len() as f64 {
         deck.playing = false;
         deck.position_frames = track.frames.len() as f64;
     }
@@ -1227,6 +1599,165 @@ mod tests {
     }
 
     #[test]
+    fn manual_loop_size_is_track_bound_and_does_not_change_the_other_deck() {
+        let (mut engine, mut commands) = engine_with_command_queue(4, [true, true], [false; 2]);
+        engine.telemetry.position_seconds[0].store(0.25_f64.to_bits(), Ordering::Release);
+
+        let snapshot = engine
+            .set_loop_size(0, TEST_SOURCE_TRACK_ID, 0.5)
+            .expect("a valid loop fits the source track");
+
+        assert_eq!(snapshot.deck_a.loop_in_seconds, Some(0.25));
+        assert_eq!(snapshot.deck_a.loop_out_seconds, Some(0.75));
+        assert_eq!(snapshot.deck_a.loop_size_seconds, 0.5);
+        assert!(snapshot.deck_a.loop_active);
+        assert_eq!(snapshot.deck_b.loop_in_seconds, None);
+        assert!(!snapshot.deck_b.loop_active);
+        assert!(matches!(
+            commands.pop(),
+            Ok(AudioCommand::SetManualLoop {
+                deck: 0,
+                generation: 1,
+                loop_in_seconds: 0.25,
+                loop_out_seconds: 0.75,
+            })
+        ));
+    }
+
+    #[test]
+    fn manual_loop_markers_reject_missing_stale_and_invalid_commands() {
+        let (mut engine, mut commands) = engine_with_command_queue(8, [true, false], [false; 2]);
+
+        assert!(engine.set_loop_out(0, TEST_SOURCE_TRACK_ID).is_err());
+        assert!(engine.set_loop_in(1, TEST_SOURCE_TRACK_ID).is_err());
+        assert!(engine.set_loop_in(0, "sha256:stale").is_err());
+        assert!(engine
+            .set_loop_size(0, TEST_SOURCE_TRACK_ID, f64::NAN)
+            .is_err());
+        assert!(commands.pop().is_err());
+
+        engine.telemetry.position_seconds[0].store(0.2_f64.to_bits(), Ordering::Release);
+        let loop_in = engine.set_loop_in(0, TEST_SOURCE_TRACK_ID).unwrap();
+        assert_eq!(loop_in.deck_a.loop_in_seconds, Some(0.2));
+        engine.telemetry.position_seconds[0].store(0.8_f64.to_bits(), Ordering::Release);
+        let loop_out = engine.set_loop_out(0, TEST_SOURCE_TRACK_ID).unwrap();
+        assert_eq!(loop_out.deck_a.loop_out_seconds, Some(0.8));
+        assert!((loop_out.deck_a.loop_size_seconds - 0.6).abs() < f64::EPSILON);
+        assert!(loop_out.deck_a.loop_active);
+    }
+
+    #[test]
+    fn full_audio_queue_rejects_manual_loop_without_mutating_snapshot() {
+        let (mut engine, _commands) = engine_with_command_queue(1, [true, false], [false; 2]);
+        engine
+            .enqueue(AudioCommand::Stop { deck: 0 })
+            .expect("fill the bounded audio queue");
+        let before = engine.snapshot();
+
+        let error = engine
+            .set_loop_size(0, TEST_SOURCE_TRACK_ID, 0.25)
+            .expect_err("a full queue must report that the loop was not applied");
+
+        assert!(error.contains("queue is full"));
+        let after = engine.snapshot();
+        assert_eq!(after.deck_a.loop_in_seconds, before.deck_a.loop_in_seconds);
+        assert_eq!(
+            after.deck_a.loop_out_seconds,
+            before.deck_a.loop_out_seconds
+        );
+        assert!(!after.deck_a.loop_active);
+    }
+
+    #[test]
+    fn callback_wraps_at_loop_out_before_reading_the_next_track_frame() {
+        let mut settings = EngineSettings::default();
+        settings.decks[0].track = Some(test_track(
+            &(0..10).map(|i| i as f32 / 10.0).collect::<Vec<_>>(),
+        ));
+        settings.decks[0].playing = true;
+        let mut playback = PlaybackState::new(&settings, 48_000);
+        playback.decks[0].position_frames = 5.0;
+        playback.decks[0].manual_loop = Some(PlaybackLoop {
+            loop_in_frames: 2.0,
+            loop_out_frames: 5.0,
+            active: true,
+            release_pending: false,
+        });
+
+        let frame = next_deck_frame(&mut playback.decks[0], 48_000.0);
+
+        assert!(frame.left > 0.0);
+        assert_eq!(playback.decks[0].position_frames, 3.0);
+        assert!(playback.decks[0].playing);
+    }
+
+    #[test]
+    fn callback_releases_a_playing_loop_after_its_next_boundary() {
+        let mut settings = EngineSettings::default();
+        settings.decks[0].track = Some(test_track(&[0.1; 10]));
+        settings.decks[0].playing = true;
+        let mut playback = PlaybackState::new(&settings, 48_000);
+        playback.decks[0].position_frames = 4.0;
+        playback.decks[0].manual_loop = Some(PlaybackLoop {
+            loop_in_frames: 2.0,
+            loop_out_frames: 5.0,
+            active: true,
+            release_pending: true,
+        });
+
+        next_deck_frame(&mut playback.decks[0], 48_000.0);
+
+        let manual_loop = playback.decks[0].manual_loop.unwrap();
+        assert!(!manual_loop.active);
+        assert!(!manual_loop.release_pending);
+        assert_eq!(playback.decks[0].position_frames, 5.0);
+        assert!(playback.decks[0].playing);
+    }
+
+    #[test]
+    fn releasing_a_paused_loop_uses_current_engine_play_state() {
+        let (mut engine, mut commands) = engine_with_command_queue(4, [true, false], [false; 2]);
+        engine.settings.decks[0].playing = true;
+        engine.settings.decks[0].loop_in_seconds = Some(0.2);
+        engine.settings.decks[0].loop_out_seconds = Some(0.7);
+        engine.settings.decks[0].loop_active = true;
+        engine.telemetry.loop_active[0].store(true, Ordering::Release);
+
+        let snapshot = engine.release_loop(0, TEST_SOURCE_TRACK_ID).unwrap();
+
+        assert!(!snapshot.deck_a.loop_active);
+        assert!(!snapshot.deck_a.loop_release_pending);
+        assert!(matches!(
+            commands.pop(),
+            Ok(AudioCommand::ReleaseManualLoop {
+                deck: 0,
+                generation: 1
+            })
+        ));
+    }
+
+    #[test]
+    fn releasing_a_playing_loop_marks_release_pending_until_callback_boundary() {
+        let (mut engine, mut commands) = engine_with_command_queue(4, [true, false], [true, false]);
+        engine.settings.decks[0].loop_in_seconds = Some(0.2);
+        engine.settings.decks[0].loop_out_seconds = Some(0.7);
+        engine.settings.decks[0].loop_active = true;
+        engine.telemetry.loop_active[0].store(true, Ordering::Release);
+
+        let snapshot = engine.release_loop(0, TEST_SOURCE_TRACK_ID).unwrap();
+
+        assert!(snapshot.deck_a.loop_active);
+        assert!(snapshot.deck_a.loop_release_pending);
+        assert!(matches!(
+            commands.pop(),
+            Ok(AudioCommand::ReleaseManualLoop {
+                deck: 0,
+                generation: 1
+            })
+        ));
+    }
+
+    #[test]
     fn full_audio_queue_reports_failed_cue_trigger_without_changing_snapshot() {
         let (mut engine, _commands) = engine_with_command_queue(1, [true, false], [false; 2]);
         engine
@@ -1262,6 +1793,29 @@ mod tests {
             .is_ok());
 
         assert_eq!(playback.decks[0].position_frames, 0.0);
+    }
+
+    #[test]
+    fn callback_ignores_a_manual_loop_for_a_replaced_track_generation() {
+        let mut settings = EngineSettings::default();
+        settings.decks[0].track = Some(test_track(&[0.25; 48_000]));
+        settings.decks[0].generation = 9;
+        let mut playback = PlaybackState::new(&settings, 48_000);
+        let (mut retired_tracks, _retired_consumer) = RingBuffer::new(1);
+
+        assert!(playback
+            .apply(
+                AudioCommand::SetManualLoop {
+                    deck: 0,
+                    generation: 8,
+                    loop_in_seconds: 0.1,
+                    loop_out_seconds: 0.6,
+                },
+                &mut retired_tracks,
+            )
+            .is_ok());
+
+        assert!(playback.decks[0].manual_loop.is_none());
     }
 
     #[test]

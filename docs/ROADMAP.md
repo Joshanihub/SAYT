@@ -3,7 +3,7 @@
 **Status:** PROPOSED<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-27<br>
-**Version:** 0.2.2
+**Version:** 0.2.3
 
 Milestone dependencies and full M0–M10 exit gates are maintained in [`MASTER_IMPLEMENTATION_ROADMAP.md`](MASTER_IMPLEMENTATION_ROADMAP.md). This file remains the concise current-milestone view.
 
@@ -11,7 +11,7 @@ Milestone dependencies and full M0–M10 exit gates are maintained in [`MASTER_I
 
 **Status:** In progress. The Rust engine, decoder, EQ, two-deck mixer, Tauri commands, React controls, and reviewed audio-validation toolkit are implemented in source. Local Rust, frontend, and Python checks passed; push and PR cross-platform CI passed for code commit `853e51477e56593471c7126378d290524be391af`. The owner reports PASS for core Windows fixture loading, transport, mixer/EQ, device refresh/retry, and shutdown checks, but per-test details and physical reproduction are incomplete. Runtime viewport captures exist at four sizes. No-device behavior, failed-switch recovery, unsupported-file interaction, and non-Windows hardware playback remain open.
 
-An owner-approved DJ expansion slice is also active on `feat/dj-command-system`: Hot Cues are implemented through the existing Rust engine, Tauri actor and shared command dispatcher. Local automated checks and a Windows desktop release build pass. Fixture cueing and restart persistence still need a controlled desktop run; M1 remains open.
+An owner-approved DJ expansion slice is also active on `feat/dj-command-system`: Hot Cues and Manual Loops use the existing Rust engine, Tauri actor and shared command dispatcher. Hot Cue and loop automated checks pass locally; exact-head remote CI and loop runtime/listening evidence remain pending. The owner-approved Hot Cue fixture/restart run also remains pending; M1 remains open.
 
 ### M1 exit gate
 
@@ -25,7 +25,7 @@ An owner-approved DJ expansion slice is also active on `feat/dj-command-system`:
 
 ## Next milestones
 
-1. **Current DJ slice:** complete the two-fixture Hot Cue runtime/restart test on `feat/dj-command-system`, then implement Manual Loops (in/out, sizing, release) with engine tests. This explicit owner priority runs alongside M1 closeout and does not imply that M1 is accepted.
+1. **Current DJ slice:** complete the approved two-fixture Hot Cue runtime/restart test and Manual Loop runtime/listening checks on `feat/dj-command-system`; then continue to Loop Roll and Beat Jump as separate engine-backed behaviors. This explicit owner priority runs alongside M1 closeout and does not imply that M1 is accepted.
 2. **M1 closeout:** record detailed Windows picker/Tauri outcomes and complete the no-device, unsupported-WAV, and failed-switch checks. Add macOS/Linux hardware evidence before claiming cross-platform playback.
 3. **M2 — reliability:** measure callback load and dropouts; implement device loss/recovery and a tested shutdown path; use a deterministic offline renderer and failure controls before longer soak runs.
 4. **M3 — library and preparation:** add local metadata persistence and migration once the owner approves the schema and data-retention behavior; keep the first library import local and reversible.

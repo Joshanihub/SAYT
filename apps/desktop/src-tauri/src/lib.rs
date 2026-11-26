@@ -147,6 +147,43 @@ fn set_hot_cue_color(
     audio.set_hot_cue_color(deck, slot, &source_track_id, color)
 }
 
+#[tauri::command]
+fn set_loop_in(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    source_track_id: String,
+) -> Result<MixerSnapshot, String> {
+    audio.set_loop_in(deck, &source_track_id)
+}
+
+#[tauri::command]
+fn set_loop_out(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    source_track_id: String,
+) -> Result<MixerSnapshot, String> {
+    audio.set_loop_out(deck, &source_track_id)
+}
+
+#[tauri::command]
+fn set_loop_size(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    source_track_id: String,
+    size_seconds: f64,
+) -> Result<MixerSnapshot, String> {
+    audio.set_loop_size(deck, &source_track_id, size_seconds)
+}
+
+#[tauri::command]
+fn release_loop(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    source_track_id: String,
+) -> Result<MixerSnapshot, String> {
+    audio.release_loop(deck, &source_track_id)
+}
+
 /// Starts the desktop shell and reports startup or runtime failures.
 pub fn run() -> Result<(), Box<dyn Error>> {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
@@ -183,7 +220,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             trigger_hot_cue,
             clear_hot_cue,
             rename_hot_cue,
-            set_hot_cue_color
+            set_hot_cue_color,
+            set_loop_in,
+            set_loop_out,
+            set_loop_size,
+            release_loop
         ))
         .run(tauri::generate_context!())
     {

@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { M1_MATERIAL_ICON_NAMES, MaterialIcon } from "./MaterialIcon";
 import {
   createHotCueCommand,
+  createManualLoopCommand,
   createShortcutCommand,
   getDefaultShortcutBindings,
   type CommandDispatcher,
@@ -20,6 +21,7 @@ import {
   AudioSettings,
   DeckPanel,
   HotCueControls,
+  ManualLoopControls,
   invokeNativeTrackPicker,
   LibraryEmptyState,
   MixerConsole,
@@ -80,6 +82,11 @@ const emptyDeck = {
   hot_cues: Array.from({ length: 8 }, () => null),
   hot_cue_warning: null,
   active_hot_cue_slot: null,
+  loop_in_seconds: null,
+  loop_out_seconds: null,
+  loop_size_seconds: 1,
+  loop_active: false,
+  loop_release_pending: false,
 };
 
 const loadedDeck = {
@@ -129,7 +136,12 @@ describe("M1 desktop workspace", () => {
     expect(markup).toContain("DECK B");
     expect(markup).toContain("Quick crate");
     expect(markup).toContain("Crossfader");
-    expect(markup.match(/aria-label="Deck [AB] hot cues"/g)).toHaveLength(2);
+    expect(
+      markup.match(/aria-label="Deck [AB] performance pads"/g),
+    ).toHaveLength(2);
+    expect(
+      markup.match(/aria-label="Deck [AB] performance mode"/g),
+    ).toHaveLength(2);
     expect(markup).toContain('aria-label="Master output peak level"');
     expect(markup).toContain(
       'disabled="" title="Bridge is not implemented in M1"',
@@ -260,6 +272,74 @@ describe("M1 desktop workspace", () => {
     expect(markup).toContain("hot-cue-color-cyan is-assigned is-active");
     expect(markup).toContain("0:02");
     expect(markup).toContain("0:05");
+  });
+
+  it("renders honest manual-loop time, state, preset sizes and load gating", () => {
+    const emptyMarkup = renderToStaticMarkup(
+      <ManualLoopControls
+        deck={emptyDeck}
+        deckIndex={0}
+        loading={false}
+        shortcutText={testShortcutText}
+        onCommand={() => undefined}
+      />,
+    );
+    const activeMarkup = renderToStaticMarkup(
+      <ManualLoopControls
+        deck={{
+          ...loadedDeck,
+          loop_in_seconds: 0.25,
+          loop_out_seconds: 0.75,
+          loop_size_seconds: 0.5,
+          loop_active: true,
+          loop_release_pending: true,
+        }}
+        deckIndex={1}
+        loading={false}
+        shortcutText={testShortcutText}
+        onCommand={() => undefined}
+      />,
+    );
+
+    expect(emptyMarkup).toContain(
+      'aria-label="Set Loop In on Deck A at the current position"',
+    );
+    expect(emptyMarkup.match(/disabled=""/g)).toHaveLength(9);
+    expect(activeMarkup).toContain("0:00.250");
+    expect(activeMarkup).toContain("0:00.750");
+    expect(activeMarkup).toContain("Releasing at loop boundary");
+    expect(activeMarkup).toContain('aria-pressed="true"');
+    expect(activeMarkup).toContain(
+      "Sizes use seconds because beatgrid and BPM analysis are not available yet.",
+    );
+  });
+
+  it("routes manual-loop pad actions through the typed dispatcher with source identity", () => {
+    const dispatch = vi.fn();
+    const tree = ManualLoopControls({
+      deck: loadedDeck,
+      deckIndex: 1,
+      loading: false,
+      shortcutText: testShortcutText,
+      onCommand: dispatch,
+    });
+    const elements = findElements(tree);
+
+    findByLabel(
+      elements,
+      "Set 0.25 second loop from the current position on Deck B",
+    ).props.onClick?.();
+    expect(dispatch).toHaveBeenLastCalledWith(
+      createManualLoopCommand("setSize", 1, loadedDeck.source_track_id, 0.25),
+    );
+
+    findByLabel(
+      elements,
+      "Set Loop In on Deck B at the current position",
+    ).props.onClick?.();
+    expect(dispatch).toHaveBeenLastCalledWith(
+      createManualLoopCommand("setIn", 1, loadedDeck.source_track_id),
+    );
   });
 
   it.each<["set" | "trigger" | "clear", HotCueSlot]>([

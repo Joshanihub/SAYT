@@ -34,6 +34,8 @@ The defaults are SAYT-authored. On Windows and Linux, **Primary** means **Ctrl**
 | Open DJ / Library / Settings workspace  | Primary+Alt+1 / Primary+Alt+2 / Primary+Alt+3                 |
 | Retry / refresh audio outputs           | Primary+Alt+R / Primary+Alt+Shift+R                           |
 | Open shortcut dialog                    | F1                                                            |
+| Set Loop In / Loop Out on focused deck  | Alt+I / Alt+O                                                 |
+| Release focused deck loop               | Alt+Shift+O                                                   |
 
 ## Limits and troubleshooting
 
@@ -42,7 +44,8 @@ The defaults are SAYT-authored. On Windows and Linux, **Primary** means **Ctrl**
 - Text fields, select menus, content-editable regions and range controls retain normal input behavior. A focused button or link retains native Space activation.
 - If stored mappings are corrupt or from an unsupported version, SAYT falls back to built-in mappings and displays a warning. Open the dialog and reset defaults if needed.
 - If a mapping will not save, check that local app storage is available. The current mapping remains active only after a successful save.
-- Shortcuts do not provide system-wide hotkeys, cue points, loops, pitch/sync, effects, sampler, recording, library search or controller input. Those actions are not implemented in this slice.
+- Loop shortcuts operate the focused deck. Loop In marks its current engine position; Loop Out must follow Loop In. Release exits at the next boundary while playing and immediately while paused. The Loop mode also exposes 250 ms, 500 ms, 1 s, 2 s, 4 s and 8 s pads, which start at the current playhead. These are seconds, not beat-synced sizes, and loop regions are not persisted.
+- Shortcuts do not provide system-wide hotkeys, Loop Roll, Beat Jump, pitch/sync, effects, sampler, recording, library search or controller input. Those actions are not implemented in this slice.
 
 ## Owner verification on Windows
 
@@ -62,7 +65,8 @@ The defaults are SAYT-authored. On Windows and Linux, **Primary** means **Ctrl**
 4. Use the crossfader and master shortcuts at low volume, then compare the visible control values with their range controls.
 5. Open F1, search for “crossfader,” remap a shortcut, close and reopen the dialog, and confirm the displayed mapping. Restart SAYT and confirm the remapping persists. Reset defaults and confirm the displayed mapping returns.
 6. Focus the search box and range controls and type/use arrows. Verify the keyboard handler does not replace normal input. Use Tab/Shift+Tab/Escape in the shortcut dialog.
-7. Close SAYT while playback is active and record whether the engine output stops and the process exits. Record device, viewport, OS, fixture, error text, and each result.
+7. In the Loop mode, use a size pad on one deck, confirm that deck's position wraps and the other deck continues independently; test Loop In/Out, release during playback, release while paused, seek outside, stop, and replacing the loaded track. Note whether the audible seam clicks. Repeat with the other deck.
+8. Close SAYT while playback is active and record whether the engine output stops and the process exits. Record device, viewport, OS, fixture, error text, and each result.
 
 This procedure can verify Windows command routing and visible engine state. It cannot establish macOS behavior, physical latency/dropouts, or audible quality without the relevant OS/device and human listening.
 

@@ -1,6 +1,7 @@
 export type DeckId = 0 | 1;
 export type HotCueSlot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type HotCueAction = "set" | "trigger" | "clear";
+export type ManualLoopAction = "setIn" | "setOut" | "setSize" | "release";
 export type HotCueColor =
   "coral" | "orange" | "amber" | "lime" | "cyan" | "blue" | "violet" | "pink";
 export type WorkspaceId = "dj" | "library" | "settings";
@@ -73,6 +74,14 @@ export type CommandPayloadMap = {
     sourceTrackId: string | null;
     color: HotCueColor;
   };
+  "loop.setIn": { deck: DeckId; sourceTrackId: string | null };
+  "loop.setOut": { deck: DeckId; sourceTrackId: string | null };
+  "loop.setSize": {
+    deck: DeckId;
+    sourceTrackId: string | null;
+    sizeSeconds: number;
+  };
+  "loop.release": { deck: DeckId; sourceTrackId: string | null };
   "mixer.setMaster": { value: number };
   "mixer.adjustMaster": { delta: number };
   "mixer.setCrossfader": { value: number };
@@ -348,6 +357,45 @@ const BASE_KEYBOARD_COMMANDS = [
     }),
   },
   {
+    id: "setLoopIn",
+    label: "Set loop in on focused deck",
+    description: "Set the manual loop start at the focused deck's position.",
+    category: "Manual loops",
+    context: "Focused deck",
+    defaultShortcut: { code: "KeyI", alt: true },
+    repeatable: false,
+    createCommand: ({ focusedDeck, focusedTrackId }) => ({
+      id: "loop.setIn",
+      payload: { deck: focusedDeck, sourceTrackId: focusedTrackId ?? null },
+    }),
+  },
+  {
+    id: "setLoopOut",
+    label: "Set loop out on focused deck",
+    description: "Set the manual loop end at the focused deck's position.",
+    category: "Manual loops",
+    context: "Focused deck",
+    defaultShortcut: { code: "KeyO", alt: true },
+    repeatable: false,
+    createCommand: ({ focusedDeck, focusedTrackId }) => ({
+      id: "loop.setOut",
+      payload: { deck: focusedDeck, sourceTrackId: focusedTrackId ?? null },
+    }),
+  },
+  {
+    id: "releaseLoop",
+    label: "Release focused deck loop",
+    description: "Exit the active loop at its next boundary while playing.",
+    category: "Manual loops",
+    context: "Focused deck",
+    defaultShortcut: { code: "KeyO", alt: true, shift: true },
+    repeatable: false,
+    createCommand: ({ focusedDeck, focusedTrackId }) => ({
+      id: "loop.release",
+      payload: { deck: focusedDeck, sourceTrackId: focusedTrackId ?? null },
+    }),
+  },
+  {
     id: "crossfaderLeft",
     label: "Move crossfader toward Deck A",
     description: "Move the crossfader left by one keyboard step.",
@@ -529,6 +577,34 @@ export function createHotCueCommand(
     case "clear":
       return { id: "cue.clear", payload };
   }
+}
+
+export function createManualLoopCommand(
+  action: ManualLoopAction,
+  deck: DeckId,
+  sourceTrackId: string | null,
+  sizeSeconds?: number,
+): AppCommand {
+  if (action === "setIn") {
+    return { id: "loop.setIn", payload: { deck, sourceTrackId } };
+  }
+  if (action === "setOut") {
+    return { id: "loop.setOut", payload: { deck, sourceTrackId } };
+  }
+  if (action === "release") {
+    return { id: "loop.release", payload: { deck, sourceTrackId } };
+  }
+  if (
+    sizeSeconds === undefined ||
+    !Number.isFinite(sizeSeconds) ||
+    sizeSeconds <= 0
+  ) {
+    throw new RangeError("Loop size commands require positive finite seconds");
+  }
+  return {
+    id: "loop.setSize",
+    payload: { deck, sourceTrackId, sizeSeconds },
+  };
 }
 
 function createHotCueShortcut(

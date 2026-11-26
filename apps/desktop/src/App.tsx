@@ -5,6 +5,7 @@ import { ShortcutOverlay } from "./ShortcutOverlay";
 import {
   DECK_CONTROL_LIMITS,
   createHotCueCommand,
+  createManualLoopCommand,
   detectShortcutPlatform,
   dispatchShortcutKeydown,
   formatShortcut,
@@ -21,6 +22,7 @@ import {
   type HotCueAction,
   type HotCueColor,
   type HotCueSlot,
+  type ManualLoopAction,
   type ShortcutBindings,
   type ShortcutBinding,
   type ShortcutContext,
@@ -47,6 +49,11 @@ type DeckSnapshot = {
   hot_cues: (HotCueSnapshot | null)[];
   hot_cue_warning: string | null;
   active_hot_cue_slot: number | null;
+  loop_in_seconds: number | null;
+  loop_out_seconds: number | null;
+  loop_size_seconds: number;
+  loop_active: boolean;
+  loop_release_pending: boolean;
 };
 
 type HotCueSnapshot = {
@@ -88,6 +95,11 @@ const emptyDeck = (): DeckSnapshot => ({
   hot_cues: Array.from({ length: 8 }, () => null),
   hot_cue_warning: null,
   active_hot_cue_slot: null,
+  loop_in_seconds: null,
+  loop_out_seconds: null,
+  loop_size_seconds: 1,
+  loop_active: false,
+  loop_release_pending: false,
 });
 
 const emptyMixer = (): MixerSnapshot => ({
@@ -107,6 +119,15 @@ function formatTime(seconds: number) {
   if (!Number.isFinite(seconds)) return "0:00";
   const whole = Math.max(0, Math.floor(seconds));
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
+function formatLoopTime(seconds: number | null) {
+  if (seconds === null || !Number.isFinite(seconds) || seconds < 0) {
+    return "—:—.---";
+  }
+  const wholeSeconds = Math.floor(seconds);
+  const milliseconds = Math.floor((seconds - wholeSeconds) * 1_000);
+  return `${Math.floor(wholeSeconds / 60)}:${String(wholeSeconds % 60).padStart(2, "0")}.${String(milliseconds).padStart(3, "0")}`;
 }
 
 function clampValue(value: number, minimum: number, maximum: number) {
@@ -177,6 +198,132 @@ const HOT_CUE_COLORS: readonly HotCueColor[] = [
 ];
 
 const HOT_CUE_SLOT_IDS: readonly HotCueSlot[] = [0, 1, 2, 3, 4, 5, 6, 7];
+const MANUAL_LOOP_SIZE_PRESETS_SECONDS = [0.25, 0.5, 1, 2, 4, 8] as const;
+
+export function ManualLoopControls({
+  deck,
+  deckIndex,
+  loading,
+  shortcutText,
+  onCommand,
+}: {
+  deck: DeckSnapshot;
+  deckIndex: DeckId;
+  loading: boolean;
+  shortcutText: (shortcutId: ShortcutId) => string;
+  onCommand: CommandDispatcher;
+}) {
+  const deckLabel = deckIndex === 0 ? "A" : "B";
+  const dispatchLoop = (action: ManualLoopAction, sizeSeconds?: number) =>
+    onCommand(
+      createManualLoopCommand(
+        action,
+        deckIndex,
+        deck.source_track_id,
+        sizeSeconds,
+      ),
+    );
+  const loopStatus = deck.loop_release_pending
+    ? "Releasing at loop boundary"
+    : deck.loop_active
+      ? "Loop active"
+      : "Loop inactive";
+  const loopLength =
+    deck.loop_in_seconds === null || deck.loop_out_seconds === null
+      ? null
+      : deck.loop_out_seconds - deck.loop_in_seconds;
+
+  return (
+    <div
+      className="manual-loop-controls"
+      aria-label={`Deck ${deckLabel} manual loop controls`}
+    >
+      <div
+        className="manual-loop-readout"
+        aria-label={`Deck ${deckLabel} loop region`}
+      >
+        <span>
+          <small>IN</small>
+          <output>{formatLoopTime(deck.loop_in_seconds)}</output>
+        </span>
+        <span>
+          <small>OUT</small>
+          <output>{formatLoopTime(deck.loop_out_seconds)}</output>
+        </span>
+        <span>
+          <small>LENGTH</small>
+          <output>{formatLoopTime(loopLength)}</output>
+        </span>
+        <span
+          className={`manual-loop-status${deck.loop_active ? " is-active" : ""}`}
+          role="status"
+        >
+          {loopStatus}
+        </span>
+      </div>
+
+      <div
+        className="manual-loop-size-grid"
+        aria-label={`Deck ${deckLabel} loop sizes in seconds`}
+      >
+        {MANUAL_LOOP_SIZE_PRESETS_SECONDS.map((sizeSeconds) => (
+          <button
+            key={sizeSeconds}
+            className={`manual-loop-size${deck.loop_active && Math.abs(deck.loop_size_seconds - sizeSeconds) < 0.001 ? " is-active" : ""}`}
+            type="button"
+            disabled={!deck.loaded || loading}
+            aria-pressed={
+              deck.loop_active &&
+              Math.abs(deck.loop_size_seconds - sizeSeconds) < 0.001
+            }
+            aria-label={`Set ${sizeSeconds} second loop from the current position on Deck ${deckLabel}`}
+            title={`Start a ${sizeSeconds} second loop at the current position`}
+            onClick={() => dispatchLoop("setSize", sizeSeconds)}
+          >
+            {sizeSeconds < 1 ? `${sizeSeconds * 1_000} ms` : `${sizeSeconds} s`}
+          </button>
+        ))}
+      </div>
+
+      <div className="manual-loop-actions">
+        <button
+          type="button"
+          aria-label={`Set Loop In on Deck ${deckLabel} at the current position`}
+          disabled={!deck.loaded || loading}
+          title={`Set Loop In at the current position · ${shortcutText("setLoopIn")}`}
+          onClick={() => dispatchLoop("setIn")}
+        >
+          Set In <kbd>{shortcutText("setLoopIn")}</kbd>
+        </button>
+        <button
+          type="button"
+          aria-label={`Set Loop Out on Deck ${deckLabel} at the current position`}
+          disabled={!deck.loaded || loading || deck.loop_in_seconds === null}
+          title={`Set Loop Out at the current position · ${shortcutText("setLoopOut")}`}
+          onClick={() => dispatchLoop("setOut")}
+        >
+          Set Out <kbd>{shortcutText("setLoopOut")}</kbd>
+        </button>
+        <button
+          className="manual-loop-release"
+          type="button"
+          aria-label={`Release Deck ${deckLabel} loop at the next boundary`}
+          disabled={!deck.loop_active || deck.loop_release_pending || loading}
+          title={`Release at the next boundary while playing · ${shortcutText("releaseLoop")}`}
+          onClick={() => dispatchLoop("release")}
+        >
+          {deck.loop_release_pending ? "Releasing…" : "Release"}{" "}
+          <kbd>{shortcutText("releaseLoop")}</kbd>
+        </button>
+      </div>
+
+      <p className="manual-loop-note">
+        Sizes use seconds because beatgrid and BPM analysis are not available
+        yet.
+      </p>
+    </div>
+  );
+}
 
 export function HotCueControls({
   deck,
@@ -192,6 +339,7 @@ export function HotCueControls({
   onCommand: CommandDispatcher;
 }) {
   const deckLabel = deckIndex === 0 ? "A" : "B";
+  const [selectedMode, setSelectedMode] = useState<"hotCue" | "loop">("hotCue");
   const [selectedSlot, setSelectedSlot] = useState<HotCueSlot | null>(null);
   const selectedCue =
     selectedSlot === null ? null : (deck.hot_cues[selectedSlot] ?? null);
@@ -230,69 +378,108 @@ export function HotCueControls({
   return (
     <section
       className="hot-cue-section"
-      aria-label={`Deck ${deckLabel} hot cues`}
+      aria-label={`Deck ${deckLabel} performance pads`}
       aria-describedby={`deck-${deckLabel}-hot-cue-description`}
     >
       <div className="hot-cue-heading">
         <div>
-          <h3>Hot Cues</h3>
+          <h3>{selectedMode === "hotCue" ? "Hot Cues" : "Manual Loop"}</h3>
           <p id={`deck-${deckLabel}-hot-cue-description`}>
-            8 per-track positions · click an empty pad to set, an assigned pad
-            to trigger
+            {selectedMode === "hotCue"
+              ? "8 per-track positions · click an empty pad to set, an assigned pad to trigger"
+              : "Set boundaries at the playhead or start a sized loop · sizes shown in seconds"}
           </p>
         </div>
         <span className="hot-cue-track-state">
-          {deck.loaded ? "Saved with track" : "Load a track to begin"}
+          {selectedMode === "hotCue"
+            ? deck.loaded
+              ? "Saved with track"
+              : "Load a track to begin"
+            : deck.loaded
+              ? "Deck-local · not persisted"
+              : "Load a track to begin"}
         </span>
       </div>
 
-      {deck.hot_cue_warning && (
+      <div
+        className="performance-mode-switch"
+        aria-label={`Deck ${deckLabel} performance mode`}
+      >
+        <button
+          type="button"
+          aria-pressed={selectedMode === "hotCue"}
+          className={selectedMode === "hotCue" ? "is-selected" : ""}
+          onClick={() => setSelectedMode("hotCue")}
+        >
+          Hot Cue
+        </button>
+        <button
+          type="button"
+          aria-pressed={selectedMode === "loop"}
+          className={selectedMode === "loop" ? "is-selected" : ""}
+          onClick={() => setSelectedMode("loop")}
+        >
+          Loop
+        </button>
+      </div>
+
+      {selectedMode === "hotCue" && deck.hot_cue_warning && (
         <p className="hot-cue-warning" role="status">
           {deck.hot_cue_warning}
         </p>
       )}
 
-      <div className="hot-cue-grid">
-        {HOT_CUE_SLOT_IDS.map((slot) => {
-          const cue = deck.hot_cues[slot] ?? null;
-          const slotNumber = slot + 1;
-          const active = deck.active_hot_cue_slot === slot;
-          const padAction = cue ? "trigger" : "set";
-          const padShortcut = getHotCueShortcutId(padAction, slot);
-          return (
-            <button
-              key={slot}
-              type="button"
-              className={`hot-cue-pad${cue ? ` hot-cue-color-${cue.color} is-assigned` : " is-empty"}${active ? " is-active" : ""}${selectedSlot === slot ? " is-selected" : ""}`}
-              disabled={!deck.loaded || loading}
-              aria-label={
-                cue
-                  ? `Trigger Deck ${deckLabel} hot cue ${slotNumber}, ${cue.name}, at ${formatTime(cue.position_seconds)}`
-                  : `Set Deck ${deckLabel} hot cue ${slotNumber} at the current position`
-              }
-              aria-pressed={active}
-              title={
-                cue
-                  ? `Trigger ${cue.name} at ${formatTime(cue.position_seconds)} · ${shortcutText(padShortcut)}`
-                  : `Set Hot Cue ${slotNumber} at the current playback position · ${shortcutText(padShortcut)}`
-              }
-              onClick={() => {
-                setSelectedSlot(slot);
-                dispatchCue(cue ? "trigger" : "set", slot);
-              }}
-            >
-              <span className="hot-cue-slot-number">{slotNumber}</span>
-              <strong>{cue?.name ?? "EMPTY"}</strong>
-              <small>
-                {cue ? formatTime(cue.position_seconds) : "SET POSITION"}
-                <kbd>{shortcutText(padShortcut)}</kbd>
-              </small>
-            </button>
-          );
-        })}
-      </div>
+      {selectedMode === "hotCue" ? (
+        <div className="hot-cue-grid">
+          {HOT_CUE_SLOT_IDS.map((slot) => {
+            const cue = deck.hot_cues[slot] ?? null;
+            const slotNumber = slot + 1;
+            const active = deck.active_hot_cue_slot === slot;
+            const padAction = cue ? "trigger" : "set";
+            const padShortcut = getHotCueShortcutId(padAction, slot);
+            return (
+              <button
+                key={slot}
+                type="button"
+                className={`hot-cue-pad${cue ? ` hot-cue-color-${cue.color} is-assigned` : " is-empty"}${active ? " is-active" : ""}${selectedSlot === slot ? " is-selected" : ""}`}
+                disabled={!deck.loaded || loading}
+                aria-label={
+                  cue
+                    ? `Trigger Deck ${deckLabel} hot cue ${slotNumber}, ${cue.name}, at ${formatTime(cue.position_seconds)}`
+                    : `Set Deck ${deckLabel} hot cue ${slotNumber} at the current position`
+                }
+                aria-pressed={active}
+                title={
+                  cue
+                    ? `Trigger ${cue.name} at ${formatTime(cue.position_seconds)} · ${shortcutText(padShortcut)}`
+                    : `Set Hot Cue ${slotNumber} at the current playback position · ${shortcutText(padShortcut)}`
+                }
+                onClick={() => {
+                  setSelectedSlot(slot);
+                  dispatchCue(cue ? "trigger" : "set", slot);
+                }}
+              >
+                <span className="hot-cue-slot-number">{slotNumber}</span>
+                <strong>{cue?.name ?? "EMPTY"}</strong>
+                <small>
+                  {cue ? formatTime(cue.position_seconds) : "SET POSITION"}
+                  <kbd>{shortcutText(padShortcut)}</kbd>
+                </small>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <ManualLoopControls
+          deck={deck}
+          deckIndex={deckIndex}
+          loading={loading}
+          shortcutText={shortcutText}
+          onCommand={onCommand}
+        />
+      )}
 
-      {selectedSlot !== null && (
+      {selectedMode === "hotCue" && selectedSlot !== null && (
         <div className="hot-cue-editor" aria-label="Selected hot cue controls">
           <span className="hot-cue-editor-title">Cue {selectedSlot + 1}</span>
           {selectedCue ? (
@@ -1368,6 +1555,30 @@ export function App() {
         if (command.id === "cue.setColor")
           cueArgs.color = command.payload.color;
         runMixerCommand(nativeCommand, cueArgs);
+        break;
+      }
+      case "loop.setIn":
+      case "loop.setOut":
+      case "loop.setSize":
+      case "loop.release": {
+        const { deck, sourceTrackId } = command.payload;
+        if (!sourceTrackId) {
+          setError(
+            `Load a WAV into Deck ${deck === 0 ? "A" : "B"} before using manual loops.`,
+          );
+          return;
+        }
+        const nativeCommand = {
+          "loop.setIn": "set_loop_in",
+          "loop.setOut": "set_loop_out",
+          "loop.setSize": "set_loop_size",
+          "loop.release": "release_loop",
+        }[command.id];
+        const loopArgs: Record<string, unknown> = { deck, sourceTrackId };
+        if (command.id === "loop.setSize") {
+          loopArgs.sizeSeconds = command.payload.sizeSeconds;
+        }
+        runMixerCommand(nativeCommand, loopArgs);
         break;
       }
       case "mixer.setMaster":

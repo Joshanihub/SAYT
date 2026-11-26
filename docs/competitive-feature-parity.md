@@ -3,7 +3,7 @@
 **Status:** ACTIVE implementation tracker<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-27<br>
-**Version:** 0.1.3
+**Version:** 0.1.4
 
 ## Purpose and evidence boundary
 
@@ -12,6 +12,8 @@ This inventory records the public capability areas to investigate for SAYT, then
 The source review was performed on 2026-11-26. Core official sources: [Serato DJ Pro](https://serato.com/dj/pro), the [Serato DJ Pro manual index](https://support.serato.com/hc/en-us/categories/202698038-Serato-DJ-Pro-manual), [Serato keyboard shortcuts](https://support.serato.com/hc/en-us/articles/233087008-Keyboard-Shortcuts), [Serato MIDI mapping](https://support.serato.com/hc/en-us/articles/209377487-MIDI-mapping-with-Serato-DJ-Pro), and [Serato beatgrids](https://support.serato.com/hc/en-us/articles/202856014-Beatgrids-in-Serato-DJ-Pro); [VirtualDJ feature inventory](https://virtualdj.com/products/virtualdj/features.html), the [VirtualDJ manual index](https://virtualdj.com/manuals/virtualdj.html), [VirtualDJ controller mapping](https://virtualdj.com/manuals/virtualdj/settings/controllers.html), [VirtualDJ deck controls](https://virtualdj.com/manuals/virtualdj/interface/decks/deckbasics.html), and [VirtualDJ audio setup](https://virtualdj.com/manuals/virtualdj/settings/audiosetup.html).
 
 Statuses mean: **NOT STARTED**, **IN DESIGN**, **IN PROGRESS**, **IMPLEMENTED**, **AUTOMATED TESTED**, **RUNTIME VERIFIED**, **OWNER VERIFIED**, **BLOCKED**. Use the highest state actually supported by evidence for each row; code alone does not mean runtime verified. “Owner verified” identifies owner-run physical use and is not independent reproduction.
+
+Current expansion state: Hot Cues have automated coverage and still need the approved fixture/restart runtime run. Manual Loops now have in/out, six seconds-based sizes, callback wrapping, next-boundary release, and shared UI/keyboard commands; automated tests pass while Windows runtime listening remains pending. Loop Roll and Beat Jump are not implemented. See the [feature acceptance matrix](FEATURE_ACCEPTANCE_MATRIX.md) and [manual loop behavior](manual-loops.md).
 
 ## Capability tracker
 
