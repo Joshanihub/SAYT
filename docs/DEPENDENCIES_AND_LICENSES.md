@@ -3,7 +3,7 @@
 **Status:** PROPOSED inventory; owner and legal review pending<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.2.0
+**Version:** 0.3.0
 
 ## SAYT license decision
 
@@ -15,9 +15,11 @@ The direct Rust and npm dependencies, exact pins, recorded license strings, tool
 
 Current owner-review items:
 
-- `corepack pnpm audit` passed on 2026-11-26 with no known vulnerabilities. `corepack pnpm licenses list --recursive` still reports two development packages as `BlueOak-1.0.0`: `@isaacs/nonrecursive-glob-match` and `minimatch`. Their license terms remain for owner review; no allowlist change was made.
-- `cargo audit` refreshed the RustSec advisory database on 2026-11-26 and exited successfully with six allowed warnings: five unmaintained crates (`chrono`, `proc-macro-error`, `zbus_names`, `zvariant`, and `zvariant_derive`) and unsoundness advisory `RUSTSEC-2024-0429` for transitive `glib 0.18.5`. It reported no vulnerability advisories. Reachability and practical impact of the warnings in SAYT were not established.
+- Exact-head push run [45725687824](https://github.com/Joshanihub/SAYT/actions/runs/45725687824) and PR run [45725694284](https://github.com/Joshanihub/SAYT/actions/runs/45725694284) passed Windows, macOS, and Ubuntu for head `c79a448b433f4f29f50236254621d8020105a126`. On Linux, the PR job's Python suite passed 52 tests; the normal fixture manifest passed 77/77 checks. Negative verifier tests also print expected failure reports while asserting those invalid inputs are rejected.
+- The same exact-head Linux job ran `pnpm audit` with no known vulnerabilities. `pnpm licenses list --recursive` reports two development-only packages with `BlueOak-1.0.0`: `@isaacs/nonrecursive-glob-match@1.1.0` and `minimatch@11.0.9`. `pnpm why` places them under the ESLint development toolchain. The [Blue Oak Model License 1.0.0](https://blueoakcouncil.org/license/1.0.0) requires recipients to receive its license text or a link and includes a contributor patent license and no-liability terms. Applicability and distribution handling remain for owner/legal review; no allowlist change was made.
+- `cargo audit` refreshed the RustSec database in exact-head CI on 2026-11-26 and reported no known vulnerabilities, plus five unmaintained-package warnings and the unsoundness advisory [RUSTSEC-2024-0429](https://rustsec.org/advisories/RUSTSEC-2024-0429.html) for `glib 0.18.5`. The affected `VariantStrIter` iterator methods have undefined-behaviour risk and RustSec lists `glib >=0.20.0` as patched. `glib 0.18.5` is in the Linux Tauri/GTK graph; a source scan found no `VariantStrIter` or `array_iter_str` use in SAYT or cached dependency sources outside the `glib` crate itself. This lowers observed direct reachability but is not a binary call-graph audit or a security clearance.
+- `cargo tree --locked --offline --workspace --all-features --edges all --target all -i <crate>` showed `proc-macro-error@1.0.4` in the Linux GTK macro build graph, but no resolved workspace graph path for `chrono@0.4.45`, `zbus_names@4.3.5`, `zvariant@5.15.1`, or `zvariant_derive@5.15.1`. Those four remain in `Cargo.lock`, which `cargo audit` scans; they were not shown as active dependencies in the all-workspace/all-target resolution. Their RustSec records are [chrono](https://rustsec.org/advisories/RUSTSEC-2026-0543.html), [proc-macro-error](https://rustsec.org/advisories/RUSTSEC-2024-0370.html), [zbus_names](https://rustsec.org/advisories/RUSTSEC-2026-0371.html), [zvariant](https://rustsec.org/advisories/RUSTSEC-2026-0370.html), and [zvariant_derive](https://rustsec.org/advisories/RUSTSEC-2026-0372.html). No transitive upgrade was made; re-evaluate when the Linux Tauri dependency stack changes.
 - `cargo deny check --hide-inclusion-graph bans licenses sources` passed on 2026-11-26. It emitted duplicate-lockfile-entry warnings; no dependency-policy allowlist was widened.
-- A full SBOM and legal review are required before distributing binaries.
+- A packaged-artifact SBOM, review of the active Linux GTK dependency path, and legal review are required before distributing binaries. The SAYT project license and third-party/font/icon approvals remain owner decisions.
 
 Do not silently widen license allowlists or describe scanner output as legal approval.
