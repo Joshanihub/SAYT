@@ -3,9 +3,9 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.2
+**Version:** 0.3.3
 
-This file records reproduced evidence separately from historical agent reports. The audio-validation source integration is commit `853e51477e56593471c7126378d290524be391af`; the latest branch head is `ace3ad571e899f11c2ee2ca5e5d357ff1c819f81` on `feat/stitch-m1-dj-workspace`, based on `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and unmerged; PR #2 remains open/draft. The latest push run [45731618779](https://github.com/Joshanihub/SAYT/actions/runs/45731618779) and PR run [45731625225](https://github.com/Joshanihub/SAYT/actions/runs/45731625225) both passed Windows, macOS, and Ubuntu at the latest head. Linux CI confirms 52 Python tests pass and the valid manifest passes 77/77 fixture checks. Some negative verifier tests intentionally print failed-verification output and assert that invalid manifests or missing files are rejected.
+This file records reproduced evidence separately from historical agent reports. The audio-validation source integration is commit `853e51477e56593471c7126378d290524be391af`; the latest branch head is `6de029fbaa936d3e4c06c39a781a3143c77bec45` on `feat/stitch-m1-dj-workspace`, based on `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and unmerged; PR #2 remains open/draft. Exact-head push run [45733825348](https://github.com/Joshanihub/SAYT/actions/runs/45733825348) and PR run [45733831972](https://github.com/Joshanihub/SAYT/actions/runs/45733831972) both passed Windows, macOS, and Ubuntu. The PR Ubuntu log records 52 Python tests passing and 77/77 fixture checks. Some negative verifier tests intentionally print failed-verification output and assert that invalid manifests or missing files are rejected.
 
 ## Reproduced locally on Windows
 
@@ -25,6 +25,15 @@ Manifest SHA-256: `1FA8F84E47C17F6FC017F99D5023AC8CE4C683B400BE788BE98C5E6E586A4
 
 The first local toolkit run failed because CP1252 could not encode the contributed checkmark output. The generator and verifier output was changed to ASCII; the rerun above passed. A first frontend check used Node 24.16.0, which did not match `.node-version`; it was superseded by the exact Node 24.22.3 run recorded above.
 
+## Latest exact-head CI — documentation/status commit
+
+Branch head `6de029fbaa936d3e4c06c39a781a3143c77bec45` passed both workflow events on all three operating systems:
+
+- Push run [45733825348](https://github.com/Joshanihub/SAYT/actions/runs/45733825348): Windows, macOS, and Ubuntu passed.
+- Pull request run [45733831972](https://github.com/Joshanihub/SAYT/actions/runs/45733831972): Windows, macOS, and Ubuntu passed. Its Ubuntu job records `Ran 52 tests`, `test_symlink_escape_rejected ... ok`, and `77 checks passed, 0 checks failed` across seven fixtures.
+
+The tested desktop source is unchanged from integration commit `853e51477e56593471c7126378d290524be391af`; intervening commits were documentation-only.
+
 ## GitHub Actions for exact integration commit
 
 | Event           | Run                                                                        | PR head SHA                                | Result                                                                            |
@@ -37,8 +46,8 @@ The passing PR run's Ubuntu log records `Ran 52 tests`, `test_symlink_escape_rej
 ## Desktop runtime and hardware
 
 - Historical Codex Tauri run: Windows desktop rendered the initial empty DJ workspace and connected engine snapshot at 1920×1032. Two decks were empty. This is a window/render check only.
-- Current-head launch: on `17693ba8341817e9152b8f66f55a07009f6139ad`, `corepack pnpm desktop dev` ran with Node.js 24.22.3/pnpm 12.23.0; Vite became ready on `127.0.0.1:1420`, Cargo finished, and `sayt-desktop.exe` started and remained alive at the last process check. Cargo emitted a non-fatal output filename collision warning for `sayt_desktop.pdb` between the library and binary targets.
-- Actual native picker, WAV load, real Tauri transport/mixer IPC, 1440×900/1280×800/narrow responsive screenshots, and physical playback remain NOT RUN. No UI automation was retried after the prior helper detected concurrent input; owner-operated manual interaction is now pending with the dev process left running.
+- Current running session: `corepack pnpm desktop dev` was launched with Node.js 24.22.3/pnpm 12.23.0 while the checkout was at documentation commit `c79a448b433f4f29f50236254621d8020105a126`; the product-code tree matches integration commit `853e51477e56593471c7126378d290524be391af`. Vite became ready on `127.0.0.1:1420`, Cargo finished, and `sayt-desktop.exe` remains alive. Cargo emitted a non-fatal output filename collision warning for `sayt_desktop.pdb` between the library and binary targets.
+- Actual native picker, WAV load, real Tauri transport/mixer IPC, 1440×900/1280×800/narrow responsive screenshots, and physical playback remain NOT RUN. No UI automation was retried after the prior helper detected concurrent input; owner-operated manual results have not yet been received, and the dev process remains available.
 - Physical dual playback, independent audible control, EQ/gain/crossfader, device disconnect/recovery, and shutdown during playback are NOT RUN. A screenshot, UI meter, moving waveform, or engine snapshot is not hardware evidence. See [`audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md`](audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md) and its blank [`RESULTS_TEMPLATE.md`](audio-validation/RESULTS_TEMPLATE.md).
 
 ## Scope, security, dependency and rollback notes
