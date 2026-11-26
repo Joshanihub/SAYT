@@ -2,7 +2,7 @@
 
 SAYT is an open, local-first music workstation. The first product target is a reliable desktop DJ application, with library migration and playlist bridging as the initial differentiator.
 
-**Project status:** Milestone 1 is in progress. The source implements local PCM WAV loading, two transport decks, gain and three-band controls, crossfader mixing, metering, device enumeration, and an OS audio-output path. Build and automated-check results are in [`docs/M1_REPORT.md`](docs/M1_REPORT.md); physical playback still requires manual verification. Current scope and gates are in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+**Project status:** Milestone 1 is in progress. The source implements local PCM WAV loading, two transport decks, gain and three-band controls, crossfader mixing, metering, device enumeration, and an OS audio-output path. The owner reports that the core Windows playback and control checks passed; failure-path details and independent hardware reproduction remain open. Build and automated-check results are in [`docs/M1_REPORT.md`](docs/M1_REPORT.md); current scope and gates are in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Principles
 

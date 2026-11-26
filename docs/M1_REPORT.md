@@ -3,9 +3,13 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.5.0
+**Version:** 0.5.1
 
-## Current increment — PR #2 audio-validation consolidation
+## Current status snapshot — 2026-11-26
+
+M1 remains in progress. The owner reports PASS for Windows fixture loading, independent deck controls, low-volume mixer/EQ, device refresh/retry, and clean shutdown. The report did not include a named device, viewport, per-test observations, or error messages; these results are attributed owner evidence, not independent reproduction. The owner also reports PASS for F1, Alt+2, and Ctrl+Alt+2 on the keyboard feature branch; focused-deck transport/EQ shortcuts and remapping persistence remain open. The current device settings have automated loading, empty-list, and enumeration-error coverage. Physical no-device and failed-switch recovery, unsupported-file interaction through the native picker, macOS/Linux hardware playback, and full Screen 01 fidelity remain open. See [`PROJECT_STATUS.md`](PROJECT_STATUS.md), [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md), and [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md).
+
+## Historical implementation increment — PR #2 audio-validation consolidation
 
 - **Repository:** `C:\Dev\SAYT`, `feat/stitch-m1-dj-workspace`; base `1d0323799d0a833a40b20cd58b1c79e43a11044b`; integration commit `853e51477e56593471c7126378d290524be391af`.
 - **Contribution review:** imported the reviewed `tools/audio-validation/` and `docs/audio-validation/` files from PR #2. Kept PR #2 open/draft. Excluded its workflow file because it was based on old `main`; preserved the already-tested PR #1 workflow and added one Linux-only Python unittest step.
@@ -14,7 +18,7 @@
 - **Fixtures:** generated seven files at `%TEMP%\SAYT-Audio-Fixtures`; verifier returned `ALL CHECKS PASSED`, 77 passed, 0 failed. Manifest SHA-256: `1FA8F84E47C17F6FC017F99D5023AC8CE4C683B400BE788BE98C5E6E586A4701`. Generated WAVs are not committed.
 - **Full local checks:** Rust `fmt`, `check`, Clippy, and workspace tests passed with rustc/cargo 1.100.0. Frontend frozen install, format, lint, typecheck, 20 tests, and build passed on exact Node 24.22.3 / pnpm 12.23.0. The first frontend invocation used Node 24.16.0 and was superseded by the exact-pinned rerun.
 - **GitHub:** push run [45721302725](https://github.com/Joshanihub/SAYT/actions/runs/45721302725) and PR run [45721308789](https://github.com/Joshanihub/SAYT/actions/runs/45721308789) passed on Windows, macOS, and Ubuntu for PR head `853e51477e56593471c7126378d290524be391af` (the PR event checked merge ref `198d769fb8439a5a1471441e50c29cb0b07711cb`). Its Ubuntu log records all 52 Python tests, including `test_symlink_escape_rejected`, and 77/77 fixture checks.
-- **Runtime/hardware:** current-head `corepack pnpm desktop dev` launched from commit `17693ba8341817e9152b8f66f55a07009f6139ad` using Node 24.22.3/pnpm 12.23.0; Vite was ready, Rust compilation completed, and the desktop process remained alive at the last check. Cargo emitted a non-fatal PDB output filename collision warning for the library and binary targets. No picker, control, IPC, visual-size, or physical-device interaction was performed by the agent. Owner/manual checks are pending; prior screenshot evidence remains only the initial empty workspace at 1920×1032.
+- **Runtime/hardware at this earlier evidence point:** current-head `corepack pnpm desktop dev` launched from commit `17693ba8341817e9152b8f66f55a07009f6139ad` using Node 24.22.3/pnpm 12.23.0; Vite was ready, Rust compilation completed, and the desktop process remained alive at the last check. Cargo emitted a non-fatal PDB output filename collision warning for the library and binary targets. No picker, control, IPC, visual-size, or physical-device interaction was performed by the agent in that pass. Subsequent owner reports and runtime captures are summarized above and in the linked current status files.
 - **Rollback/migration:** no database, persistence schema, dependency, or lockfile changes. Revert commit `853e51477e56593471c7126378d290524be391af` on the feature branch if required; do not reset or merge `main`.
 
 See [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md) and [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md) for the complete evidence states and open M1 gates.
@@ -80,4 +84,4 @@ The commands below were run on 2026-11-26 after the final source and test edits;
 
 - Branch: `feat/stitch-m1-dj-workspace`; base commit `1d0323799d0a833a40b20cd58b1c79e43a11044b`; implementation commits `49676c2`, `c517a49`, and `693983f`.
 - Pull request: [#1](https://github.com/Joshanihub/SAYT/pull/1), open and unmerged. Cross-platform run: [45710169519](https://github.com/Joshanihub/SAYT/actions/runs/45710169519), all three OS jobs passed.
-- M1 remains **IN PROGRESS** until the owner records physical-device evidence for two real WAV files, independent transport, gain/EQ/crossfader, device failure/recovery, and shutdown. Do not begin M2 before that review.
+- M1 remains **IN PROGRESS** until all required owner checks are recorded with enough detail and failure paths are exercised. Core playback/control/shutdown checks are owner-reported as PASS; no-device and failed-switch outcomes, unsupported-file interaction, and non-Windows hardware evidence remain open. Do not begin M2 before the owner reviews and accepts M1.

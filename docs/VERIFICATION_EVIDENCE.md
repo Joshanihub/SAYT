@@ -3,9 +3,9 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.22
+**Version:** 0.3.23
 
-This file records reproduced evidence separately from historical agent reports. Remote `main` remains at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and PR #2 remains draft. The M1 feature branch head `ee137e288b324a50e6f9b1574c4aee9d4eee1c09` passed exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) on Windows, macOS, and Ubuntu. Keyboard-command implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` and status commit `2706945e62b25573cc4d4b44af2248011b878d5c` are pushed to `feat/dj-command-system`; exact-head Actions run [45884170431](https://github.com/Joshanihub/SAYT/actions/runs/45884170431) completed successfully with all 3 matrix jobs. No PR or merge was created for the expansion branch.
+This file records reproduced evidence separately from historical agent reports. Remote `main` remains at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and PR #2 remains draft. The M1 feature branch head `ee137e288b324a50e6f9b1574c4aee9d4eee1c09` passed exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) on Windows, macOS, and Ubuntu. The separate keyboard-command branch `feat/dj-command-system` now includes device-discovery UI state fixes; exact source head `df430f06ee8f13463ee4e7bab5ce7531cea93182` passed push run [45891309370](https://github.com/Joshanihub/SAYT/actions/runs/45891309370) on Windows, macOS, and Ubuntu, including Rust and JavaScript dependency audits. No PR or merge was created for the expansion branch.
 
 The subsequent documentation-only branch head `3ca5c517b4436447d7978c75cdaa80aecbbb138c` also passed exact-head Actions run [45886251516](https://github.com/Joshanihub/SAYT/actions/runs/45886251516) on all 3 matrix jobs.
 
