@@ -3,9 +3,19 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.15
+**Version:** 0.3.16
 
-This file records reproduced evidence separately from historical agent reports. The last fully CI-verified source commit is `14ea4d9f102e39860ee6ad76b10e44f04cb574a0` on `feat/stitch-m1-dj-workspace`, based on unchanged `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Later source commits are pushed to the same feature branch; exact-head CI for the latest source commit remains pending. PR #1 and #2 are open and unmerged. Exact-head push run [45812052568](https://github.com/Joshanihub/SAYT/actions/runs/45812052568) and PR run [45812058496](https://github.com/Joshanihub/SAYT/actions/runs/45812058496) passed Windows, macOS, and Ubuntu for the output-switch recovery source.
+This file records reproduced evidence separately from historical agent reports. The base is unchanged `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`; PR #1 and #2 are open and unmerged. For pushed source `b3fe45c1091226df1f1304962e86d8f7cdd04102`, exact-head run [45827515625](https://github.com/Joshanihub/SAYT/actions/runs/45827515625) passed on Windows, macOS, and Ubuntu. The responsive correction described below is a newer local working-tree change and has not yet run in CI.
+
+## M1 responsive workspace correction — local runtime verification
+
+The initial actual Tauri capture at 800×700 exposed a CSS auto-placement defect: Deck A occupied the first cell, the mixer expanded across the second row, and Deck B fell below it. The grid now has explicit areas at desktop, the existing 1060 px compact breakpoint, and the existing 720 px stacked breakpoint. The Tauri window minimum width changed from 800 to 480 to expose the existing narrow rules.
+
+`corepack pnpm desktop dev` launched the current Windows build with its engine snapshot connected and the system-default output listed. Win32 `PrintWindow` captured the actual client area without activating the window, and `GetClientRect` confirmed exact sizes of 1440×900, 1280×800, 800×700, and 480×700. Images: [`1440×900`](evidence/m1-responsive/sayt-1440x900.png), [`1280×800`](evidence/m1-responsive/sayt-1280x800.png), [`800×700`](evidence/m1-responsive/sayt-800x700.png), and [`480×700`](evidence/m1-responsive/sayt-480x700.png).
+
+Observed: the two desktop sizes retain deck A / mixer / deck B columns; 800×700 keeps both decks side by side above the mixer; 480×700 stacks deck A, deck B, then mixer and uses vertical page scrolling. I compared these captures with the supplied 1600×1200 Screen 01 Stitch PNG. Color roles, typography, and overall deck/mixer hierarchy are present, but the production screen is still an M1 subset; the reference's pitch/key controls, cue/loop/pad modes, deck meters, FX/record controls, and full library browser are absent. This is runtime placement verification, not full design acceptance or audio verification.
+
+The responsive stylesheet regression suite passed as part of `corepack pnpm test` (23 tests). A controlled mutation changed the expected desktop area from `deck-a mixer deck-b` to `deck-a deck-b mixer`; `corepack pnpm --filter @sayt/desktop test -- src/styles.test.ts` failed on that assertion as expected, and the source file was restored byte-for-byte before the passing rerun. The complete local source check set also passed: `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` (25 engine and 1 audio-service actor test), `cargo check --workspace --all-targets --locked`, `corepack pnpm format:check`, `corepack pnpm lint`, `corepack pnpm typecheck`, and `corepack pnpm build`. The new source and captures remain uncommitted at this evidence revision.
 
 ## M1 output-switch recovery — local working-tree verification
 
@@ -67,7 +77,7 @@ The supplied Stitch roles are now integrated with local assets: Space Grotesk fo
 
 The asset manifest [`tools/font-assets/asset-manifest.json`](../tools/font-assets/asset-manifest.json) records the exact 16 text-font subsets and Material Symbols source/output URLs, sizes, and SHA-256 values. [`build_material_symbols.py`](../tools/font-assets/build_material_symbols.py) reproduced 66 verified ligatures from the pinned v387 source into a 51,720-byte WOFF2 subset with SHA-256 `f31f8e017925c3a6a882c1a67f0d41d6531f5a3193d1a3e1f5dc0cbbf99d4459`; optional tool pins are `fonttools==4.68.0` and `Brotli==1.2.1`. `py -3 tools/font-assets/verify_assets.py` passed: 17 assets, 4 notices, 5 M1 icon names, local-only CSS paths, and nonrecursive font roles. `py -3 -m unittest discover -s tools/font-assets/tests -v` passed 3 role-validation cases. The owner-authorized design roles and official OFL/Apache notice sources are recorded in [`DEPENDENCIES_AND_LICENSES.md`](DEPENDENCIES_AND_LICENSES.md).
 
-The current Windows Tauri window was observed in an empty DJ workspace at a 1280×800 client viewport (the outer window screenshot was 1282×832). The corrected typography roles and Material Symbols rendered. This is a runtime render observation, not a matched Stitch comparison. The 1440×900 and narrow captures remain NOT RUN; matching the 1280×800 render against its Stitch reference is also NOT RUN. Library and Settings screens were not inspected in this runtime pass. Actual font script behavior for arbitrary user metadata and independent reproduction of physical audio checks remain unverified; the later owner report is recorded above.
+At an earlier evidence revision the current Windows Tauri window was observed in an empty DJ workspace at a 1280×800 client viewport (outer window 1282×832); at that time the larger and narrow Stitch comparisons had not been captured. This historical render observation is superseded by the responsive captures and comparison recorded at the start of this file. Library and Settings screens remain uninspected in this runtime pass. Actual font script behavior for arbitrary user metadata and independent reproduction of physical audio checks remain unverified; the owner report is recorded above.
 
 ## Local build-tool audit
 

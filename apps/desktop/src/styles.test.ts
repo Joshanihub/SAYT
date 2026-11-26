@@ -14,3 +14,20 @@ describe("shared interaction motion", () => {
     expect(styles).toContain("scroll-behavior: auto !important");
   });
 });
+
+describe("responsive deck workspace placement", () => {
+  it("keeps both decks visible before the mixer at compact and narrow widths", () => {
+    expect(styles).toMatch(
+      /\.dj-grid\s*\{[^}]*grid-template-areas:\s*"deck-a mixer deck-b"/s,
+    );
+    expect(styles).toMatch(/\.deck-a\s*\{\s*grid-area:\s*deck-a;/);
+    expect(styles).toMatch(/\.deck-b\s*\{\s*grid-area:\s*deck-b;/);
+    expect(styles).toMatch(/\.mixer-console\s*\{\s*grid-area:\s*mixer;/);
+    expect(styles).toMatch(
+      /@media\s*\(max-width:\s*1060px\)[\s\S]*?\.dj-grid\s*\{[^}]*grid-template-areas:\s*"deck-a deck-b"\s+"mixer mixer"/s,
+    );
+    expect(styles).toMatch(
+      /@media\s*\(max-width:\s*720px\)[\s\S]*?\.dj-grid\s*\{[^}]*grid-template-areas:\s*"deck-a"\s+"deck-b"\s+"mixer"/s,
+    );
+  });
+});

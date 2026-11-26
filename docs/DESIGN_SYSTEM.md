@@ -3,7 +3,7 @@
 **Status:** PROPOSED implementation guide reconciled to Stitch v1<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.1.2
+**Version:** 0.1.3
 
 ## Authority and preservation
 
@@ -47,7 +47,7 @@ Reference motion is short and purposeful: active controls gain a visible state, 
 
 ## Responsive rules and open comparison
 
-The shared Stitch spec describes mixer adaptation below 1280 px and crate minimisation below 1024 px. Current `apps/desktop/src/styles.css` uses media queries at 1279, 1060, 720, and 480 px. This difference is recorded; do not silently change it. A Tauri render at 1280×800 is recorded, but it has not been compared with its reference; 1440×900 and narrow screenshots remain NOT RUN. Compare every captured target view against Stitch before settling the breakpoints.
+The shared Stitch spec describes mixer adaptation below 1280 px and crate minimisation below 1024 px. Current `apps/desktop/src/styles.css` uses media queries at 1279, 1060, 720, and 480 px. Named grid areas keep deck placement deterministic at the 1060 px two-column transition and 720 px stacked layout. The Tauri minimum width is 480 px so the narrow layout is reachable. Reproduced target-size captures are in [`evidence/m1-responsive/`](evidence/m1-responsive/). At 1440×900 and 1280×800 the workspace uses two decks around the mixer; at 800×700 the decks are side by side above the mixer; at 480×700 deck A, deck B, and mixer stack vertically and the page scrolls. Against the supplied 1600×1200 Screen 01 reference, the current M1 view preserves the overall dark, lime/cyan deck identity and deck/mixer hierarchy but remains a partial screen: pitch/key controls, cue/loop/pad modes, deck metering, FX, recording, and the full library browser are not yet implemented. Do not mark full-screen visual fidelity accepted from these captures.
 
 ## Screen-level fidelity
 

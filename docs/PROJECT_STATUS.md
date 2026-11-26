@@ -3,19 +3,19 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.15
+**Version:** 0.4.16
 
 ## Current verified position — M1 motion, recovery, and owner-reported audio checks
 
-- **Repository and baseline:** `C:\Dev\SAYT`, branch `feat/stitch-m1-dj-workspace`, based on `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. The last fully CI-verified source commit is `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`; newer feature-branch source changes are pushed with exact-head CI pending. Remote `main` remains unchanged.
-- **GitHub review:** PR #1 and PR #2 are open and unmerged. Exact-head push run [45812052568](https://github.com/Joshanihub/SAYT/actions/runs/45812052568) and PR run [45812058496](https://github.com/Joshanihub/SAYT/actions/runs/45812058496) passed Windows, macOS, and Ubuntu for source commit `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`. The latest source head still needs all three OS jobs to complete. No merge into `main` occurred.
+- **Repository and baseline:** `C:\Dev\SAYT`, branch `feat/stitch-m1-dj-workspace`, based on `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Pushed source `b3fe45c1091226df1f1304962e86d8f7cdd04102` passed exact-head CI on Windows, macOS, and Ubuntu; the responsive correction is currently local and awaits its own CI run. Remote `main` remains unchanged.
+- **GitHub review:** PR #1 and PR #2 are open and unmerged. Earlier exact-head push run [45812052568](https://github.com/Joshanihub/SAYT/actions/runs/45812052568) and PR run [45812058496](https://github.com/Joshanihub/SAYT/actions/runs/45812058496) passed Windows, macOS, and Ubuntu for source commit `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`; the later push run [45827515625](https://github.com/Joshanihub/SAYT/actions/runs/45827515625) passed all three OSes for `b3fe45c`. No merge into `main` occurred.
 - **Stitch typography and icons:** 16 local variable WOFF2 text-font subsets and a 66-ligature Material Symbols subset are integrated. Four upstream license notices are present under `apps/desktop/public/licenses`; runtime font loading makes no network request. Exact sources, hashes, sizes, Unicode ranges, and build-tool pins are recorded in the asset manifest and dependency inventory.
-- **Local verification:** the current working tree passes Rust format, Clippy, all 25 engine tests plus 1 desktop actor test, locked all-target check, and repository formatting. Frontend format, lint, typecheck, 22 UI tests, and production build passed with the motion update; this follow-up changes only Rust tests and documentation.
+- **Local verification:** Rust format, Clippy, all 25 engine tests plus 1 desktop actor test, and locked all-target check passed. Frontend format, lint, typecheck, 23 UI tests, and production build passed with the responsive correction.
 - **Output-switch recovery:** source now attempts the replacement stream after a pause error and restores the previous stream if replacement fails. Resume failure is reported in the command error and output-error snapshot. Four hardware-independent transition tests pass; CPAL/OS recovery remains unverified.
 - **Interaction motion:** button and select state changes, including navigation, transport, and load controls, use a named 120 ms ease-out transition. CSS honors `prefers-reduced-motion`; the stylesheet regression test passes and failed under an intentional canary edit. Runtime preference behavior and target-screen appearance remain unverified.
-- **Desktop render:** The current Windows Tauri DJ empty state was observed at a 1280×800 client viewport; the corrected typography and Material Symbols rendered. No target-size Stitch comparison has been completed.
+- **Responsive workspace:** Fixed CSS auto-placement that put Deck B below the mixer between 721 px and 1060 px. Named grid areas now preserve deck order at desktop, compact, and narrow sizes; Tauri captures at 1440×900, 1280×800, 800×700, and 480×700 are committed in `docs/evidence/m1-responsive/`. Visual comparison confirms the M1 identity and core hierarchy while the supplied Screen 01 remains only partially implemented.
 - **Owner-reported audio checks:** on 2026-11-26 the owner reported that all requested manual audio checks passed, including fixture loading, deck transport, low-volume mixer/EQ controls, refresh/retry, and shutdown. Device/viewport and per-test observations were not provided, so this is attributed owner evidence, not an independent reproduction; the current accessibility snapshot shows populated, stopped decks but does not identify the tested fixtures.
-- **M1 remains IN PROGRESS:** the 1440×900, 1280×800, and narrow Stitch comparisons remain open. Two Computer Use screenshot attempts returned unrelated Chrome content despite the selected SAYT window exposing its own accessibility tree, so no new target-size screenshots were accepted as evidence.
+- **M1 remains IN PROGRESS:** target viewport placement is runtime verified, but full Screen 01 fidelity and audio failure-path/hardware acceptance remain open. Build and test evidence for the responsive correction is recorded in `docs/VERIFICATION_EVIDENCE.md`; its exact-head cross-platform CI will start after push.
 - **Other open decisions:** SAYT's project license remains undecided; logo/artwork provenance and BlueOak/GLib advisory review remain open. The locked `rtrb 0.4.1` is outside the affected range in the reviewed RustSec advisory; details are in the dependency inventory. These are not claims that the app is release-ready.
 - Detailed commands, outputs, screenshots boundary, and CI evidence are in [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md); milestone states remain in [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md).
 
@@ -49,7 +49,7 @@ The original Stitch export and extracted references are in `design/reference/`. 
 
 1. Commit/push the decoder coverage and verify exact-head CI; exact commands and results are recorded in `docs/VERIFICATION_EVIDENCE.md`.
 2. Record unsupported-WAV, no-device, and failed-switch recovery outcomes; the owner's summary did not identify those failure scenarios separately.
-3. Capture the live Tauri app at 1440×900, 1280×800, and a narrow viewport, compare each against the supplied Stitch PNGs, and record intentional deviations plus font/icon fallback behavior.
+3. Implement the next accepted Screen 01 vertical slices and update the matched Stitch comparison after each delivery; do not mark the full Screen 01 accepted while cues, pads, FX, recording, or library browsing remain unavailable.
 4. Before a consequential release decision, assess reachability/impact of the five unmaintained Rust crates and `glib` unsoundness notice, review the two BlueOak npm license terms, and complete an SBOM/legal review. Fresh local scan results are recorded in `docs/DEPENDENCIES_AND_LICENSES.md`.
 5. SAYT's project license remains undecided; no license grant is added.
 

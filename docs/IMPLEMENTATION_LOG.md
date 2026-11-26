@@ -3,7 +3,15 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.7
+**Version:** 0.4.8
+
+## 2026-11-26 — M1 responsive workspace correction
+
+- A real 800×700 client capture showed that automatic CSS grid placement put Deck B after the full-width mixer, leaving the right column empty and the second deck below the fold. The previous 800 px Tauri minimum also made the existing 720 px stacked breakpoint unreachable.
+- Added named desktop, compact, and narrow grid areas so the 1060 px layout places both decks above the mixer, and the 720 px layout stacks Deck A, Deck B, then mixer. Lowered Tauri's minimum width to 480 px to make the established narrow styles usable.
+- Added a stylesheet regression test for each grid mode and added responsive placement to the M1 requirements. The complete UI suite passes; four screenshots were captured from the running Tauri window using Win32 `PrintWindow` at client sizes verified by `GetClientRect` and are stored in `docs/evidence/m1-responsive/`.
+- Compared the captured M1 empty workspace with the supplied Screen 01 reference. The deck colors, dark surfaces, type roles, and high-level deck/mixer arrangement are present. The screen remains a partial implementation: cue/loop/pad controls, pitch/key, per-deck meters, effects/recording, and the full library browser are not implemented.
+- Local verification passed: Rust format, Clippy, workspace tests (25 engine, 1 desktop actor), and locked all-target check; frontend format, lint, typecheck, 23 UI tests, and production build. A controlled mutation of the desktop grid order made the regression test fail; source bytes were restored and the test rerun passed. This working-tree change has not yet been committed or pushed. Exact-head CI for current pushed source `b3fe45c` passed Windows, macOS, and Ubuntu.
 
 ## 2026-11-26 — M1 output-switch recovery
 
