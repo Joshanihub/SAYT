@@ -1,6 +1,9 @@
 //! Bounded WAV decoding and waveform extraction.
 
+use std::fmt::Write as FmtWrite;
 use std::{fs, path::Path, sync::Arc};
+
+use sha2::{Digest, Sha256};
 
 pub(crate) const MAX_WAV_FILE_BYTES: u64 = 512 * 1024 * 1024;
 pub(crate) const MAX_TRACK_FRAMES: usize = 32_000_000;
@@ -21,6 +24,7 @@ pub(crate) struct Track {
     pub(crate) channels: u16,
     pub(crate) duration_seconds: f64,
     pub(crate) filename: String,
+    pub(crate) source_track_id: String,
     pub(crate) waveform: Arc<[f32]>,
 }
 
@@ -61,12 +65,21 @@ pub(crate) fn decode_track(path: &Path) -> Result<Track, String> {
     }
 
     let mut samples = reader.into_samples::<i32>();
+    let mut content_digest = Sha256::new();
+    content_digest.update(b"SAYT decoded PCM track identity v1\0");
+    content_digest.update(spec.sample_rate.to_le_bytes());
+    content_digest.update(spec.channels.to_le_bytes());
+    content_digest.update(spec.bits_per_sample.to_le_bytes());
     let scale = (1_i64 << (spec.bits_per_sample - 1)) as f32;
     let mut frames = Vec::new();
     while let Some(left_sample) = read_sample(&mut samples)? {
+        content_digest.update(left_sample.to_le_bytes());
         let right_sample = if spec.channels == 2 {
-            read_sample(&mut samples)?
-                .ok_or_else(|| "Stereo WAV data ended with an incomplete audio frame".to_string())?
+            let right_sample = read_sample(&mut samples)?.ok_or_else(|| {
+                "Stereo WAV data ended with an incomplete audio frame".to_string()
+            })?;
+            content_digest.update(right_sample.to_le_bytes());
+            right_sample
         } else {
             left_sample
         };
@@ -86,6 +99,12 @@ pub(crate) fn decode_track(path: &Path) -> Result<Track, String> {
         .and_then(|name| name.to_str())
         .unwrap_or("Selected WAV file")
         .to_string();
+    let mut source_track_id = String::with_capacity("sha256:".len() + 64);
+    source_track_id.push_str("sha256:");
+    for byte in content_digest.finalize() {
+        write!(&mut source_track_id, "{byte:02x}")
+            .expect("writing a hexadecimal digest into a String cannot fail");
+    }
     let waveform = make_waveform(&frames);
     Ok(Track {
         frames: Arc::from(frames),
@@ -93,6 +112,7 @@ pub(crate) fn decode_track(path: &Path) -> Result<Track, String> {
         channels: spec.channels,
         duration_seconds,
         filename,
+        source_track_id,
         waveform: Arc::from(waveform),
     })
 }
@@ -335,5 +355,36 @@ mod tests {
         let temp = TempWav::new("missing.wav");
         let error = decode_track(temp.path()).unwrap_err();
         assert!(error.contains("Could not inspect WAV file"));
+    }
+
+    #[test]
+    fn source_identity_tracks_decoded_pcm_instead_of_filename() {
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: 48_000,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let first_file = TempWav::new("first-name.wav");
+        let renamed_copy = TempWav::new("renamed-copy.wav");
+        let changed_audio = TempWav::new("changed-audio.wav");
+
+        for (path, sample) in [
+            (first_file.path(), 12_345_i16),
+            (renamed_copy.path(), 12_345_i16),
+            (changed_audio.path(), -12_345_i16),
+        ] {
+            let mut writer = hound::WavWriter::create(path, spec).unwrap();
+            writer.write_sample(sample).unwrap();
+            writer.finalize().unwrap();
+        }
+
+        let first = decode_track(first_file.path()).unwrap();
+        let renamed = decode_track(renamed_copy.path()).unwrap();
+        let changed = decode_track(changed_audio.path()).unwrap();
+
+        assert!(first.source_track_id.starts_with("sha256:"));
+        assert_eq!(first.source_track_id, renamed.source_track_id);
+        assert_ne!(first.source_track_id, changed.source_track_id);
     }
 }

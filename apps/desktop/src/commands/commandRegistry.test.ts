@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  createHotCueCommand,
   createShortcutCommand,
   detectShortcutPlatform,
   dispatchShortcutKeydown,
   formatShortcut,
   getDefaultShortcutBindings,
   getEffectiveShortcutBindings,
+  getHotCueShortcutId,
   isEditableTarget,
   isNativeSpaceTarget,
   KEYBOARD_COMMANDS,
@@ -19,6 +21,8 @@ import {
   type ShortcutBinding,
   type ShortcutPlatform,
   type ShortcutStorage,
+  type HotCueAction,
+  type HotCueSlot,
 } from "./commandRegistry";
 
 class MemoryStorage implements ShortcutStorage {
@@ -258,6 +262,28 @@ describe("central keyboard command registry", () => {
       payload: { delta: 0.05 },
     });
   });
+
+  it.each<HotCueAction>(["set", "trigger", "clear"])(
+    "routes each %s hot-cue shortcut through the same typed command as its pad",
+    (action) => {
+      const sourceTrackId = `sha256:${"c".repeat(64)}`;
+      const context = {
+        focusedDeck: 1 as const,
+        focusedTrackId: sourceTrackId,
+      };
+      const slots: HotCueSlot[] = [0, 1, 2, 3, 4, 5, 6, 7];
+
+      for (const slot of slots) {
+        const shortcutCommand = createShortcutCommand(
+          getHotCueShortcutId(action, slot),
+          context,
+        );
+        expect(shortcutCommand).toEqual(
+          createHotCueCommand(action, 1, slot, sourceTrackId),
+        );
+      }
+    },
+  );
 
   it("persists and reloads valid local overrides", () => {
     const storage = new MemoryStorage();

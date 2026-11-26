@@ -2,27 +2,28 @@
 
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-26<br>
-**Version:** 0.4.23
+**Date:** 2026-11-27<br>
+**Version:** 0.4.25
 
 ## Current verified position — M1 closeout and keyboard-command expansion
 
 - **M1 source branch:** `feat/stitch-m1-dj-workspace` is based on unchanged `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Responsive correction and decoder rejection coverage are pushed as `ee137e288b324a50e6f9b1574c4aee9d4eee1c09`; exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) both passed Windows, macOS, and Ubuntu. GitHub currently shows PR #1 open and PR #2 still draft. No merge into `main` is authorized.
-- **DJ expansion branch:** implementation commit `c5d4fa944d1adb1dee813fa2186c3eaf10c36520` and follow-up fixes are pushed to `feat/dj-command-system` from the isolated worktree, based on the pushed M1 SHA above. Current source head `df430f06ee8f13463ee4e7bab5ce7531cea93182` passed exact-head Actions run [45891309370](https://github.com/Joshanihub/SAYT/actions/runs/45891309370) on Windows, macOS, and Ubuntu, including dependency audits. No PR or merge was created. Windows runtime shows the shortcut dialog and search working at 1282×832. The owner reports F1, Alt+2, and Ctrl+Alt+2 passed; per-key visible outcomes and viewport were not supplied. Focused-deck transport/EQ commands, remapping persistence across restart, and macOS runtime remain unverified.
+- **DJ expansion branch:** the current isolated worktree is `feat/dj-command-system` at base `6691e3ab8a5b8871266154ea5160227136cf85da`; `main` remains `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Previous documentation CI run [45893203879](https://github.com/Joshanihub/SAYT/actions/runs/45893203879) completed successfully on the base commit. This change adds an engine-backed Hot Cue slice. Local checks pass, including an isolated-target Windows desktop release build; exact-head remote CI and fixture-based desktop acceptance remain pending. The normal build path could not replace the executable held by the running SAYT window, which I left untouched. No PR or merge is created.
 - **Stitch typography and icons:** 16 local variable WOFF2 text-font subsets and a 66-ligature Material Symbols subset are integrated. Four upstream license notices are present under `apps/desktop/public/licenses`; runtime font loading makes no network request. Exact sources, hashes, sizes, Unicode ranges, and build-tool pins are recorded in the asset manifest and dependency inventory.
-- **Local verification:** Rust format, Clippy, all 25 engine tests plus 1 desktop actor test, and locked all-target check passed. Frontend format, lint, typecheck, 47 tests, and production build pass on the current working tree.
+- **Local verification:** Rust format, Clippy, 36 engine tests plus 9 desktop actor/cue-store tests, locked all-target check, and isolated-target Windows Tauri release build pass. Frontend format, lint, typecheck, 55 tests, and production web build pass. Rust dependency-policy checks pass with duplicate-version warnings; the advisory audit exits successfully with existing allowed unmaintained and GLib soundness notices. Exact commands and limits are in `docs/VERIFICATION_EVIDENCE.md`.
 - **M1 device discovery state:** the Settings surface now distinguishes loading, an empty device list, enumeration failure, and a selected system default. The React tests verify these states; real device enumeration and recovery still require hardware verification.
 - **Output-switch recovery:** source now attempts the replacement stream after a pause error and restores the previous stream if replacement fails. Resume failure is reported in the command error and output-error snapshot. Four hardware-independent transition tests pass; CPAL/OS recovery remains unverified.
 - **Interaction motion:** button and select state changes, including navigation, transport, and load controls, use a named 120 ms ease-out transition. CSS honors `prefers-reduced-motion`; the stylesheet regression test passes and failed under an intentional canary edit. Runtime preference behavior and target-screen appearance remain unverified.
 - **Responsive workspace:** Fixed CSS auto-placement that put Deck B below the mixer between 721 px and 1060 px. Named grid areas now preserve deck order at desktop, compact, and narrow sizes; Tauri captures at 1440×900, 1280×800, 800×700, and 480×700 are committed in `docs/evidence/m1-responsive/`. Visual comparison confirms the M1 identity and core hierarchy while the supplied Screen 01 remains only partially implemented.
 - **Owner-reported audio checks:** on 2026-11-26 the owner reported that all requested manual audio checks passed, including fixture loading, deck transport, low-volume mixer/EQ controls, refresh/retry, and shutdown. Device/viewport and per-test observations were not provided, so this is attributed owner evidence, not an independent reproduction; the current accessibility snapshot shows populated, stopped decks but does not identify the tested fixtures.
+- **Hot Cues:** eight colorable, editable, persisted slots per source track; real bounded generation-bound seek commands; shared UI/keyboard dispatch; local source identity and corruption recovery. Automated engine, persistence and React suites pass. The owner approved the two-fixture/restart runtime run, but the live SAYT window was repeatedly minimized or detected concurrent owner input, so fixture loads and restart restoration remain NOT RUN. I left that window open and did not continue sending input.
 - **M1 remains IN PROGRESS:** target viewport placement is runtime verified and the current branch head passes cross-platform CI, but full Screen 01 fidelity and audio failure-path/hardware acceptance remain open. Build and test evidence is recorded in `docs/VERIFICATION_EVIDENCE.md`.
 - **Other open decisions:** SAYT's project license remains undecided; logo/artwork provenance and BlueOak/GLib advisory review remain open. The locked `rtrb 0.4.1` is outside the affected range in the reviewed RustSec advisory; details are in the dependency inventory. These are not claims that the app is release-ready.
 - Detailed commands, outputs, screenshots boundary, and CI evidence are in [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md); milestone states remain in [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md).
 
 ## Current milestone
 
-**M1 closeout plus DJ feature expansion.** The existing Rust engine, Tauri control API, and Stitch-informed workspace remain integrated. The keyboard command system is in a separate review branch from the pushed M1 head. Neither track closes M1 or authorizes a merge.
+**M1 closeout plus approved DJ feature expansion.** The existing Rust engine, Tauri control API, and Stitch-informed workspace remain integrated. The command system and Hot Cues are in the isolated `feat/dj-command-system` branch. M1 hardware/failure-path acceptance remains open; this feature does not close M1 or authorize a merge.
 
 ## Verified baseline before this change
 
@@ -50,10 +51,10 @@ The original Stitch export and extracted references are in `design/reference/`. 
 
 1. Recheck cross-platform CI after any later changes to the M1 branch; `ee137e2` currently passes exact-head push and PR runs.
 2. Record physical unsupported-WAV, no-device, and failed-switch recovery outcomes; decoder, UI, and transition-policy tests cover software paths, but the owner's summary did not identify those physical failure scenarios separately.
-3. Implement the next accepted Screen 01 vertical slices and update the matched Stitch comparison after each delivery; do not mark the full Screen 01 accepted while cues, pads, FX, recording, or library browsing remain unavailable.
+3. Complete the already approved two-fixture Hot Cue runtime/restart run when the SAYT window is available without concurrent owner input; then implement Manual Loops (in/out, sizing and release) as the next DJ performance slice. Update the matched Stitch comparison after each delivery; do not mark Screen 01 complete while later pads, FX, recording, or library browsing remain unavailable.
 4. Before a consequential release decision, assess reachability/impact of the five unmaintained Rust crates and `glib` unsoundness notice, review the two BlueOak npm license terms, and complete an SBOM/legal review. Fresh local scan results are recorded in `docs/DEPENDENCIES_AND_LICENSES.md`.
 5. SAYT's project license remains undecided; no license grant is added.
 
 ## Next milestone
 
-Do not start M2 reliability implementation until M1 exit requirements have been reviewed and approved. After M1, the roadmap prioritizes callback load/dropout measurement, device loss recovery, and shutdown verification.
+Keep M1 acceptance open until its exit requirements are reviewed and approved. Finish Hot Cue runtime acceptance on the current expansion branch, then continue with Manual Loops; retain the M2 callback-load, device recovery, and shutdown gates before implementing timing-sensitive performance systems.

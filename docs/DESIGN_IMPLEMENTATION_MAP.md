@@ -2,8 +2,8 @@
 
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-26<br>
-**Version:** 0.2.3
+**Date:** 2026-11-27<br>
+**Version:** 0.2.4
 
 This maps every screen in the supplied Stitch archive to the current product boundary. The task handoff identifies the designs as founder-approved; that provenance is recorded here without implying that the Stitch prototype or every screen's behavior was independently re-tested. Prototype simulations are reference material, not evidence of working SAYT features.
 
@@ -34,11 +34,11 @@ This maps every screen in the supplied Stitch archive to the current product bou
 
 - **Reference / asset:** `design/reference/SAYT-Stitch-v1/stitch_sayt_dj_audio_studio/sayt_dj_live_performance_workspace/screen.png` and `code.html`.
 - **Workspace / target:** DJ performance workspace; M1.
-- **Required frontend:** Two deck panels, accurate loaded-audio waveforms and positions, transport, seek, gain/EQ controls, actual master meter, master level, crossfader, and two-slot quick crate.
-- **Required backend:** Existing `sayt-engine` deck/DSP/output behavior, mixer snapshots and commands, plus async native WAV picker. Tauri owns `Engine` on a bounded actor thread.
-- **Current source:** `DeckPanel`, `Waveform`, `MixerConsole`, and `QuickCrateBrowser` in `apps/desktop/src/App.tsx`; engine code remains in `crates/sayt-engine`; commands and actor are in `apps/desktop/src-tauri/src/`.
-- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified; simulations are not product evidence. Source: partial implementation. Automated: 21 frontend tests passed; `App.test.tsx` covers empty state, waveform peak/position mapping, deck-index command mapping, play/pause/stop, seek, gain/EQ, master level, crossfader, crate routing, and mocked native picker command name/arguments. Real Tauri IPC remains untested by frontend tests. Running desktop: empty DJ workspace rendered at a 1280×800 client viewport. Physical hardware: not verified.
-- **Manual requirements / limitations:** Follow the loaded-file, simultaneous playback, independent transport, audibility, gain/EQ/crossfader, device recovery, and shutdown checks in `docs/REQUIREMENTS.md`. One actual master meter is available; per-deck meters, cue routing, and advanced performance features are not.
+- **Required frontend:** Two deck panels, accurate loaded-audio waveforms and positions, transport, seek, gain/EQ controls, eight identifiable colorable Hot Cue pads per deck, actual master meter, master level, crossfader, and two-slot quick crate.
+- **Required backend:** Existing `sayt-engine` deck/DSP/output behavior, mixer snapshots and commands, native WAV picker, and generation-bound Hot Cue seeks with versioned local per-track metadata. Tauri owns `Engine` and cue file access on a bounded actor thread.
+- **Current source:** `DeckPanel`, `HotCueControls`, `Waveform`, `MixerConsole`, and `QuickCrateBrowser` in `apps/desktop/src/App.tsx`; engine code remains in `crates/sayt-engine`; commands, cue store and actor are in `apps/desktop/src-tauri/src/`.
+- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified; simulations are not product evidence. Hot Cue source, automated tests, and Windows desktop release build pass locally; real Tauri fixture loading, cue triggering, restart restoration, and screenshot artifact remain pending because owner input/minimization interrupted the live-window run. Initial empty workspace render observed at 1920×1032, not retained as a repository image. Physical playback and sample-accurate timing are not verified.
+- **Manual requirements / limitations:** Complete `docs/hot-cues.md` fixture and restart procedure when the window is available. Follow the loaded-file, simultaneous playback, independent transport, audibility, gain/EQ/crossfader, device recovery, and shutdown checks in `docs/REQUIREMENTS.md`. One actual master meter is available; per-deck meters and cue routing remain unavailable.
 
 ### Screen 02 — SAYT Music Library Manager
 

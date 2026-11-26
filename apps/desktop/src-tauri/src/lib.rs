@@ -3,11 +3,12 @@
 use std::error::Error;
 
 use crate::audio_service::AudioService;
-use sayt_engine::{DeviceInfo, MixerSnapshot};
+use sayt_engine::{DeviceInfo, HotCueColor, MixerSnapshot};
 use tauri::Manager;
 use tracing_subscriber::EnvFilter;
 
 mod audio_service;
+mod hot_cues;
 
 #[tauri::command]
 fn list_devices(audio: tauri::State<'_, AudioService>) -> Result<Vec<DeviceInfo>, String> {
@@ -94,6 +95,58 @@ fn engine_snapshot(audio: tauri::State<'_, AudioService>) -> Result<MixerSnapsho
     audio.snapshot()
 }
 
+#[tauri::command]
+fn set_hot_cue(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    slot: usize,
+    source_track_id: String,
+) -> Result<MixerSnapshot, String> {
+    audio.set_hot_cue(deck, slot, &source_track_id)
+}
+
+#[tauri::command]
+fn trigger_hot_cue(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    slot: usize,
+    source_track_id: String,
+) -> Result<MixerSnapshot, String> {
+    audio.trigger_hot_cue(deck, slot, &source_track_id)
+}
+
+#[tauri::command]
+fn clear_hot_cue(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    slot: usize,
+    source_track_id: String,
+) -> Result<MixerSnapshot, String> {
+    audio.clear_hot_cue(deck, slot, &source_track_id)
+}
+
+#[tauri::command]
+fn rename_hot_cue(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    slot: usize,
+    source_track_id: String,
+    name: String,
+) -> Result<MixerSnapshot, String> {
+    audio.rename_hot_cue(deck, slot, &source_track_id, name)
+}
+
+#[tauri::command]
+fn set_hot_cue_color(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    slot: usize,
+    source_track_id: String,
+    color: HotCueColor,
+) -> Result<MixerSnapshot, String> {
+    audio.set_hot_cue_color(deck, slot, &source_track_id, color)
+}
+
 /// Starts the desktop shell and reports startup or runtime failures.
 pub fn run() -> Result<(), Box<dyn Error>> {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
@@ -104,10 +157,18 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         .map_err(|error| std::io::Error::other(error.to_string()))?;
 
     tracing::info!(component = "desktop-shell", event = "startup");
-    let audio = AudioService::new().map_err(std::io::Error::other)?;
     if let Err(error) = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .manage(audio)
+        .setup(|app| {
+            let cue_directory = app
+                .path()
+                .app_local_data_dir()
+                .map_err(|error| std::io::Error::other(error.to_string()))?
+                .join("hot-cues-v1");
+            let audio = AudioService::new(cue_directory).map_err(std::io::Error::other)?;
+            app.manage(audio);
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler!(
             list_devices,
             select_device,
@@ -117,7 +178,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             set_deck_control,
             set_mixer,
             pick_track,
-            engine_snapshot
+            engine_snapshot,
+            set_hot_cue,
+            trigger_hot_cue,
+            clear_hot_cue,
+            rename_hot_cue,
+            set_hot_cue_color
         ))
         .run(tauri::generate_context!())
     {

@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     decoder::{decode_track, StereoFrame, Track},
     dsp::{EqBank, EqCoefficients},
+    hot_cue::{empty_hot_cue_slots, validate_hot_cue_slots, HotCueSlots},
 };
 
 const AUDIO_COMMAND_CAPACITY: usize = 64;
@@ -42,6 +43,7 @@ pub struct DeviceInfo {
 pub struct DeckSnapshot {
     pub loaded: bool,
     pub filename: String,
+    pub source_track_id: Option<String>,
     pub duration_seconds: f64,
     pub position_seconds: f64,
     pub playing: bool,
@@ -52,6 +54,9 @@ pub struct DeckSnapshot {
     pub mid: f32,
     pub high: f32,
     pub waveform: Vec<f32>,
+    pub hot_cues: HotCueSlots,
+    pub hot_cue_warning: Option<String>,
+    pub active_hot_cue_slot: Option<usize>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -75,6 +80,9 @@ struct DeckSettings {
     low: f32,
     mid: f32,
     high: f32,
+    hot_cues: HotCueSlots,
+    hot_cue_warning: Option<String>,
+    active_hot_cue_slot: Option<usize>,
 }
 
 impl Default for DeckSettings {
@@ -88,6 +96,9 @@ impl Default for DeckSettings {
             low: 0.0,
             mid: 0.0,
             high: 0.0,
+            hot_cues: empty_hot_cue_slots(),
+            hot_cue_warning: None,
+            active_hot_cue_slot: None,
         }
     }
 }
@@ -211,6 +222,9 @@ impl Engine {
         self.settings.decks[deck].generation = generation;
         self.settings.decks[deck].position_seconds = 0.0;
         self.settings.decks[deck].playing = false;
+        self.settings.decks[deck].active_hot_cue_slot = None;
+        self.settings.decks[deck].hot_cues = empty_hot_cue_slots();
+        self.settings.decks[deck].hot_cue_warning = None;
         Ok(self.snapshot())
     }
 
@@ -228,27 +242,94 @@ impl Engine {
 
     pub fn stop(&mut self, deck: usize) -> Result<MixerSnapshot, String> {
         validate_deck(deck)?;
-        self.ensure_output_selected()?;
         self.enqueue(AudioCommand::Stop { deck })?;
         self.settings.decks[deck].position_seconds = 0.0;
         self.settings.decks[deck].playing = false;
+        self.settings.decks[deck].active_hot_cue_slot = None;
         self.telemetry
             .set_deck(deck, self.settings.decks[deck].generation, 0.0, false);
         Ok(self.snapshot())
     }
 
     pub fn seek(&mut self, deck: usize, position_seconds: f64) -> Result<MixerSnapshot, String> {
+        self.seek_internal(deck, position_seconds, None)
+    }
+
+    pub fn set_hot_cues(
+        &mut self,
+        deck: usize,
+        expected_source_track_id: &str,
+        hot_cues: HotCueSlots,
+        warning: Option<String>,
+    ) -> Result<MixerSnapshot, String> {
         validate_deck(deck)?;
-        self.ensure_output_selected()?;
+        let settings = &self.settings.decks[deck];
+        let Some(track) = &settings.track else {
+            return Err("Load a WAV into this deck before editing hot cues".to_string());
+        };
+        if track.source_track_id != expected_source_track_id {
+            return Err("This deck changed tracks. Select the hot cue again.".to_string());
+        }
+        validate_hot_cue_slots(&hot_cues, track.duration_seconds)?;
+
+        let settings = &mut self.settings.decks[deck];
+        settings.hot_cues = hot_cues;
+        settings.hot_cue_warning = warning;
+        if settings
+            .active_hot_cue_slot
+            .is_some_and(|slot| settings.hot_cues[slot].is_none())
+        {
+            settings.active_hot_cue_slot = None;
+        }
+        Ok(self.snapshot())
+    }
+
+    pub fn trigger_hot_cue(
+        &mut self,
+        deck: usize,
+        slot: usize,
+        expected_source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        validate_deck(deck)?;
+        let settings = &self.settings.decks[deck];
+        let Some(track) = &settings.track else {
+            return Err("Load a WAV into this deck before triggering a hot cue".to_string());
+        };
+        if track.source_track_id != expected_source_track_id {
+            return Err("This deck changed tracks. Select the hot cue again.".to_string());
+        }
+        let Some(cue) = settings.hot_cues.get(slot).and_then(Option::as_ref) else {
+            return Err("This hot cue slot is empty. Set a cue before triggering it.".to_string());
+        };
+        self.seek_internal(deck, cue.position_seconds, Some(slot))
+    }
+
+    fn seek_internal(
+        &mut self,
+        deck: usize,
+        position_seconds: f64,
+        active_hot_cue_slot: Option<usize>,
+    ) -> Result<MixerSnapshot, String> {
+        validate_deck(deck)?;
         if !position_seconds.is_finite() {
             return Err("Seek position must be a finite number of seconds".to_string());
         }
         let Some(track) = &self.settings.decks[deck].track else {
+            if active_hot_cue_slot.is_some() {
+                return Err("Load a WAV into this deck before triggering a hot cue".to_string());
+            }
+            self.ensure_output_selected()?;
             return Ok(self.snapshot());
         };
         let position = position_seconds.clamp(0.0, track.duration_seconds);
-        self.enqueue(AudioCommand::Seek { deck, position })?;
+        let generation = self.settings.decks[deck].generation;
+        self.enqueue(AudioCommand::Seek {
+            deck,
+            generation,
+            position,
+        })?;
         self.settings.decks[deck].position_seconds = position;
+        self.settings.decks[deck].active_hot_cue_slot = active_hot_cue_slot;
         self.telemetry.position_seconds[deck].store(position.to_bits(), Ordering::Release);
         Ok(self.snapshot())
     }
@@ -340,6 +421,8 @@ impl Engine {
                 low: settings.low,
                 mid: settings.mid,
                 high: settings.high,
+                hot_cues: settings.hot_cues.clone(),
+                hot_cue_warning: settings.hot_cue_warning.clone(),
                 ..DeckSnapshot::default()
             };
         };
@@ -360,6 +443,7 @@ impl Engine {
         DeckSnapshot {
             loaded: true,
             filename: track.filename.clone(),
+            source_track_id: Some(track.source_track_id.clone()),
             duration_seconds: track.duration_seconds,
             position_seconds: position_seconds.clamp(0.0, track.duration_seconds),
             playing,
@@ -370,6 +454,11 @@ impl Engine {
             mid: settings.mid,
             high: settings.high,
             waveform: track.waveform.to_vec(),
+            hot_cues: settings.hot_cues.clone(),
+            hot_cue_warning: settings.hot_cue_warning.clone(),
+            active_hot_cue_slot: settings
+                .active_hot_cue_slot
+                .filter(|slot| settings.hot_cues.get(*slot).is_some_and(Option::is_some)),
         }
     }
 
@@ -603,6 +692,7 @@ enum AudioCommand {
     },
     Seek {
         deck: usize,
+        generation: u64,
         position: f64,
     },
     SetDeckControls {
@@ -715,10 +805,17 @@ impl PlaybackState {
                 self.decks[deck].position_frames = 0.0;
                 Ok(())
             }
-            AudioCommand::Seek { deck, position } => {
-                if let Some(track) = &self.decks[deck].track {
-                    self.decks[deck].position_frames =
-                        position.clamp(0.0, track.duration_seconds) * f64::from(track.sample_rate);
+            AudioCommand::Seek {
+                deck,
+                generation,
+                position,
+            } => {
+                let deck_state = &mut self.decks[deck];
+                if deck_state.generation == generation {
+                    if let Some(track) = &deck_state.track {
+                        deck_state.position_frames = position.clamp(0.0, track.duration_seconds)
+                            * f64::from(track.sample_rate);
+                    }
                 }
                 Ok(())
             }
@@ -920,8 +1017,18 @@ fn soft_limit(input: f32) -> f32 {
 mod tests {
     use super::*;
     use crate::decoder::{StereoFrame, WAVEFORM_BINS};
+    use crate::hot_cue::{default_hot_cue, HotCue, HotCueColor};
+
+    const TEST_SOURCE_TRACK_ID: &str =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+    const TEST_SOURCE_TRACK_ID_B: &str =
+        "sha256:1111111111111111111111111111111111111111111111111111111111111111";
 
     fn test_track(samples: &[f32]) -> Arc<Track> {
+        test_track_with_source(samples, TEST_SOURCE_TRACK_ID)
+    }
+
+    fn test_track_with_source(samples: &[f32], source_track_id: &str) -> Arc<Track> {
         Arc::new(Track {
             frames: Arc::from(
                 samples
@@ -936,8 +1043,38 @@ mod tests {
             channels: 2,
             duration_seconds: samples.len() as f64 / 48_000.0,
             filename: "fixture.wav".to_string(),
+            source_track_id: source_track_id.to_string(),
             waveform: Arc::from(vec![0.0; WAVEFORM_BINS]),
         })
+    }
+
+    fn engine_with_command_queue(
+        capacity: usize,
+        loaded_tracks: [bool; 2],
+        playing: [bool; 2],
+    ) -> (Engine, Consumer<AudioCommand>) {
+        let mut engine = Engine::new().unwrap();
+        engine.selected_device = Some("test-output".to_string());
+        let (command_sender, command_receiver) = RingBuffer::new(capacity);
+        engine.command_sender = Some(command_sender);
+        for deck in 0..2 {
+            if loaded_tracks[deck] {
+                let source_track_id = if deck == 0 {
+                    TEST_SOURCE_TRACK_ID
+                } else {
+                    TEST_SOURCE_TRACK_ID_B
+                };
+                engine.settings.decks[deck].track =
+                    Some(test_track_with_source(&[0.25; 48_000], source_track_id));
+                engine.settings.decks[deck].generation = (deck + 1) as u64;
+                engine.settings.decks[deck].playing = playing[deck];
+                engine.telemetry.track_generation[deck].store((deck + 1) as u64, Ordering::Release);
+                engine.telemetry.playing[deck].store(playing[deck], Ordering::Release);
+                engine.settings.decks[deck].hot_cues[0] =
+                    Some(default_hot_cue(0, if deck == 0 { 0.5 } else { 0.75 }));
+            }
+        }
+        (engine, command_receiver)
     }
 
     fn test_playback(track_a: Arc<Track>, track_b: Arc<Track>, crossfader: f32) -> PlaybackState {
@@ -997,6 +1134,134 @@ mod tests {
         let deck = engine.snapshot_deck(0);
         assert_eq!(deck.position_seconds, 0.0);
         assert!(!deck.playing);
+    }
+
+    #[test]
+    fn hot_cues_trigger_generation_bound_seeks_on_both_decks_and_preserve_play_state() {
+        let (mut engine, mut commands) = engine_with_command_queue(4, [true, true], [false, true]);
+
+        let paused = engine.trigger_hot_cue(0, 0, TEST_SOURCE_TRACK_ID).unwrap();
+        let playing = engine
+            .trigger_hot_cue(1, 0, TEST_SOURCE_TRACK_ID_B)
+            .unwrap();
+
+        assert_eq!(paused.deck_a.position_seconds, 0.5);
+        assert!(!paused.deck_a.playing);
+        assert_eq!(paused.deck_a.active_hot_cue_slot, Some(0));
+        assert_eq!(playing.deck_b.position_seconds, 0.75);
+        assert!(playing.deck_b.playing);
+        assert_eq!(playing.deck_b.active_hot_cue_slot, Some(0));
+        assert!(matches!(
+            commands.pop(),
+            Ok(AudioCommand::Seek {
+                deck: 0,
+                generation: 1,
+                position: 0.5
+            })
+        ));
+        assert!(matches!(
+            commands.pop(),
+            Ok(AudioCommand::Seek {
+                deck: 1,
+                generation: 2,
+                position: 0.75
+            })
+        ));
+    }
+
+    #[test]
+    fn hot_cue_trigger_rejects_stale_identity_empty_slots_and_unloaded_decks() {
+        let (mut engine, mut commands) = engine_with_command_queue(4, [true, false], [false; 2]);
+
+        assert!(engine.trigger_hot_cue(0, 0, "sha256:stale").is_err());
+        assert!(engine.trigger_hot_cue(0, 8, TEST_SOURCE_TRACK_ID).is_err());
+        assert!(engine.trigger_hot_cue(1, 0, TEST_SOURCE_TRACK_ID).is_err());
+        assert!(commands.pop().is_err());
+    }
+
+    #[test]
+    fn active_cue_feedback_survives_playback_and_clears_on_stop() {
+        let (mut engine, _) = engine_with_command_queue(4, [true, false], [true, false]);
+        engine.trigger_hot_cue(0, 0, TEST_SOURCE_TRACK_ID).unwrap();
+        engine.telemetry.position_seconds[0].store(0.8_f64.to_bits(), Ordering::Release);
+
+        let playing_snapshot = engine.snapshot();
+        assert_eq!(playing_snapshot.deck_a.position_seconds, 0.8);
+        assert_eq!(playing_snapshot.deck_a.active_hot_cue_slot, Some(0));
+
+        let stopped_snapshot = engine.stop(0).unwrap();
+        assert_eq!(stopped_snapshot.deck_a.active_hot_cue_slot, None);
+    }
+
+    #[test]
+    fn hot_cue_updates_are_deck_local_and_reject_stale_or_invalid_data() {
+        let (mut engine, _) = engine_with_command_queue(4, [true, true], [false; 2]);
+        let mut deck_a_cues = empty_hot_cue_slots();
+        deck_a_cues[2] = Some(HotCue {
+            name: "Intro".to_string(),
+            color: HotCueColor::Violet,
+            position_seconds: 0.75,
+        });
+
+        assert!(engine
+            .set_hot_cues(0, "sha256:stale", deck_a_cues.clone(), None)
+            .is_err());
+        let mut invalid_cues = deck_a_cues.clone();
+        invalid_cues[2].as_mut().unwrap().position_seconds = 2.0;
+        assert!(engine
+            .set_hot_cues(0, TEST_SOURCE_TRACK_ID, invalid_cues, None)
+            .is_err());
+
+        let updated = engine
+            .set_hot_cues(0, TEST_SOURCE_TRACK_ID, deck_a_cues, None)
+            .unwrap();
+        assert_eq!(updated.deck_a.hot_cues[2].as_ref().unwrap().name, "Intro");
+        assert!(updated.deck_b.hot_cues[2].is_none());
+        assert_eq!(
+            updated.deck_b.hot_cues[0]
+                .as_ref()
+                .unwrap()
+                .position_seconds,
+            0.75
+        );
+    }
+
+    #[test]
+    fn full_audio_queue_reports_failed_cue_trigger_without_changing_snapshot() {
+        let (mut engine, _commands) = engine_with_command_queue(1, [true, false], [false; 2]);
+        engine
+            .enqueue(AudioCommand::Stop { deck: 0 })
+            .expect("fill the bounded audio queue");
+
+        let error = engine
+            .trigger_hot_cue(0, 0, TEST_SOURCE_TRACK_ID)
+            .expect_err("a full queue must not claim cue success");
+        assert!(error.contains("queue is full"));
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.deck_a.position_seconds, 0.0);
+        assert_eq!(snapshot.deck_a.active_hot_cue_slot, None);
+    }
+
+    #[test]
+    fn callback_ignores_a_seek_for_a_replaced_track_generation() {
+        let mut settings = EngineSettings::default();
+        settings.decks[0].track = Some(test_track(&[0.25; 48_000]));
+        settings.decks[0].generation = 9;
+        let mut playback = PlaybackState::new(&settings, 48_000);
+        let (mut retired_tracks, _retired_consumer) = RingBuffer::new(1);
+
+        assert!(playback
+            .apply(
+                AudioCommand::Seek {
+                    deck: 0,
+                    generation: 8,
+                    position: 0.75,
+                },
+                &mut retired_tracks,
+            )
+            .is_ok());
+
+        assert_eq!(playback.decks[0].position_frames, 0.0);
     }
 
     #[test]

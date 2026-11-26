@@ -1,7 +1,7 @@
 //! Owns the non-Send CPAL engine on a dedicated control thread.
 
 use std::{
-    path::Path,
+    path::{Path, PathBuf},
     sync::{
         mpsc::{self, Receiver, SyncSender, TrySendError},
         Mutex,
@@ -9,7 +9,12 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use sayt_engine::{DeviceInfo, Engine, MixerSnapshot};
+use sayt_engine::{
+    default_hot_cue, empty_hot_cue_slots, validate_hot_cue, validate_hot_cue_slots, DeviceInfo,
+    Engine, HotCueColor, HotCueSlots, MixerSnapshot, HOT_CUE_SLOT_COUNT,
+};
+
+use crate::hot_cues::{HotCueLoad, HotCueStore};
 
 const CONTROL_QUEUE_CAPACITY: usize = 64;
 const REPLY_QUEUE_CAPACITY: usize = 1;
@@ -32,6 +37,17 @@ enum ServiceCommand {
     ),
     SetMixer(Option<f32>, Option<f32>, EngineReply<MixerSnapshot>),
     LoadTrack(usize, std::path::PathBuf, EngineReply<MixerSnapshot>),
+    SetHotCue(usize, usize, String, EngineReply<MixerSnapshot>),
+    TriggerHotCue(usize, usize, String, EngineReply<MixerSnapshot>),
+    ClearHotCue(usize, usize, String, EngineReply<MixerSnapshot>),
+    RenameHotCue(usize, usize, String, String, EngineReply<MixerSnapshot>),
+    SetHotCueColor(
+        usize,
+        usize,
+        String,
+        HotCueColor,
+        EngineReply<MixerSnapshot>,
+    ),
     Snapshot(EngineReply<MixerSnapshot>),
     Shutdown,
 }
@@ -43,7 +59,7 @@ pub struct AudioService {
 }
 
 impl AudioService {
-    pub fn new() -> Result<Self, String> {
+    pub fn new(hot_cue_directory: PathBuf) -> Result<Self, String> {
         let (commands, receiver) = mpsc::sync_channel(CONTROL_QUEUE_CAPACITY);
         let (startup_sender, startup_receiver) = mpsc::sync_channel(REPLY_QUEUE_CAPACITY);
         let actor = thread::Builder::new()
@@ -51,7 +67,7 @@ impl AudioService {
             .spawn(move || match Engine::new() {
                 Ok(engine) => {
                     let _ = startup_sender.send(Ok(()));
-                    run_engine_actor(engine, receiver);
+                    run_engine_actor(engine, HotCueStore::new(hot_cue_directory), receiver);
                 }
                 Err(error) => {
                     let _ = startup_sender.send(Err(error));
@@ -120,6 +136,60 @@ impl AudioService {
         self.request(|reply| ServiceCommand::LoadTrack(deck, path, reply))
     }
 
+    pub fn set_hot_cue(
+        &self,
+        deck: usize,
+        slot: usize,
+        source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::SetHotCue(deck, slot, source_track_id, reply))
+    }
+
+    pub fn trigger_hot_cue(
+        &self,
+        deck: usize,
+        slot: usize,
+        source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::TriggerHotCue(deck, slot, source_track_id, reply))
+    }
+
+    pub fn clear_hot_cue(
+        &self,
+        deck: usize,
+        slot: usize,
+        source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::ClearHotCue(deck, slot, source_track_id, reply))
+    }
+
+    pub fn rename_hot_cue(
+        &self,
+        deck: usize,
+        slot: usize,
+        source_track_id: &str,
+        name: String,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::RenameHotCue(deck, slot, source_track_id, name, reply))
+    }
+
+    pub fn set_hot_cue_color(
+        &self,
+        deck: usize,
+        slot: usize,
+        source_track_id: &str,
+        color: HotCueColor,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| {
+            ServiceCommand::SetHotCueColor(deck, slot, source_track_id, color, reply)
+        })
+    }
+
     pub fn snapshot(&self) -> Result<MixerSnapshot, String> {
         self.request(ServiceCommand::Snapshot)
     }
@@ -162,7 +232,11 @@ impl Drop for AudioService {
     }
 }
 
-fn run_engine_actor(mut engine: Engine, commands: Receiver<ServiceCommand>) {
+fn run_engine_actor(
+    mut engine: Engine,
+    hot_cue_store: HotCueStore,
+    commands: Receiver<ServiceCommand>,
+) {
     while let Ok(command) = commands.recv() {
         match command {
             ServiceCommand::ListDevices(reply) => reply_with(reply, engine.devices()),
@@ -183,11 +257,194 @@ fn run_engine_actor(mut engine: Engine, commands: Receiver<ServiceCommand>) {
                 reply_with(reply, engine.set_mixer(master, crossfader));
             }
             ServiceCommand::LoadTrack(deck, path, reply) => {
-                reply_with(reply, engine.load_track(deck, &path));
+                reply_with(
+                    reply,
+                    load_track_with_cues(&mut engine, &hot_cue_store, deck, &path),
+                );
+            }
+            ServiceCommand::SetHotCue(deck, slot, source_track_id, reply) => {
+                reply_with(
+                    reply,
+                    mutate_hot_cues(
+                        &mut engine,
+                        &hot_cue_store,
+                        deck,
+                        slot,
+                        &source_track_id,
+                        |slots, cue_position, duration| {
+                            let existing = slots[slot].clone();
+                            let mut cue =
+                                existing.unwrap_or_else(|| default_hot_cue(slot, cue_position));
+                            cue.position_seconds = cue_position;
+                            validate_hot_cue(slot, &cue, duration)?;
+                            slots[slot] = Some(cue);
+                            Ok(())
+                        },
+                    ),
+                );
+            }
+            ServiceCommand::TriggerHotCue(deck, slot, source_track_id, reply) => {
+                reply_with(reply, engine.trigger_hot_cue(deck, slot, &source_track_id));
+            }
+            ServiceCommand::ClearHotCue(deck, slot, source_track_id, reply) => {
+                reply_with(
+                    reply,
+                    mutate_hot_cues(
+                        &mut engine,
+                        &hot_cue_store,
+                        deck,
+                        slot,
+                        &source_track_id,
+                        |slots, _, _| {
+                            slots[slot] = None;
+                            Ok(())
+                        },
+                    ),
+                );
+            }
+            ServiceCommand::RenameHotCue(deck, slot, source_track_id, name, reply) => {
+                reply_with(
+                    reply,
+                    mutate_hot_cues(
+                        &mut engine,
+                        &hot_cue_store,
+                        deck,
+                        slot,
+                        &source_track_id,
+                        |slots, _, duration| {
+                            let Some(cue) = slots[slot].as_mut() else {
+                                return Err("Set this hot cue before editing its name".to_string());
+                            };
+                            cue.name = name.trim().to_string();
+                            validate_hot_cue(slot, cue, duration)
+                        },
+                    ),
+                );
+            }
+            ServiceCommand::SetHotCueColor(deck, slot, source_track_id, color, reply) => {
+                reply_with(
+                    reply,
+                    mutate_hot_cues(
+                        &mut engine,
+                        &hot_cue_store,
+                        deck,
+                        slot,
+                        &source_track_id,
+                        |slots, _, duration| {
+                            let Some(cue) = slots[slot].as_mut() else {
+                                return Err(
+                                    "Set this hot cue before changing its color".to_string()
+                                );
+                            };
+                            cue.color = color;
+                            validate_hot_cue(slot, cue, duration)
+                        },
+                    ),
+                );
             }
             ServiceCommand::Snapshot(reply) => reply_with(reply, Ok(engine.snapshot())),
             ServiceCommand::Shutdown => break,
         }
+    }
+}
+
+fn load_track_with_cues(
+    engine: &mut Engine,
+    store: &HotCueStore,
+    deck: usize,
+    path: &Path,
+) -> Result<MixerSnapshot, String> {
+    let loaded_snapshot = engine.load_track(deck, path)?;
+    let loaded_deck = deck_snapshot(&loaded_snapshot, deck)?;
+    let source_track_id = loaded_deck
+        .source_track_id
+        .as_deref()
+        .ok_or_else(|| "The loaded WAV has no source identity for hot cues".to_string())?;
+    let cues = match store.load(source_track_id, loaded_deck.duration_seconds) {
+        Ok(cues) => cues,
+        Err(warning) => {
+            tracing::warn!(
+                component = "hot-cue-store",
+                check = "load_source_cues",
+                source_track_id,
+                "Saved hot cues could not be loaded; starting this deck with empty cue slots"
+            );
+            HotCueLoad {
+                slots: empty_hot_cue_slots(),
+                warning: Some(warning),
+            }
+        }
+    };
+
+    let deck_ids = [
+        loaded_snapshot.deck_a.source_track_id.as_deref(),
+        loaded_snapshot.deck_b.source_track_id.as_deref(),
+    ];
+    for (target_deck, target_id) in deck_ids.into_iter().enumerate() {
+        if target_id == Some(source_track_id) {
+            engine.set_hot_cues(
+                target_deck,
+                source_track_id,
+                cues.slots.clone(),
+                cues.warning.clone(),
+            )?;
+        }
+    }
+    Ok(engine.snapshot())
+}
+
+fn mutate_hot_cues(
+    engine: &mut Engine,
+    store: &HotCueStore,
+    deck: usize,
+    slot: usize,
+    expected_source_track_id: &str,
+    mutation: impl FnOnce(&mut HotCueSlots, f64, f64) -> Result<(), String>,
+) -> Result<MixerSnapshot, String> {
+    if slot >= HOT_CUE_SLOT_COUNT {
+        return Err(format!(
+            "Hot cue slot must be between 1 and {HOT_CUE_SLOT_COUNT}"
+        ));
+    }
+    let snapshot = engine.snapshot();
+    let deck_state = deck_snapshot(&snapshot, deck)?;
+    let source_track_id = deck_state
+        .source_track_id
+        .as_deref()
+        .ok_or_else(|| "Load a WAV into this deck before editing hot cues".to_string())?;
+    if source_track_id != expected_source_track_id {
+        return Err("This deck changed tracks. Select the hot cue again.".to_string());
+    }
+
+    let mut slots = deck_state.hot_cues.clone();
+    mutation(
+        &mut slots,
+        deck_state.position_seconds,
+        deck_state.duration_seconds,
+    )?;
+    validate_hot_cue_slots(&slots, deck_state.duration_seconds)?;
+    store.save(source_track_id, deck_state.duration_seconds, &slots)?;
+
+    let track_ids = [
+        snapshot.deck_a.source_track_id.as_deref(),
+        snapshot.deck_b.source_track_id.as_deref(),
+    ];
+    for (target_deck, track_id) in track_ids.into_iter().enumerate() {
+        if track_id == Some(source_track_id) {
+            engine.set_hot_cues(target_deck, source_track_id, slots.clone(), None)?;
+        }
+    }
+    Ok(engine.snapshot())
+}
+
+fn deck_snapshot(
+    snapshot: &MixerSnapshot,
+    deck: usize,
+) -> Result<&sayt_engine::DeckSnapshot, String> {
+    match deck {
+        0 => Ok(&snapshot.deck_a),
+        1 => Ok(&snapshot.deck_b),
+        _ => Err("Deck index must be 0 or 1".to_string()),
     }
 }
 
@@ -201,7 +458,8 @@ mod tests {
 
     #[test]
     fn actor_returns_snapshots_and_preserves_no_device_errors() {
-        let service = AudioService::new().expect("audio control actor starts");
+        let service = AudioService::new(std::env::temp_dir().join("sayt-hot-cues-actor-test"))
+            .expect("audio control actor starts");
         let initial = service.snapshot().expect("initial engine snapshot");
         assert_eq!(initial.crossfader, 0.5);
 
@@ -213,5 +471,30 @@ mod tests {
         let after_error = service.snapshot().expect("snapshot after rejected control");
         assert_eq!(after_error.master_volume, 0.8);
         assert_eq!(after_error.crossfader, 0.5);
+    }
+
+    #[test]
+    fn actor_reports_unloaded_and_stale_hot_cue_actions_without_claiming_success() {
+        let storage = std::env::temp_dir().join(format!(
+            "sayt-hot-cues-actor-unloaded-{}",
+            std::process::id()
+        ));
+        let service = AudioService::new(storage).expect("audio control actor starts");
+        let error = service
+            .trigger_hot_cue(
+                0,
+                0,
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            )
+            .expect_err("an unloaded deck cannot trigger a cue");
+        assert!(error.contains("Load a WAV"));
+        let error = service
+            .set_hot_cue(
+                2,
+                0,
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            )
+            .expect_err("invalid deck index must be rejected");
+        assert!(error.contains("Deck index"));
     }
 }

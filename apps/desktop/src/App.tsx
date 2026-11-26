@@ -4,9 +4,11 @@ import { MaterialIcon } from "./MaterialIcon";
 import { ShortcutOverlay } from "./ShortcutOverlay";
 import {
   DECK_CONTROL_LIMITS,
+  createHotCueCommand,
   detectShortcutPlatform,
   dispatchShortcutKeydown,
   formatShortcut,
+  getHotCueShortcutId,
   getEffectiveShortcutBindings,
   loadShortcutOverrides,
   MIXER_CONTROL_LIMITS,
@@ -16,6 +18,9 @@ import {
   type CommandDispatcher,
   type DeckControlId,
   type DeckId,
+  type HotCueAction,
+  type HotCueColor,
+  type HotCueSlot,
   type ShortcutBindings,
   type ShortcutBinding,
   type ShortcutContext,
@@ -28,6 +33,7 @@ import {
 type DeckSnapshot = {
   loaded: boolean;
   filename: string;
+  source_track_id: string | null;
   duration_seconds: number;
   position_seconds: number;
   playing: boolean;
@@ -38,6 +44,15 @@ type DeckSnapshot = {
   mid: number;
   high: number;
   waveform: number[];
+  hot_cues: (HotCueSnapshot | null)[];
+  hot_cue_warning: string | null;
+  active_hot_cue_slot: number | null;
+};
+
+type HotCueSnapshot = {
+  name: string;
+  color: HotCueColor;
+  position_seconds: number;
 };
 
 type MixerSnapshot = {
@@ -59,6 +74,7 @@ const SNAPSHOT_INTERVAL_MS = 100;
 const emptyDeck = (): DeckSnapshot => ({
   loaded: false,
   filename: "",
+  source_track_id: null,
   duration_seconds: 0,
   position_seconds: 0,
   playing: false,
@@ -69,6 +85,9 @@ const emptyDeck = (): DeckSnapshot => ({
   mid: 0,
   high: 0,
   waveform: [],
+  hot_cues: Array.from({ length: 8 }, () => null),
+  hot_cue_warning: null,
+  active_hot_cue_slot: null,
 });
 
 const emptyMixer = (): MixerSnapshot => ({
@@ -143,6 +162,222 @@ export function Waveform({
         <span className="playhead" style={{ left: `${progress * 100}%` }} />
       )}
     </div>
+  );
+}
+
+const HOT_CUE_COLORS: readonly HotCueColor[] = [
+  "coral",
+  "orange",
+  "amber",
+  "lime",
+  "cyan",
+  "blue",
+  "violet",
+  "pink",
+];
+
+const HOT_CUE_SLOT_IDS: readonly HotCueSlot[] = [0, 1, 2, 3, 4, 5, 6, 7];
+
+export function HotCueControls({
+  deck,
+  deckIndex,
+  loading,
+  shortcutText,
+  onCommand,
+}: {
+  deck: DeckSnapshot;
+  deckIndex: DeckId;
+  loading: boolean;
+  shortcutText: (shortcutId: ShortcutId) => string;
+  onCommand: CommandDispatcher;
+}) {
+  const deckLabel = deckIndex === 0 ? "A" : "B";
+  const [selectedSlot, setSelectedSlot] = useState<HotCueSlot | null>(null);
+  const selectedCue =
+    selectedSlot === null ? null : (deck.hot_cues[selectedSlot] ?? null);
+  const [nameDraft, setNameDraft] = useState(selectedCue?.name ?? "");
+
+  useEffect(() => {
+    setNameDraft(selectedCue?.name ?? "");
+  }, [deck.source_track_id, selectedSlot, selectedCue?.name]);
+
+  const dispatchCue = (action: HotCueAction, slot: HotCueSlot) => {
+    onCommand(
+      createHotCueCommand(action, deckIndex, slot, deck.source_track_id),
+    );
+  };
+
+  const saveCueName = () => {
+    if (
+      selectedSlot === null ||
+      !selectedCue ||
+      !deck.source_track_id ||
+      nameDraft.trim() === selectedCue.name
+    ) {
+      return;
+    }
+    onCommand({
+      id: "cue.rename",
+      payload: {
+        deck: deckIndex,
+        slot: selectedSlot,
+        sourceTrackId: deck.source_track_id,
+        name: nameDraft,
+      },
+    });
+  };
+
+  return (
+    <section
+      className="hot-cue-section"
+      aria-label={`Deck ${deckLabel} hot cues`}
+      aria-describedby={`deck-${deckLabel}-hot-cue-description`}
+    >
+      <div className="hot-cue-heading">
+        <div>
+          <h3>Hot Cues</h3>
+          <p id={`deck-${deckLabel}-hot-cue-description`}>
+            8 per-track positions · click an empty pad to set, an assigned pad
+            to trigger
+          </p>
+        </div>
+        <span className="hot-cue-track-state">
+          {deck.loaded ? "Saved with track" : "Load a track to begin"}
+        </span>
+      </div>
+
+      {deck.hot_cue_warning && (
+        <p className="hot-cue-warning" role="status">
+          {deck.hot_cue_warning}
+        </p>
+      )}
+
+      <div className="hot-cue-grid">
+        {HOT_CUE_SLOT_IDS.map((slot) => {
+          const cue = deck.hot_cues[slot] ?? null;
+          const slotNumber = slot + 1;
+          const active = deck.active_hot_cue_slot === slot;
+          const padAction = cue ? "trigger" : "set";
+          const padShortcut = getHotCueShortcutId(padAction, slot);
+          return (
+            <button
+              key={slot}
+              type="button"
+              className={`hot-cue-pad${cue ? ` hot-cue-color-${cue.color} is-assigned` : " is-empty"}${active ? " is-active" : ""}${selectedSlot === slot ? " is-selected" : ""}`}
+              disabled={!deck.loaded || loading}
+              aria-label={
+                cue
+                  ? `Trigger Deck ${deckLabel} hot cue ${slotNumber}, ${cue.name}, at ${formatTime(cue.position_seconds)}`
+                  : `Set Deck ${deckLabel} hot cue ${slotNumber} at the current position`
+              }
+              aria-pressed={active}
+              title={
+                cue
+                  ? `Trigger ${cue.name} at ${formatTime(cue.position_seconds)} · ${shortcutText(padShortcut)}`
+                  : `Set Hot Cue ${slotNumber} at the current playback position · ${shortcutText(padShortcut)}`
+              }
+              onClick={() => {
+                setSelectedSlot(slot);
+                dispatchCue(cue ? "trigger" : "set", slot);
+              }}
+            >
+              <span className="hot-cue-slot-number">{slotNumber}</span>
+              <strong>{cue?.name ?? "EMPTY"}</strong>
+              <small>
+                {cue ? formatTime(cue.position_seconds) : "SET POSITION"}
+                <kbd>{shortcutText(padShortcut)}</kbd>
+              </small>
+            </button>
+          );
+        })}
+      </div>
+
+      {selectedSlot !== null && (
+        <div className="hot-cue-editor" aria-label="Selected hot cue controls">
+          <span className="hot-cue-editor-title">Cue {selectedSlot + 1}</span>
+          {selectedCue ? (
+            <>
+              <label>
+                <span className="sr-only">
+                  Deck {deckLabel} cue {selectedSlot + 1} name
+                </span>
+                <input
+                  type="text"
+                  aria-label={`Deck ${deckLabel} hot cue ${selectedSlot + 1} name`}
+                  value={nameDraft}
+                  maxLength={64}
+                  disabled={loading}
+                  onChange={(event) =>
+                    setNameDraft(
+                      Array.from(event.target.value).slice(0, 32).join(""),
+                    )
+                  }
+                  onBlur={saveCueName}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") event.currentTarget.blur();
+                    if (event.key === "Escape") setNameDraft(selectedCue.name);
+                  }}
+                />
+              </label>
+              <label className="hot-cue-color-control">
+                <span className="sr-only">
+                  Deck {deckLabel} cue {selectedSlot + 1} color
+                </span>
+                <select
+                  aria-label={`Deck ${deckLabel} hot cue ${selectedSlot + 1} color`}
+                  value={selectedCue.color}
+                  disabled={loading}
+                  onChange={(event) =>
+                    onCommand({
+                      id: "cue.setColor",
+                      payload: {
+                        deck: deckIndex,
+                        slot: selectedSlot,
+                        sourceTrackId: deck.source_track_id,
+                        color: event.target.value as HotCueColor,
+                      },
+                    })
+                  }
+                >
+                  {HOT_CUE_COLORS.map((color) => (
+                    <option key={color} value={color}>
+                      {color[0]?.toUpperCase()}
+                      {color.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                disabled={!deck.loaded || loading}
+                title={`Reassign at current position · ${shortcutText(getHotCueShortcutId("set", selectedSlot))}`}
+                onClick={() => dispatchCue("set", selectedSlot)}
+              >
+                Reassign{" "}
+                <kbd>
+                  {shortcutText(getHotCueShortcutId("set", selectedSlot))}
+                </kbd>
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                title={`Clear this saved cue · ${shortcutText(getHotCueShortcutId("clear", selectedSlot))}`}
+                onClick={() => dispatchCue("clear", selectedSlot)}
+              >
+                Clear{" "}
+                <kbd>
+                  {shortcutText(getHotCueShortcutId("clear", selectedSlot))}
+                </kbd>
+              </button>
+            </>
+          ) : (
+            <span className="hot-cue-empty-selection">
+              Empty · setting uses the real engine position
+            </span>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -320,6 +555,15 @@ export function DeckPanel({
           }
         />
       </label>
+
+      <HotCueControls
+        key={deck.source_track_id ?? `deck-${deckIndex}-empty`}
+        deck={deck}
+        deckIndex={deckIndex}
+        loading={loading}
+        shortcutText={shortcutText}
+        onCommand={onCommand}
+      />
 
       <div className="deck-controls" aria-label={`Deck ${label} controls`}>
         {controls.map(({ key, label: controlLabel, value, min, max, step }) => (
@@ -880,11 +1124,24 @@ export function App() {
   const shortcutBindingsRef = useRef<ShortcutBindings>(
     effectiveShortcutBindings,
   );
-  const shortcutContextRef = useRef<ShortcutContext>({ focusedDeck });
+  const initialFocusedTrackId =
+    focusedDeck === 0
+      ? mixer.deck_a.source_track_id
+      : mixer.deck_b.source_track_id;
+  const shortcutContextRef = useRef<ShortcutContext>({
+    focusedDeck,
+    focusedTrackId: initialFocusedTrackId,
+  });
   const shortcutOverlayOpenRef = useRef(shortcutOverlayOpen);
   const commandDispatcherRef = useRef<CommandDispatcher>(() => undefined);
   shortcutBindingsRef.current = effectiveShortcutBindings;
-  shortcutContextRef.current = { focusedDeck };
+  shortcutContextRef.current = {
+    focusedDeck,
+    focusedTrackId:
+      focusedDeck === 0
+        ? mixer.deck_a.source_track_id
+        : mixer.deck_b.source_track_id,
+  };
   shortcutOverlayOpenRef.current = shortcutOverlayOpen;
 
   useEffect(() => {
@@ -1081,6 +1338,36 @@ export function App() {
         const { deck: deckIndex, control, delta } = command.payload;
         const deck = deckIndex === 0 ? mixer.deck_a : mixer.deck_b;
         setDeckControl(deckIndex, control, deck[control] + delta);
+        break;
+      }
+      case "cue.set":
+      case "cue.trigger":
+      case "cue.clear":
+      case "cue.rename":
+      case "cue.setColor": {
+        const { deck, slot, sourceTrackId } = command.payload;
+        if (!sourceTrackId) {
+          setError(
+            `Load a WAV into Deck ${deck === 0 ? "A" : "B"} before using hot cues.`,
+          );
+          return;
+        }
+        const nativeCommand = {
+          "cue.set": "set_hot_cue",
+          "cue.trigger": "trigger_hot_cue",
+          "cue.clear": "clear_hot_cue",
+          "cue.rename": "rename_hot_cue",
+          "cue.setColor": "set_hot_cue_color",
+        }[command.id];
+        const cueArgs: Record<string, unknown> = {
+          deck,
+          slot,
+          sourceTrackId,
+        };
+        if (command.id === "cue.rename") cueArgs.name = command.payload.name;
+        if (command.id === "cue.setColor")
+          cueArgs.color = command.payload.color;
+        runMixerCommand(nativeCommand, cueArgs);
         break;
       }
       case "mixer.setMaster":

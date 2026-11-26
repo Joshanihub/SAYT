@@ -4,10 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { M1_MATERIAL_ICON_NAMES, MaterialIcon } from "./MaterialIcon";
 import {
+  createHotCueCommand,
   createShortcutCommand,
   getDefaultShortcutBindings,
   type CommandDispatcher,
   type ShortcutId,
+  type HotCueSlot,
 } from "./commands/commandRegistry";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
@@ -17,6 +19,7 @@ import {
   AppShell,
   AudioSettings,
   DeckPanel,
+  HotCueControls,
   invokeNativeTrackPicker,
   LibraryEmptyState,
   MixerConsole,
@@ -30,8 +33,13 @@ type TestElementProps = {
   "aria-label"?: string;
   className?: string;
   disabled?: boolean;
+  onBlur?: () => void;
   onChange?: (event: { target: { value: string } }) => void;
   onClick?: () => void;
+  onKeyDown?: (event: {
+    key: string;
+    currentTarget: { blur: () => void };
+  }) => void;
   onFocusCapture?: () => void;
   onPointerDownCapture?: () => void;
 };
@@ -58,6 +66,7 @@ function findByLabel(
 const emptyDeck = {
   loaded: false,
   filename: "",
+  source_track_id: null,
   duration_seconds: 0,
   position_seconds: 0,
   playing: false,
@@ -68,12 +77,16 @@ const emptyDeck = {
   mid: 0,
   high: 0,
   waveform: [],
+  hot_cues: Array.from({ length: 8 }, () => null),
+  hot_cue_warning: null,
+  active_hot_cue_slot: null,
 };
 
 const loadedDeck = {
   ...emptyDeck,
   loaded: true,
   filename: "track.wav",
+  source_track_id: `sha256:${"a".repeat(64)}`,
   duration_seconds: 10,
   sample_rate: 48_000,
   channels: 2,
@@ -116,6 +129,7 @@ describe("M1 desktop workspace", () => {
     expect(markup).toContain("DECK B");
     expect(markup).toContain("Quick crate");
     expect(markup).toContain("Crossfader");
+    expect(markup.match(/aria-label="Deck [AB] hot cues"/g)).toHaveLength(2);
     expect(markup).toContain('aria-label="Master output peak level"');
     expect(markup).toContain(
       'disabled="" title="Bridge is not implemented in M1"',
@@ -186,6 +200,82 @@ describe("M1 desktop workspace", () => {
     expect(markup).toContain("height:88%");
     expect(markup).toContain("left:50%");
   });
+
+  it("renders eight empty cue pads for a loaded deck and disables them when empty", () => {
+    const emptyMarkup = renderToStaticMarkup(
+      <HotCueControls
+        deck={emptyDeck}
+        deckIndex={0}
+        loading={false}
+        shortcutText={testShortcutText}
+        onCommand={() => undefined}
+      />,
+    );
+    const loadedMarkup = renderToStaticMarkup(
+      <HotCueControls
+        deck={loadedDeck}
+        deckIndex={1}
+        loading={false}
+        shortcutText={testShortcutText}
+        onCommand={() => undefined}
+      />,
+    );
+
+    expect(emptyMarkup).toContain("Load a track to begin");
+    expect(
+      emptyMarkup.match(
+        /aria-label="Set Deck A hot cue \d at the current position"/g,
+      ),
+    ).toHaveLength(8);
+    expect(emptyMarkup.match(/disabled=""/g)).toHaveLength(8);
+    expect(loadedMarkup).toContain("Saved with track");
+    expect(loadedMarkup).toContain("Hot Cue 8");
+  });
+
+  it("renders persisted cue labels, colors, positions, active feedback and editor controls", () => {
+    const cues = [...loadedDeck.hot_cues] as (null | {
+      name: string;
+      color: "coral" | "cyan";
+      position_seconds: number;
+    })[];
+    cues[0] = { name: "Intro", color: "coral", position_seconds: 2.25 };
+    cues[4] = { name: "Drop", color: "cyan", position_seconds: 5 };
+    const markup = renderToStaticMarkup(
+      <HotCueControls
+        deck={{
+          ...loadedDeck,
+          hot_cues: cues,
+          active_hot_cue_slot: 4,
+        }}
+        deckIndex={1}
+        loading={false}
+        shortcutText={testShortcutText}
+        onCommand={() => undefined}
+      />,
+    );
+
+    expect(markup).toContain("Intro");
+    expect(markup).toContain("Drop");
+    expect(markup).toContain("hot-cue-color-coral");
+    expect(markup).toContain("hot-cue-color-cyan is-assigned is-active");
+    expect(markup).toContain("0:02");
+    expect(markup).toContain("0:05");
+  });
+
+  it.each<["set" | "trigger" | "clear", HotCueSlot]>([
+    ["set", 0],
+    ["trigger", 3],
+    ["clear", 7],
+  ])(
+    "creates the typed %s command for the selected deck, slot and track",
+    (action, slot) => {
+      const sourceTrackId = `sha256:${"b".repeat(64)}`;
+      expect(createHotCueCommand(action, 1, slot, sourceTrackId)).toEqual({
+        id: `cue.${action}`,
+        payload: { deck: 1, slot, sourceTrackId },
+      });
+    },
+  );
 
   it("limits Audio Settings to currently exposed output controls", () => {
     const markup = renderToStaticMarkup(

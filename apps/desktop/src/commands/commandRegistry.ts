@@ -1,4 +1,8 @@
 export type DeckId = 0 | 1;
+export type HotCueSlot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type HotCueAction = "set" | "trigger" | "clear";
+export type HotCueColor =
+  "coral" | "orange" | "amber" | "lime" | "cyan" | "blue" | "violet" | "pink";
 export type WorkspaceId = "dj" | "library" | "settings";
 export type DeckControlId = "gain" | "low" | "mid" | "high";
 
@@ -42,6 +46,33 @@ export type CommandPayloadMap = {
     control: DeckControlId;
     delta: number;
   };
+  "cue.set": {
+    deck: DeckId;
+    slot: HotCueSlot;
+    sourceTrackId: string | null;
+  };
+  "cue.trigger": {
+    deck: DeckId;
+    slot: HotCueSlot;
+    sourceTrackId: string | null;
+  };
+  "cue.clear": {
+    deck: DeckId;
+    slot: HotCueSlot;
+    sourceTrackId: string | null;
+  };
+  "cue.rename": {
+    deck: DeckId;
+    slot: HotCueSlot;
+    sourceTrackId: string | null;
+    name: string;
+  };
+  "cue.setColor": {
+    deck: DeckId;
+    slot: HotCueSlot;
+    sourceTrackId: string | null;
+    color: HotCueColor;
+  };
   "mixer.setMaster": { value: number };
   "mixer.adjustMaster": { delta: number };
   "mixer.setCrossfader": { value: number };
@@ -78,7 +109,10 @@ type ShortcutSpec = {
   meta?: boolean;
 };
 
-export type ShortcutContext = { focusedDeck: DeckId };
+export type ShortcutContext = {
+  focusedDeck: DeckId;
+  focusedTrackId?: string | null;
+};
 
 export type ShortcutDefinition = {
   id: string;
@@ -91,7 +125,7 @@ export type ShortcutDefinition = {
   createCommand: (context: ShortcutContext) => AppCommand;
 };
 
-export const KEYBOARD_COMMANDS = [
+const BASE_KEYBOARD_COMMANDS = [
   {
     id: "focusDeckA",
     label: "Focus Deck A",
@@ -472,9 +506,84 @@ export const KEYBOARD_COMMANDS = [
   },
 ] as const satisfies readonly ShortcutDefinition[];
 
+type HotCueSlotNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type HotCueShortcutId =
+  `${Capitalize<HotCueAction>}HotCue${HotCueSlotNumber}`;
+type HotCueShortcutDefinition = Omit<ShortcutDefinition, "id"> & {
+  id: HotCueShortcutId;
+};
+
+const HOT_CUE_SLOT_IDS: readonly HotCueSlot[] = [0, 1, 2, 3, 4, 5, 6, 7];
+export function createHotCueCommand(
+  action: HotCueAction,
+  deck: DeckId,
+  slot: HotCueSlot,
+  sourceTrackId: string | null,
+): AppCommand {
+  const payload = { deck, slot, sourceTrackId };
+  switch (action) {
+    case "set":
+      return { id: "cue.set", payload };
+    case "trigger":
+      return { id: "cue.trigger", payload };
+    case "clear":
+      return { id: "cue.clear", payload };
+  }
+}
+
+function createHotCueShortcut(
+  action: HotCueAction,
+  slot: HotCueSlot,
+): HotCueShortcutDefinition {
+  const slotNumber = (slot + 1) as HotCueSlotNumber;
+  const actionName = action[0].toUpperCase() + action.slice(1);
+  const defaultShortcut: ShortcutSpec =
+    action === "trigger"
+      ? { code: `Digit${slotNumber}`, alt: true, shift: true }
+      : action === "set"
+        ? { code: `Digit${slotNumber}`, primary: true, shift: true }
+        : {
+            code: `Digit${slotNumber}`,
+            primary: true,
+            alt: true,
+            shift: true,
+          };
+
+  return {
+    id: `${actionName}HotCue${slotNumber}` as HotCueShortcutId,
+    label: `${actionName} focused deck Hot Cue ${slotNumber}`,
+    description: `${actionName} Hot Cue ${slotNumber} on the focused deck.`,
+    category: "Hot cues",
+    context: "Focused deck",
+    defaultShortcut,
+    repeatable: false,
+    createCommand: ({ focusedDeck, focusedTrackId }) =>
+      createHotCueCommand(action, focusedDeck, slot, focusedTrackId ?? null),
+  };
+}
+
+const HOT_CUE_SHORTCUTS = HOT_CUE_SLOT_IDS.flatMap((slot) => [
+  createHotCueShortcut("set", slot),
+  createHotCueShortcut("trigger", slot),
+  createHotCueShortcut("clear", slot),
+]);
+
+export const KEYBOARD_COMMANDS = [
+  ...BASE_KEYBOARD_COMMANDS,
+  ...HOT_CUE_SHORTCUTS,
+] as const satisfies readonly ShortcutDefinition[];
+
 export type ShortcutId = (typeof KEYBOARD_COMMANDS)[number]["id"];
 export type ShortcutBindings = Record<ShortcutId, ShortcutBinding>;
 export type ShortcutOverrides = Partial<ShortcutBindings>;
+
+export function getHotCueShortcutId(
+  action: HotCueAction,
+  slot: HotCueSlot,
+): HotCueShortcutId {
+  const actionName = action[0].toUpperCase() + action.slice(1);
+  return `${actionName}HotCue${slot + 1}` as HotCueShortcutId;
+}
 
 export const SHORTCUT_STORAGE_KEY = "sayt.keyboard-shortcuts.v1";
 const SHORTCUT_STORAGE_VERSION = 1;
