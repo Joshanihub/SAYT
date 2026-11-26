@@ -3,7 +3,7 @@
 **Status:** PROPOSED inventory; owner and legal review pending<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.1
+**Version:** 0.3.2
 
 ## SAYT license decision
 
@@ -15,7 +15,7 @@ The direct Rust and npm dependencies, exact pins, recorded license strings, tool
 
 Current owner-review items:
 
-- Exact-head push run [45729174758](https://github.com/Joshanihub/SAYT/actions/runs/45729174758) and PR run [45729179397](https://github.com/Joshanihub/SAYT/actions/runs/45729179397) passed Windows, macOS, and Ubuntu for head `9553c76f9b6b5d5c17b9dbae6b54742b13cf373b`. On Linux, the PR job's Python suite passed 52 tests; the normal fixture manifest passed 77/77 checks. Negative verifier tests also print expected failure reports while asserting those invalid inputs are rejected.
+- Exact-head push run [45731618779](https://github.com/Joshanihub/SAYT/actions/runs/45731618779) and PR run [45731625225](https://github.com/Joshanihub/SAYT/actions/runs/45731625225) passed Windows, macOS, and Ubuntu for head `ace3ad571e899f11c2ee2ca5e5d357ff1c819f81`. On Linux, the PR job's Python suite passed 52 tests; the normal fixture manifest passed 77/77 checks. Negative verifier tests also print expected failure reports while asserting those invalid inputs are rejected.
 - The same exact-head Linux job ran `pnpm audit` with no known vulnerabilities. `pnpm licenses list --recursive` reports two development-only packages with `BlueOak-1.0.0`: `@isaacs/nonrecursive-glob-match@1.1.0` and `minimatch@11.0.9`. `pnpm why` places them under the ESLint development toolchain. The [Blue Oak Model License 1.0.0](https://blueoakcouncil.org/license/1.0.0) requires recipients to receive its license text or a link and includes a contributor patent license and no-liability terms. Applicability and distribution handling remain for owner/legal review; no allowlist change was made.
 - `cargo audit` refreshed the RustSec database in exact-head CI on 2026-11-26 and reported no known vulnerabilities, plus five unmaintained-package warnings and the unsoundness advisory [RUSTSEC-2024-0429](https://rustsec.org/advisories/RUSTSEC-2024-0429.html) for `glib 0.18.5`. The affected `VariantStrIter` iterator methods have undefined-behaviour risk and RustSec lists `glib >=0.20.0` as patched. `glib 0.18.5` is in the Linux Tauri/GTK graph; a source scan found no `VariantStrIter` or `array_iter_str` use in SAYT or cached dependency sources outside the `glib` crate itself. This lowers observed direct reachability but is not a binary call-graph audit or a security clearance.
 - `cargo tree --locked --offline --workspace --all-features --edges all --target all -i <crate>` showed `proc-macro-error@1.0.4` in the Linux GTK macro build graph, but no resolved workspace graph path for `chrono@0.4.45`, `zbus_names@4.3.5`, `zvariant@5.15.1`, or `zvariant_derive@5.15.1`. Those four remain in `Cargo.lock`, which `cargo audit` scans; they were not shown as active dependencies in the all-workspace/all-target resolution. Their RustSec records are [chrono](https://rustsec.org/advisories/RUSTSEC-2026-0543.html), [proc-macro-error](https://rustsec.org/advisories/RUSTSEC-2024-0370.html), [zbus_names](https://rustsec.org/advisories/RUSTSEC-2026-0371.html), [zvariant](https://rustsec.org/advisories/RUSTSEC-2026-0370.html), and [zvariant_derive](https://rustsec.org/advisories/RUSTSEC-2026-0372.html). No transitive upgrade was made; re-evaluate when the Linux Tauri dependency stack changes.
