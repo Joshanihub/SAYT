@@ -24,6 +24,8 @@
   --cyan: #38bdf8;
   --coral: #f43f5e;
   --amber: #fb923c;
+  --motion-control-duration: 120ms;
+  --motion-control-easing: ease-out;
 }
 
 * {
@@ -45,6 +47,11 @@ select {
 button,
 select {
   color: inherit;
+  transition:
+    color var(--motion-control-duration) var(--motion-control-easing),
+    background-color var(--motion-control-duration) var(--motion-control-easing),
+    border-color var(--motion-control-duration) var(--motion-control-easing),
+    filter var(--motion-control-duration) var(--motion-control-easing);
 }
 button {
   cursor: pointer;
@@ -1145,5 +1152,16 @@ input[type="range"]:disabled {
   .settings-card-heading {
     align-items: start;
     flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0ms !important;
   }
 }

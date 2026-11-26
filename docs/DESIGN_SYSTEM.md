@@ -3,7 +3,7 @@
 **Status:** PROPOSED implementation guide reconciled to Stitch v1<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.1.1
+**Version:** 0.1.2
 
 ## Authority and preservation
 
@@ -43,7 +43,7 @@ The Stitch roles are Space Grotesk for display/hardware labels, Inter for body/n
 
 ## Motion and interaction
 
-Reference motion is short and purposeful: active controls gain a visible state, hot-cue flashes decay quickly, and waveform motion follows real playback. The shared Stitch specification describes 60 fps waveform rendering as a target; current evidence does not measure it. Current CSS has a 100 ms width transition and focus-visible outlines; it does not establish that all motion follows `prefers-reduced-motion`. Never animate a playhead, level, latency or device state independently of engine data. Reduced-motion, hover, focus, active, disabled, loading, error, empty, and success states need explicit component-level acceptance.
+Reference motion is short and purposeful: active controls gain a visible state, hot-cue flashes decay quickly, and waveform motion follows real playback. The shared Stitch specification describes 60 fps waveform rendering as a target; current evidence does not measure it. All buttons and selects, including navigation, transport, and load controls, use a named 120 ms ease-out transition for color, background, border, and filter changes. `prefers-reduced-motion: reduce` sets CSS animation and transition durations to 0 ms and disables smooth scrolling; keyboard focus outlines remain immediate. The master-meter width still follows the engine snapshot, with its smoothing removed for reduced-motion users. A source regression test covers these stylesheet rules; runtime behavior under the operating-system preference and waveform frame rate remain unverified. Never animate a playhead, level, latency or device state independently of engine data. Loading, error, empty, and success states still need component-level acceptance.
 
 ## Responsive rules and open comparison
 

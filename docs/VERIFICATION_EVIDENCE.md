@@ -3,13 +3,13 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.8
+**Version:** 0.3.12
 
-This file records reproduced evidence separately from historical agent reports. At the start of the current batch, branch head `25c37aa414a90ad1b45d8bce39e9f8fbdaa36250` on `feat/stitch-m1-dj-workspace` was based on `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 was open and unmerged; PR #2 was open/draft/unmerged. Baseline PR run [45740252743](https://github.com/Joshanihub/SAYT/actions/runs/45740252743) passed. This batch adds local Stitch font/icon assets and code; exact-head CI for each push is tracked in GitHub Actions.
+This file records reproduced evidence separately from historical agent reports. The current source head is `14ea4d9f102e39860ee6ad76b10e44f04cb574a0` on `feat/stitch-m1-dj-workspace`, based on unchanged `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 and #2 are open and unmerged. Exact-head push run [45812052568](https://github.com/Joshanihub/SAYT/actions/runs/45812052568) and PR run [45812058496](https://github.com/Joshanihub/SAYT/actions/runs/45812058496) passed Windows, macOS, and Ubuntu for the output-switch recovery source.
 
 ## M1 output-switch recovery — local working-tree verification
 
-This change is based on pushed commit `8ecbb9e3079c1b04848fa8480a515b08c4626c85`; the recovery implementation and status updates below were locally verified before commit. Exact-head CI for this change is pending. The previous pushed head's Windows, macOS, and Ubuntu push/PR runs [45804224796](https://github.com/Joshanihub/SAYT/actions/runs/45804224796) and [45804236667](https://github.com/Joshanihub/SAYT/actions/runs/45804236667) passed.
+This change was committed and pushed as `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`. Exact-head push run [45812052568](https://github.com/Joshanihub/SAYT/actions/runs/45812052568) and PR run [45812058496](https://github.com/Joshanihub/SAYT/actions/runs/45812058496) passed all Windows, macOS, and Ubuntu jobs. The previous pushed head's Windows, macOS, and Ubuntu push/PR runs [45804224796](https://github.com/Joshanihub/SAYT/actions/runs/45804224796) and [45804236667](https://github.com/Joshanihub/SAYT/actions/runs/45804236667) also passed.
 
 | Check                 | Command / environment                                                                                | Result                                                                                                                              |
 | --------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,7 +20,19 @@ This change is based on pushed commit `8ecbb9e3079c1b04848fa8480a515b08c4626c85`
 | Frontend checks       | `corepack pnpm format:check`, `lint`, `typecheck`, `test`, `build`; Node.js 24.22.3 and pnpm 12.23.0 | PASS, exit 0; 21 UI tests passed and the production build completed                                                                 |
 | Desktop dev launch    | `corepack pnpm desktop dev`                                                                          | Tauri window launched with the recovery change. Cargo emitted the existing non-fatal `sayt_desktop.pdb` filename-collision warning. |
 
-The engine tests exercise the transition policy for opening a replacement after a pause error, restoring the previous stream after a failed replacement, exposing a failed resume, and initial selection with no previous stream. They do not exercise CPAL, a real device switch, audibility, device hot-plug, or recovery under a physical device failure. No native picker or playback controls were operated in this verification pass; owner-operated manual acceptance remains open.
+The engine tests exercise the transition policy for opening a replacement after a pause error, restoring the previous stream after a failed replacement, exposing a failed resume, and initial selection with no previous stream. They do not exercise CPAL, a real device switch, audibility, device hot-plug, or recovery under a physical device failure.
+
+## Owner-reported manual audio checks
+
+On 2026-11-26 the owner stated that all requested manual audio checks passed. The response did not include device, viewport, per-test observations, or error text. This is retained as an owner-reported result and is not presented as an independent reproduction. The live SAYT accessibility snapshot showed two populated decks in the stopped state, but did not identify the tested fixtures. See [`audio-validation/OWNER_REPORTED_RESULTS_2026-11-26.md`](audio-validation/OWNER_REPORTED_RESULTS_2026-11-26.md).
+
+Two Computer Use screenshot attempts returned unrelated Chrome content while the selected SAYT window returned a SAYT accessibility tree. The recovery selection did not correct the mismatch, so the three requested viewport captures and Stitch visual comparisons remain NOT RUN.
+
+## M1 interaction motion and reduced-motion regression
+
+After restoring the intentional canary edit, `corepack pnpm --filter @sayt/desktop test -- src/styles.test.ts` passed the full desktop UI suite: 22 tests across 2 files. The test reads `styles.css` and checks the named 120 ms transition tokens, the shared button/select rule, the `prefers-reduced-motion` rule, and zero-duration animation/transition plus automatic scrolling. A temporary change from `animation-duration: 0ms` to `1ms` made the regression test fail at its expected assertion; the source was restored and the rerun passed. This verifies stylesheet rules, not Windows accessibility settings or visual parity.
+
+The complete current-tree verification then passed: `cargo fmt --all --check`; `cargo clippy --workspace --all-targets -- -D warnings`; `cargo test --workspace` (19 engine and 1 desktop actor test); `cargo check --workspace --all-targets --locked`; `corepack pnpm format:check`; `corepack pnpm lint`; `corepack pnpm typecheck`; `corepack pnpm test` (22 tests); and `corepack pnpm build`. This local verification does not replace exact-head remote CI or the open visual/hardware checks.
 
 ## Reproduced locally on Windows
 
@@ -55,7 +67,7 @@ The supplied Stitch roles are now integrated with local assets: Space Grotesk fo
 
 The asset manifest [`tools/font-assets/asset-manifest.json`](../tools/font-assets/asset-manifest.json) records the exact 16 text-font subsets and Material Symbols source/output URLs, sizes, and SHA-256 values. [`build_material_symbols.py`](../tools/font-assets/build_material_symbols.py) reproduced 66 verified ligatures from the pinned v387 source into a 51,720-byte WOFF2 subset with SHA-256 `f31f8e017925c3a6a882c1a67f0d41d6531f5a3193d1a3e1f5dc0cbbf99d4459`; optional tool pins are `fonttools==4.68.0` and `Brotli==1.2.1`. `py -3 tools/font-assets/verify_assets.py` passed: 17 assets, 4 notices, 5 M1 icon names, local-only CSS paths, and nonrecursive font roles. `py -3 -m unittest discover -s tools/font-assets/tests -v` passed 3 role-validation cases. The owner-authorized design roles and official OFL/Apache notice sources are recorded in [`DEPENDENCIES_AND_LICENSES.md`](DEPENDENCIES_AND_LICENSES.md).
 
-The current Windows Tauri window was observed in an empty DJ workspace at a 1280×800 client viewport (the outer window screenshot was 1282×832). The corrected typography roles and Material Symbols rendered. This is a runtime render observation, not a matched Stitch comparison. The 1440×900 and narrow captures remain NOT RUN; matching the 1280×800 render against its Stitch reference is also NOT RUN. Library and Settings screens were not inspected in this runtime pass. Actual font script behavior for arbitrary user metadata and all physical audio acceptance checks remain unverified.
+The current Windows Tauri window was observed in an empty DJ workspace at a 1280×800 client viewport (the outer window screenshot was 1282×832). The corrected typography roles and Material Symbols rendered. This is a runtime render observation, not a matched Stitch comparison. The 1440×900 and narrow captures remain NOT RUN; matching the 1280×800 render against its Stitch reference is also NOT RUN. Library and Settings screens were not inspected in this runtime pass. Actual font script behavior for arbitrary user metadata and independent reproduction of physical audio checks remain unverified; the later owner report is recorded above.
 
 ## Local build-tool audit
 
@@ -74,8 +86,8 @@ The passing PR run's Ubuntu log records `Ran 52 tests`, `test_symlink_escape_rej
 
 - Historical Codex Tauri run: Windows desktop rendered the initial empty DJ workspace and connected engine snapshot at 1920×1032. Two decks were empty. This is a window/render check only.
 - Current running session: `corepack pnpm desktop dev` was launched with Node.js 24.22.3/pnpm 12.23.0 while the checkout was at documentation commit `c79a448b433f4f29f50236254621d8020105a126`; the product-code tree matches integration commit `853e51477e56593471c7126378d290524be391af`. Vite became ready on `127.0.0.1:1420`, Cargo finished, and `sayt-desktop.exe` remains alive. On 2026-11-26 the process and both requested fixture paths were confirmed present. Cargo emitted a non-fatal output filename collision warning for `sayt_desktop.pdb` between the library and binary targets.
-- Actual native picker, WAV load, real Tauri transport/mixer IPC, 1440×900 and narrow screenshots, matched Stitch comparison at 1280×800, and physical playback remain NOT RUN. The owner said they can run the manual check; results have not yet been received. Only the accessibility tree and rendered UI were inspected; no playback or device-control actions were automated, and the dev process remains available.
-- Physical dual playback, independent audible control, EQ/gain/crossfader, device disconnect/recovery, and shutdown during playback are NOT RUN. A screenshot, UI meter, moving waveform, or engine snapshot is not hardware evidence. See [`audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md`](audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md) and its blank [`RESULTS_TEMPLATE.md`](audio-validation/RESULTS_TEMPLATE.md).
+- At the earlier runtime evidence point, the native picker, WAV load, Tauri transport/mixer IPC, and physical playback had not been exercised by the agent. The owner later reported all requested manual audio checks passed; details and limits are recorded above and in [`audio-validation/OWNER_REPORTED_RESULTS_2026-11-26.md`](audio-validation/OWNER_REPORTED_RESULTS_2026-11-26.md).
+- Owner-reported dual playback, independent controls, low-volume mixer/EQ, device refresh/retry, and shutdown checks are not independently reproduced. Unsupported-WAV, no-device, and failed-switch recovery outcomes were not separately reported. A screenshot, UI meter, moving waveform, or engine snapshot is not hardware evidence. See [`audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md`](audio-validation/PHYSICAL_DEVICE_TEST_GUIDE.md) and its blank [`RESULTS_TEMPLATE.md`](audio-validation/RESULTS_TEMPLATE.md).
 
 ## Scope, security, dependency and rollback notes
 

@@ -3,15 +3,24 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.1
+**Version:** 0.4.4
 
 ## 2026-11-26 — M1 output-switch recovery
 
 - Source review found that `Engine::select_device` returned immediately when pausing the current CPAL stream failed, so the replacement device was never attempted. This contradicted M1 requirement 7's failed-switch recovery contract.
 - Updated the switch path to attempt the replacement despite a pause error. If opening the replacement fails, it best-effort resumes and retains the previous stream; a failed resume sets output-error telemetry and is included in the actionable error. No stream or command is silently discarded.
 - Added four hardware-independent tests for replacement after pause failure, successful restore, failed restore, and initial selection with no previous stream. They test transition policy only; no physical device behavior is claimed.
-- Updated `docs/REQUIREMENTS.md`, the audio-engine notes, and the physical device test guide. Local format, Clippy, workspace tests (19 engine tests and 1 audio-service test), locked all-target check, frontend format/lint/typecheck, 21 UI tests, and production build passed on the working tree based on `8ecbb9e3079c1b04848fa8480a515b08c4626c85`. Exact-head CI is pending commit and push.
-- `corepack pnpm desktop dev` rebuilt and launched the current working tree. No picker, device-control, visual comparison, or physical playback action has been performed by the agent.
+- Updated `docs/REQUIREMENTS.md`, the audio-engine notes, and the physical device test guide. Local format, Clippy, workspace tests (19 engine tests and 1 audio-service test), locked all-target check, frontend format/lint/typecheck, 21 UI tests, and production build passed before commit. The change was committed and pushed as `14ea4d9f102e39860ee6ad76b10e44f04cb574a0`; exact-head push run [45812052568](https://github.com/Joshanihub/SAYT/actions/runs/45812052568) and PR run [45812058496](https://github.com/Joshanihub/SAYT/actions/runs/45812058496) passed on Windows, macOS, and Ubuntu.
+- On 2026-11-26 the owner reported that all requested manual audio checks passed. The response did not include device, viewport, per-test observations, or error text, so the acceptance matrix records owner-reported evidence rather than independent reproduction. The current accessibility snapshot shows two populated, stopped decks but does not identify the tested fixtures.
+- Two Computer Use screenshot attempts returned unrelated Chrome content while the selected SAYT window's accessibility tree exposed the SAYT interface. Target-size screenshots and Stitch visual comparisons remain NOT RUN.
+
+## 2026-11-26 — M1 interaction motion and reduced-motion support
+
+- The design-system audit found that control hover changes had no transition and the stylesheet did not honor `prefers-reduced-motion`.
+- Added a named 120 ms ease-out transition to button and select state changes, including navigation, transport, and load controls. Added a global reduced-motion media rule that removes CSS animation/transition duration and smooth scrolling while leaving keyboard focus outlines immediate. The master meter remains tied to engine snapshot values.
+- Added `apps/desktop/src/styles.test.ts` to assert the transition tokens/selectors and reduced-motion rules. The full UI suite passed 22 tests. A temporary 1 ms mutation to the reduced-motion animation rule made the regression test fail; the source was restored and the suite passed again.
+- Current local checks pass: Rust format, Clippy, all 20 workspace tests, locked all-target check, frontend format, lint, typecheck, 22 UI tests, and production build.
+- Runtime appearance at target sizes is still open because the desktop screenshot capture returned unrelated Chrome content twice.
 
 ## 2026-11-26 — Current-head desktop launch for owner verification
 
