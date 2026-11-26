@@ -1,6 +1,29 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MaterialIcon } from "./MaterialIcon";
+import { ShortcutOverlay } from "./ShortcutOverlay";
+import {
+  DECK_CONTROL_LIMITS,
+  detectShortcutPlatform,
+  dispatchShortcutKeydown,
+  formatShortcut,
+  getEffectiveShortcutBindings,
+  loadShortcutOverrides,
+  MIXER_CONTROL_LIMITS,
+  saveShortcutOverrides,
+  validateShortcutBinding,
+  type AppCommand,
+  type CommandDispatcher,
+  type DeckControlId,
+  type DeckId,
+  type ShortcutBindings,
+  type ShortcutBinding,
+  type ShortcutContext,
+  type ShortcutId,
+  type ShortcutOverrides,
+  type ShortcutPlatform,
+  type WorkspaceId,
+} from "./commands/commandRegistry";
 
 type DeckSnapshot = {
   loaded: boolean;
@@ -28,7 +51,7 @@ type MixerSnapshot = {
 };
 
 type DeviceInfo = { id: string; name: string };
-type Page = "dj" | "library" | "settings";
+type Page = WorkspaceId;
 
 const SNAPSHOT_INTERVAL_MS = 100;
 
@@ -64,6 +87,10 @@ function formatTime(seconds: number) {
   if (!Number.isFinite(seconds)) return "0:00";
   const whole = Math.max(0, Math.floor(seconds));
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
+function clampValue(value: number, minimum: number, maximum: number) {
+  return Math.max(minimum, Math.min(maximum, value));
 }
 
 export function Waveform({
@@ -122,12 +149,16 @@ export function DeckPanel({
   deck,
   deckIndex,
   loading,
+  focused,
+  shortcutText,
   onCommand,
 }: {
   deck: DeckSnapshot;
-  deckIndex: number;
+  deckIndex: DeckId;
   loading: boolean;
-  onCommand: (command: string, args: Record<string, unknown>) => void;
+  focused: boolean;
+  shortcutText: (shortcutId: ShortcutId) => string;
+  onCommand: CommandDispatcher;
 }) {
   const label = deckIndex === 0 ? "A" : "B";
   const color = label === "A" ? "lime" : "cyan";
@@ -165,11 +196,26 @@ export function DeckPanel({
       step: 0.1,
     },
   ] as const;
+  const controlShortcuts: Record<
+    DeckControlId,
+    { decrease: ShortcutId; increase: ShortcutId }
+  > = {
+    gain: { decrease: "gainDown", increase: "gainUp" },
+    low: { decrease: "lowEqDown", increase: "lowEqUp" },
+    mid: { decrease: "midEqDown", increase: "midEqUp" },
+    high: { decrease: "highEqDown", increase: "highEqUp" },
+  };
 
   return (
     <section
-      className={`deck-panel deck-${label.toLowerCase()}`}
+      className={`deck-panel deck-${label.toLowerCase()}${focused ? " keyboard-focused" : ""}`}
       aria-labelledby={`deck-${label}-heading`}
+      onFocusCapture={() =>
+        onCommand({ id: "deck.focus", payload: { deck: deckIndex } })
+      }
+      onPointerDownCapture={() =>
+        onCommand({ id: "deck.focus", payload: { deck: deckIndex } })
+      }
     >
       <header className="deck-heading">
         <div className="deck-identity">
@@ -182,6 +228,12 @@ export function DeckPanel({
               {deck.loaded
                 ? "Local audio · PCM WAV"
                 : "Load a local file from the crate below"}
+            </p>
+            <p className="deck-keyboard-hint">
+              Focus{" "}
+              <kbd>
+                {shortcutText(deckIndex === 0 ? "focusDeckA" : "focusDeckB")}
+              </kbd>
             </p>
           </div>
         </div>
@@ -218,23 +270,24 @@ export function DeckPanel({
           type="button"
           disabled={!deck.loaded || loading}
           onClick={() =>
-            onCommand("set_playing", {
-              deck: deckIndex,
-              playing: !deck.playing,
-            })
+            onCommand({ id: "deck.playPause", payload: { deck: deckIndex } })
           }
         >
           <MaterialIcon name={deck.playing ? "pause" : "play_arrow"} />
           {deck.playing ? "Pause" : "Play"}
+          <kbd>{shortcutText("togglePlayback")}</kbd>
         </button>
         <button
           className="transport-secondary"
           type="button"
           disabled={!deck.loaded || loading}
-          onClick={() => onCommand("stop_track", { deck: deckIndex })}
+          onClick={() =>
+            onCommand({ id: "deck.stop", payload: { deck: deckIndex } })
+          }
         >
           <MaterialIcon name="stop" />
           Stop
+          <kbd>{shortcutText("stopFocusedDeck")}</kbd>
         </button>
         <output
           className="position-readout"
@@ -256,9 +309,12 @@ export function DeckPanel({
           value={deck.position_seconds}
           disabled={!deck.loaded || loading}
           onChange={(event) =>
-            onCommand("seek_track", {
-              deck: deckIndex,
-              position: Number(event.target.value),
+            onCommand({
+              id: "deck.seekTo",
+              payload: {
+                deck: deckIndex,
+                position: Number(event.target.value),
+              },
             })
           }
         />
@@ -267,7 +323,14 @@ export function DeckPanel({
       <div className="deck-controls" aria-label={`Deck ${label} controls`}>
         {controls.map(({ key, label: controlLabel, value, min, max, step }) => (
           <label className="channel-control" key={key}>
-            <span>{controlLabel}</span>
+            <span>
+              {controlLabel}
+              <small className="shortcut-inline-hint">
+                <kbd>{shortcutText(controlShortcuts[key].decrease)}</kbd>
+                <span aria-hidden="true"> / </span>
+                <kbd>{shortcutText(controlShortcuts[key].increase)}</kbd>
+              </small>
+            </span>
             <input
               aria-label={`Deck ${label} ${controlLabel}`}
               type="range"
@@ -278,12 +341,9 @@ export function DeckPanel({
               disabled={loading}
               onChange={(event) => {
                 const next = Number(event.target.value);
-                onCommand("set_deck_control", {
-                  deck: deckIndex,
-                  gain: key === "gain" ? next : null,
-                  low: key === "low" ? next : null,
-                  mid: key === "mid" ? next : null,
-                  high: key === "high" ? next : null,
+                onCommand({
+                  id: "deck.setControl",
+                  payload: { deck: deckIndex, control: key, value: next },
                 });
               }}
             />
@@ -301,10 +361,12 @@ export function DeckPanel({
 
 export function MixerConsole({
   mixer,
+  shortcutText,
   onCommand,
 }: {
   mixer: MixerSnapshot;
-  onCommand: (command: string, args: Record<string, unknown>) => void;
+  shortcutText: (shortcutId: ShortcutId) => string;
+  onCommand: CommandDispatcher;
 }) {
   const meter = Math.min(1, Math.max(0, mixer.master_meter));
   return (
@@ -347,17 +409,22 @@ export function MixerConsole({
           <strong>Master level</strong>
           <output>{Math.round(mixer.master_volume * 100)}%</output>
         </span>
+        <small className="shortcut-inline-hint">
+          <kbd>{shortcutText("masterLevelDown")}</kbd>
+          <span aria-hidden="true"> / </span>
+          <kbd>{shortcutText("masterLevelUp")}</kbd>
+        </small>
         <input
           aria-label="Master level"
           type="range"
-          min="0"
-          max="1"
-          step="0.01"
+          min={MIXER_CONTROL_LIMITS.master.min}
+          max={MIXER_CONTROL_LIMITS.master.max}
+          step={MIXER_CONTROL_LIMITS.master.step}
           value={mixer.master_volume}
           onChange={(event) =>
-            onCommand("set_mixer", {
-              master: Number(event.target.value),
-              crossfader: null,
+            onCommand({
+              id: "mixer.setMaster",
+              payload: { value: Number(event.target.value) },
             })
           }
         />
@@ -390,17 +457,24 @@ export function MixerConsole({
                 : "Center"}
           </output>
         </span>
+        <small className="shortcut-inline-hint">
+          <kbd>{shortcutText("crossfaderLeft")}</kbd>
+          <span aria-hidden="true"> / </span>
+          <kbd>{shortcutText("crossfaderRight")}</kbd>
+          <span aria-hidden="true"> · </span>
+          <kbd>{shortcutText("crossfaderCenter")}</kbd>
+        </small>
         <input
           aria-label="Crossfader"
           type="range"
-          min="0"
-          max="1"
-          step="0.01"
+          min={MIXER_CONTROL_LIMITS.crossfader.min}
+          max={MIXER_CONTROL_LIMITS.crossfader.max}
+          step={MIXER_CONTROL_LIMITS.crossfader.step}
           value={mixer.crossfader}
           onChange={(event) =>
-            onCommand("set_mixer", {
-              master: null,
-              crossfader: Number(event.target.value),
+            onCommand({
+              id: "mixer.setCrossfader",
+              payload: { value: Number(event.target.value) },
             })
           }
         />
@@ -425,7 +499,7 @@ export function QuickCrateBrowser({
 }: {
   mixer: MixerSnapshot;
   loadingDeck: number | null;
-  onLoad: (deck: number) => void;
+  onLoad: (deck: DeckId) => void;
 }) {
   const decks = [mixer.deck_a, mixer.deck_b];
   return (
@@ -442,6 +516,7 @@ export function QuickCrateBrowser({
       <div className="crate-slots">
         {decks.map((deck, index) => {
           const label = index === 0 ? "A" : "B";
+          const deckId: DeckId = index === 0 ? 0 : 1;
           return (
             <article
               className={`crate-slot crate-slot-${label.toLowerCase()}`}
@@ -464,7 +539,7 @@ export function QuickCrateBrowser({
                 type="button"
                 className="load-button"
                 disabled={loadingDeck === index}
-                onClick={() => onLoad(index)}
+                onClick={() => onLoad(deckId)}
               >
                 {loadingDeck === index
                   ? "Opening…"
@@ -613,6 +688,8 @@ export function AppShell({
   selectedDevice,
   onSelectDevice,
   engineConnected,
+  onShortcuts,
+  shortcutHelpHint,
   children,
 }: {
   page: Page;
@@ -621,6 +698,8 @@ export function AppShell({
   selectedDevice: string | null;
   onSelectDevice: (deviceId: string) => void;
   engineConnected: boolean;
+  onShortcuts: () => void;
+  shortcutHelpHint: string;
   children: ReactNode;
 }) {
   const pages: { id: Page; label: string }[] = [
@@ -714,6 +793,13 @@ export function AppShell({
             : "Waiting for audio engine"}
         </span>
         <span>Local audio · No library index · M1</span>
+        <button
+          className="shortcut-help-button"
+          type="button"
+          onClick={onShortcuts}
+        >
+          Keyboard shortcuts <kbd>{shortcutHelpHint}</kbd>
+        </button>
       </footer>
     </div>
   );
@@ -726,6 +812,45 @@ export function App() {
   const [error, setError] = useState("");
   const [loadingDeck, setLoadingDeck] = useState<number | null>(null);
   const [engineConnected, setEngineConnected] = useState(false);
+  const [focusedDeck, setFocusedDeck] = useState<DeckId>(0);
+  const [shortcutOverlayOpen, setShortcutOverlayOpen] = useState(false);
+  const [shortcutPlatform, setShortcutPlatform] =
+    useState<ShortcutPlatform>("other");
+  const [shortcutOverrides, setShortcutOverrides] = useState<ShortcutOverrides>(
+    {},
+  );
+  const [shortcutPreferenceMessage, setShortcutPreferenceMessage] = useState<
+    string | null
+  >(null);
+  const effectiveShortcutBindings = useMemo(
+    () => getEffectiveShortcutBindings(shortcutOverrides, shortcutPlatform),
+    [shortcutOverrides, shortcutPlatform],
+  );
+  const shortcutText = (shortcutId: ShortcutId) =>
+    formatShortcut(effectiveShortcutBindings[shortcutId], shortcutPlatform);
+  const shortcutBindingsRef = useRef<ShortcutBindings>(
+    effectiveShortcutBindings,
+  );
+  const shortcutContextRef = useRef<ShortcutContext>({ focusedDeck });
+  const shortcutOverlayOpenRef = useRef(shortcutOverlayOpen);
+  const commandDispatcherRef = useRef<CommandDispatcher>(() => undefined);
+  shortcutBindingsRef.current = effectiveShortcutBindings;
+  shortcutContextRef.current = { focusedDeck };
+  shortcutOverlayOpenRef.current = shortcutOverlayOpen;
+
+  useEffect(() => {
+    const platform = detectShortcutPlatform(navigator.userAgent);
+    setShortcutPlatform(platform);
+    try {
+      const loaded = loadShortcutOverrides(window.localStorage, platform);
+      setShortcutOverrides(loaded.overrides);
+      setShortcutPreferenceMessage(loaded.warning);
+    } catch {
+      setShortcutPreferenceMessage(
+        "Shortcut settings could not be read; built-in shortcuts are active.",
+      );
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -786,7 +911,7 @@ export function App() {
       .catch((cause) => setError(getErrorMessage(cause)));
   };
 
-  const loadTrack = async (deck: number) => {
+  const loadTrack = async (deck: DeckId) => {
     setLoadingDeck(deck);
     setError("");
     try {
@@ -808,8 +933,227 @@ export function App() {
     }
   };
 
-  const selectDevice = (deviceId: string) =>
-    runMixerCommand("select_device", { deviceId });
+  const setDeckControl = (
+    deckIndex: DeckId,
+    control: DeckControlId,
+    requestedValue: number,
+  ) => {
+    const limits = DECK_CONTROL_LIMITS[control];
+    const value = Math.max(limits.min, Math.min(limits.max, requestedValue));
+    runMixerCommand("set_deck_control", {
+      deck: deckIndex,
+      gain: control === "gain" ? value : null,
+      low: control === "low" ? value : null,
+      mid: control === "mid" ? value : null,
+      high: control === "high" ? value : null,
+    });
+  };
+
+  const dispatchCommand: CommandDispatcher = (command: AppCommand) => {
+    switch (command.id) {
+      case "deck.focus":
+        setFocusedDeck(command.payload.deck);
+        break;
+      case "deck.playPause": {
+        const deck = command.payload.deck === 0 ? mixer.deck_a : mixer.deck_b;
+        if (!deck.loaded || loadingDeck === command.payload.deck) {
+          setError(
+            `Load a WAV into Deck ${command.payload.deck === 0 ? "A" : "B"} before using transport shortcuts.`,
+          );
+          return;
+        }
+        runMixerCommand("set_playing", {
+          deck: command.payload.deck,
+          playing: !deck.playing,
+        });
+        break;
+      }
+      case "deck.stop": {
+        const deck = command.payload.deck === 0 ? mixer.deck_a : mixer.deck_b;
+        if (!deck.loaded || loadingDeck === command.payload.deck) {
+          setError(
+            `Load a WAV into Deck ${command.payload.deck === 0 ? "A" : "B"} before stopping it.`,
+          );
+          return;
+        }
+        runMixerCommand("stop_track", { deck: command.payload.deck });
+        break;
+      }
+      case "deck.loadTrack":
+        setFocusedDeck(command.payload.deck);
+        void loadTrack(command.payload.deck);
+        break;
+      case "deck.seekTo":
+        runMixerCommand("seek_track", {
+          deck: command.payload.deck,
+          position: command.payload.position,
+        });
+        break;
+      case "deck.seekBy": {
+        const deck = command.payload.deck === 0 ? mixer.deck_a : mixer.deck_b;
+        if (!deck.loaded) {
+          setError(
+            `Load a WAV into Deck ${command.payload.deck === 0 ? "A" : "B"} before seeking.`,
+          );
+          return;
+        }
+        const position = Math.max(
+          0,
+          Math.min(
+            deck.duration_seconds,
+            deck.position_seconds + command.payload.delta,
+          ),
+        );
+        runMixerCommand("seek_track", {
+          deck: command.payload.deck,
+          position,
+        });
+        break;
+      }
+      case "deck.setControl": {
+        const {
+          deck: deckIndex,
+          control,
+          value: requestedValue,
+        } = command.payload;
+        setDeckControl(deckIndex, control, requestedValue);
+        break;
+      }
+      case "deck.adjustControl": {
+        const { deck: deckIndex, control, delta } = command.payload;
+        const deck = deckIndex === 0 ? mixer.deck_a : mixer.deck_b;
+        setDeckControl(deckIndex, control, deck[control] + delta);
+        break;
+      }
+      case "mixer.setMaster":
+        runMixerCommand("set_mixer", {
+          master: clampValue(
+            command.payload.value,
+            MIXER_CONTROL_LIMITS.master.min,
+            MIXER_CONTROL_LIMITS.master.max,
+          ),
+          crossfader: null,
+        });
+        break;
+      case "mixer.adjustMaster":
+        runMixerCommand("set_mixer", {
+          master: clampValue(
+            mixer.master_volume + command.payload.delta,
+            MIXER_CONTROL_LIMITS.master.min,
+            MIXER_CONTROL_LIMITS.master.max,
+          ),
+          crossfader: null,
+        });
+        break;
+      case "mixer.setCrossfader":
+        runMixerCommand("set_mixer", {
+          master: null,
+          crossfader: clampValue(
+            command.payload.value,
+            MIXER_CONTROL_LIMITS.crossfader.min,
+            MIXER_CONTROL_LIMITS.crossfader.max,
+          ),
+        });
+        break;
+      case "mixer.adjustCrossfader":
+        runMixerCommand("set_mixer", {
+          master: null,
+          crossfader: clampValue(
+            mixer.crossfader + command.payload.delta,
+            MIXER_CONTROL_LIMITS.crossfader.min,
+            MIXER_CONTROL_LIMITS.crossfader.max,
+          ),
+        });
+        break;
+      case "workspace.navigate":
+        setPage(command.payload.workspace);
+        break;
+      case "output.select":
+        runMixerCommand("select_device", {
+          deviceId: command.payload.deviceId,
+        });
+        break;
+      case "output.refreshDevices":
+        void refreshDevices();
+        break;
+      case "output.retry":
+        runMixerCommand("select_device", {
+          deviceId: mixer.selected_device ?? "default",
+        });
+        break;
+      case "shortcuts.open":
+        setShortcutOverlayOpen(true);
+        break;
+      default: {
+        const unreachable: never = command;
+        return unreachable;
+      }
+    }
+  };
+  commandDispatcherRef.current = dispatchCommand;
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      dispatchShortcutKeydown(event, {
+        bindings: shortcutBindingsRef.current,
+        context: shortcutContextRef.current,
+        overlayOpen: shortcutOverlayOpenRef.current,
+        dispatch: commandDispatcherRef.current,
+      });
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  const bindShortcut = (shortcutId: ShortcutId, binding: ShortcutBinding) => {
+    const validation = validateShortcutBinding(
+      shortcutId,
+      binding,
+      effectiveShortcutBindings,
+      shortcutPlatform,
+    );
+    if (validation) {
+      setShortcutPreferenceMessage(validation);
+      return validation;
+    }
+    const nextOverrides = { ...shortcutOverrides, [shortcutId]: binding };
+    try {
+      const saveError = saveShortcutOverrides(
+        window.localStorage,
+        nextOverrides,
+      );
+      if (saveError) {
+        setShortcutPreferenceMessage(saveError);
+        return saveError;
+      }
+    } catch {
+      const saveError =
+        "Shortcut settings could not be saved. Check local app storage and retry.";
+      setShortcutPreferenceMessage(saveError);
+      return saveError;
+    }
+    setShortcutOverrides(nextOverrides);
+    setShortcutPreferenceMessage(null);
+    return null;
+  };
+
+  const resetShortcuts = () => {
+    try {
+      const saveError = saveShortcutOverrides(window.localStorage, {});
+      if (saveError) {
+        setShortcutPreferenceMessage(saveError);
+        return;
+      }
+    } catch {
+      setShortcutPreferenceMessage(
+        "Shortcut settings could not be saved. Check local app storage and retry.",
+      );
+      return;
+    }
+    setShortcutOverrides({});
+    setShortcutPreferenceMessage(null);
+  };
+
   const selectedDeviceName = devices.find(
     (device) => device.id === mixer.selected_device,
   )?.name;
@@ -817,99 +1161,142 @@ export function App() {
     !mixer.selected_device || mixer.selected_device === "default";
 
   return (
-    <AppShell
-      page={page}
-      onNavigate={setPage}
-      devices={devices}
-      selectedDevice={mixer.selected_device}
-      onSelectDevice={selectDevice}
-      engineConnected={engineConnected}
-    >
-      <main className="main-content" id="workspace">
-        <div className="page-heading">
-          <div>
-            <p className="eyebrow">LOCAL-FIRST PERFORMANCE</p>
-            <h1>
-              {page === "dj"
-                ? "DJ Workspace"
-                : page === "library"
-                  ? "Music Library"
-                  : "Audio Settings"}
-            </h1>
-          </div>
-          <div className="page-context">
-            <span className="m1-pill">M1 · TWO DECKS</span>
-            <span className="output-summary">
-              Output:{" "}
-              {selectedDeviceName ||
-                (isSystemDefault
-                  ? "System default output"
-                  : "Current selection")}
-            </span>
-          </div>
-        </div>
-
-        {(error || mixer.output_error) && (
-          <div className="error-banner" role="alert">
-            <span>
-              {error ||
-                "Audio output stopped. Re-select an output device to retry."}
-            </span>
-            <button
-              type="button"
-              onClick={() => selectDevice(mixer.selected_device ?? "default")}
-            >
-              Retry output
-            </button>
-            <button type="button" onClick={() => void refreshDevices()}>
-              Refresh devices
-            </button>
-          </div>
-        )}
-
-        {page === "dj" && (
-          <>
-            <div className="dj-grid">
-              <DeckPanel
-                deck={mixer.deck_a}
-                deckIndex={0}
-                loading={loadingDeck === 0}
-                onCommand={runMixerCommand}
-              />
-              <MixerConsole mixer={mixer} onCommand={runMixerCommand} />
-              <DeckPanel
-                deck={mixer.deck_b}
-                deckIndex={1}
-                loading={loadingDeck === 1}
-                onCommand={runMixerCommand}
-              />
+    <>
+      <AppShell
+        page={page}
+        onNavigate={(workspace) =>
+          dispatchCommand({ id: "workspace.navigate", payload: { workspace } })
+        }
+        devices={devices}
+        selectedDevice={mixer.selected_device}
+        onSelectDevice={(deviceId) =>
+          dispatchCommand({ id: "output.select", payload: { deviceId } })
+        }
+        engineConnected={engineConnected}
+        onShortcuts={() =>
+          dispatchCommand({ id: "shortcuts.open", payload: {} })
+        }
+        shortcutHelpHint={shortcutText("openShortcutHelp")}
+      >
+        <main className="main-content" id="workspace">
+          <div className="page-heading">
+            <div>
+              <p className="eyebrow">LOCAL-FIRST PERFORMANCE</p>
+              <h1>
+                {page === "dj"
+                  ? "DJ Workspace"
+                  : page === "library"
+                    ? "Music Library"
+                    : "Audio Settings"}
+              </h1>
             </div>
-            <QuickCrateBrowser
-              mixer={mixer}
-              loadingDeck={loadingDeck}
-              onLoad={(deck) => void loadTrack(deck)}
+            <div className="page-context">
+              <span className="m1-pill">M1 · TWO DECKS</span>
+              <span className="output-summary">
+                Output:{" "}
+                {selectedDeviceName ||
+                  (isSystemDefault
+                    ? "System default output"
+                    : "Current selection")}
+              </span>
+            </div>
+          </div>
+
+          {(error || mixer.output_error) && (
+            <div className="error-banner" role="alert">
+              <span>
+                {error ||
+                  "Audio output stopped. Re-select an output device to retry."}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  dispatchCommand({ id: "output.retry", payload: {} })
+                }
+              >
+                Retry output
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  dispatchCommand({ id: "output.refreshDevices", payload: {} })
+                }
+              >
+                Refresh devices
+              </button>
+            </div>
+          )}
+
+          {page === "dj" && (
+            <>
+              <div className="dj-grid">
+                <DeckPanel
+                  deck={mixer.deck_a}
+                  deckIndex={0}
+                  loading={loadingDeck === 0}
+                  focused={focusedDeck === 0}
+                  shortcutText={shortcutText}
+                  onCommand={dispatchCommand}
+                />
+                <MixerConsole
+                  mixer={mixer}
+                  shortcutText={shortcutText}
+                  onCommand={dispatchCommand}
+                />
+                <DeckPanel
+                  deck={mixer.deck_b}
+                  deckIndex={1}
+                  loading={loadingDeck === 1}
+                  focused={focusedDeck === 1}
+                  shortcutText={shortcutText}
+                  onCommand={dispatchCommand}
+                />
+              </div>
+              <QuickCrateBrowser
+                mixer={mixer}
+                loadingDeck={loadingDeck}
+                onLoad={(deck) =>
+                  dispatchCommand({ id: "deck.loadTrack", payload: { deck } })
+                }
+              />
+            </>
+          )}
+
+          {page === "library" && (
+            <LibraryEmptyState
+              loading={loadingDeck === 0}
+              onLoad={() =>
+                dispatchCommand({ id: "deck.loadTrack", payload: { deck: 0 } })
+              }
             />
-          </>
-        )}
+          )}
 
-        {page === "library" && (
-          <LibraryEmptyState
-            loading={loadingDeck === 0}
-            onLoad={() => void loadTrack(0)}
-          />
-        )}
-
-        {page === "settings" && (
-          <AudioSettings
-            devices={devices}
-            selectedDevice={mixer.selected_device}
-            outputError={mixer.output_error}
-            onRefresh={() => void refreshDevices()}
-            onRetry={() => selectDevice(mixer.selected_device ?? "default")}
-          />
-        )}
-      </main>
-    </AppShell>
+          {page === "settings" && (
+            <AudioSettings
+              devices={devices}
+              selectedDevice={mixer.selected_device}
+              outputError={mixer.output_error}
+              onRefresh={() =>
+                dispatchCommand({ id: "output.refreshDevices", payload: {} })
+              }
+              onRetry={() =>
+                dispatchCommand({ id: "output.retry", payload: {} })
+              }
+            />
+          )}
+        </main>
+      </AppShell>
+      {shortcutOverlayOpen && (
+        <ShortcutOverlay
+          bindings={effectiveShortcutBindings}
+          platform={shortcutPlatform}
+          warning={shortcutPreferenceMessage}
+          onClose={() => setShortcutOverlayOpen(false)}
+          onBind={bindShortcut}
+          onReset={resetShortcuts}
+        />
+      )}
+    </>
   );
 }
 

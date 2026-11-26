@@ -3,6 +3,12 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { M1_MATERIAL_ICON_NAMES, MaterialIcon } from "./MaterialIcon";
+import {
+  createShortcutCommand,
+  getDefaultShortcutBindings,
+  type CommandDispatcher,
+  type ShortcutId,
+} from "./commands/commandRegistry";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -17,6 +23,7 @@ import {
   QuickCrateBrowser,
   Waveform,
 } from "./App";
+import { ShortcutOverlay } from "./ShortcutOverlay";
 
 type TestElementProps = {
   children?: ReactNode;
@@ -25,6 +32,8 @@ type TestElementProps = {
   disabled?: boolean;
   onChange?: (event: { target: { value: string } }) => void;
   onClick?: () => void;
+  onFocusCapture?: () => void;
+  onPointerDownCapture?: () => void;
 };
 
 function findElements(node: ReactNode): ReactElement<TestElementProps>[] {
@@ -79,6 +88,8 @@ const emptyMixer = {
   selected_device: null,
   output_error: false,
 };
+
+const testShortcutText = (shortcutId: ShortcutId) => shortcutId;
 
 describe("M1 desktop workspace", () => {
   it("renders decorative Material Symbols without hiding transport labels", () => {
@@ -199,6 +210,8 @@ describe("M1 desktop workspace", () => {
       deck: emptyDeck,
       deckIndex: 0,
       loading: false,
+      focused: true,
+      shortcutText: testShortcutText,
       onCommand: () => undefined,
     });
     const controls = findElements(tree);
@@ -212,12 +225,13 @@ describe("M1 desktop workspace", () => {
   });
 
   it("maps Deck B transport commands to deck index 1", () => {
-    const onCommand =
-      vi.fn<(command: string, args: Record<string, unknown>) => void>();
+    const onCommand = vi.fn<CommandDispatcher>();
     const tree = DeckPanel({
       deck: loadedDeck,
       deckIndex: 1,
       loading: false,
+      focused: false,
+      shortcutText: testShortcutText,
       onCommand,
     });
     const buttons = findElements(tree).filter(
@@ -225,31 +239,59 @@ describe("M1 desktop workspace", () => {
     );
 
     buttons[0]?.props.onClick?.();
-    expect(onCommand).toHaveBeenLastCalledWith("set_playing", {
-      deck: 1,
-      playing: true,
+    expect(onCommand).toHaveBeenLastCalledWith({
+      id: "deck.playPause",
+      payload: { deck: 1 },
     });
+    expect(onCommand.mock.lastCall?.[0]).toEqual(
+      createShortcutCommand("togglePlayback", { focusedDeck: 1 }),
+    );
 
     buttons[1]?.props.onClick?.();
-    expect(onCommand).toHaveBeenLastCalledWith("stop_track", { deck: 1 });
+    expect(onCommand).toHaveBeenLastCalledWith({
+      id: "deck.stop",
+      payload: { deck: 1 },
+    });
+  });
+
+  it("selects a deck as the keyboard target when its surface receives focus or pointer input", () => {
+    const onCommand = vi.fn<CommandDispatcher>();
+    const tree = DeckPanel({
+      deck: loadedDeck,
+      deckIndex: 1,
+      loading: false,
+      focused: false,
+      shortcutText: testShortcutText,
+      onCommand,
+    });
+    const panel = findElements(tree).find((element) =>
+      element.props.className?.includes("deck-panel"),
+    );
+
+    panel?.props.onPointerDownCapture?.();
+    expect(onCommand).toHaveBeenCalledWith({
+      id: "deck.focus",
+      payload: { deck: 1 },
+    });
   });
 
   it("maps pause to a stopped state for a playing deck", () => {
-    const onCommand =
-      vi.fn<(command: string, args: Record<string, unknown>) => void>();
+    const onCommand = vi.fn<CommandDispatcher>();
     const tree = DeckPanel({
       deck: { ...loadedDeck, playing: true },
       deckIndex: 0,
       loading: false,
+      focused: true,
+      shortcutText: testShortcutText,
       onCommand,
     });
 
     findElements(tree)
       .filter((element) => element.type === "button")[0]
       ?.props.onClick?.();
-    expect(onCommand).toHaveBeenCalledWith("set_playing", {
-      deck: 0,
-      playing: false,
+    expect(onCommand).toHaveBeenCalledWith({
+      id: "deck.playPause",
+      payload: { deck: 0 },
     });
   });
 
@@ -258,6 +300,8 @@ describe("M1 desktop workspace", () => {
       deck: loadedDeck,
       deckIndex: 0,
       loading: true,
+      focused: true,
+      shortcutText: testShortcutText,
       onCommand: () => undefined,
     });
     const controls = findElements(tree);
@@ -271,71 +315,73 @@ describe("M1 desktop workspace", () => {
   });
 
   it("maps seek input to the selected deck and position", () => {
-    const onCommand =
-      vi.fn<(command: string, args: Record<string, unknown>) => void>();
+    const onCommand = vi.fn<CommandDispatcher>();
     const tree = DeckPanel({
       deck: loadedDeck,
       deckIndex: 0,
       loading: false,
+      focused: true,
+      shortcutText: testShortcutText,
       onCommand,
     });
 
     findByLabel(findElements(tree), "Deck A position").props.onChange?.({
       target: { value: "3.25" },
     });
-    expect(onCommand).toHaveBeenCalledWith("seek_track", {
-      deck: 0,
-      position: 3.25,
+    expect(onCommand).toHaveBeenCalledWith({
+      id: "deck.seekTo",
+      payload: { deck: 0, position: 3.25 },
     });
   });
 
-  it.each([
+  it.each<[string, "gain" | "low" | "mid" | "high", number]>([
     ["Deck A Gain", "gain", 1.2],
     ["Deck A Low EQ", "low", -3],
     ["Deck A Mid EQ", "mid", 2.5],
     ["Deck A High EQ", "high", 4],
   ])("maps %s to one independent deck control", (label, control, value) => {
-    const onCommand =
-      vi.fn<(command: string, args: Record<string, unknown>) => void>();
+    const onCommand = vi.fn<CommandDispatcher>();
     const tree = DeckPanel({
       deck: loadedDeck,
       deckIndex: 0,
       loading: false,
+      focused: true,
+      shortcutText: testShortcutText,
       onCommand,
     });
 
     findByLabel(findElements(tree), label).props.onChange?.({
       target: { value: String(value) },
     });
-    expect(onCommand).toHaveBeenCalledWith("set_deck_control", {
-      deck: 0,
-      gain: control === "gain" ? value : null,
-      low: control === "low" ? value : null,
-      mid: control === "mid" ? value : null,
-      high: control === "high" ? value : null,
+    expect(onCommand).toHaveBeenCalledWith({
+      id: "deck.setControl",
+      payload: { deck: 0, control, value },
     });
   });
 
   it("maps master level and crossfader changes independently", () => {
-    const onCommand =
-      vi.fn<(command: string, args: Record<string, unknown>) => void>();
-    const tree = MixerConsole({ mixer: emptyMixer, onCommand });
+    const onCommand = vi.fn<CommandDispatcher>();
+    const tree = MixerConsole({
+      mixer: emptyMixer,
+      shortcutText: testShortcutText,
+      onCommand,
+    });
     const controls = findElements(tree);
 
     findByLabel(controls, "Master level").props.onChange?.({
       target: { value: "0.65" },
     });
-    expect(onCommand).toHaveBeenLastCalledWith("set_mixer", {
-      master: 0.65,
-      crossfader: null,
+    expect(onCommand).toHaveBeenLastCalledWith({
+      id: "mixer.setMaster",
+      payload: { value: 0.65 },
     });
 
     findByLabel(controls, "Crossfader").props.onChange?.({
       target: { value: "0.2" },
     });
-    expect(onCommand).toHaveBeenLastCalledWith("set_mixer", {
-      master: null,
-      crossfader: 0.2,
+    expect(onCommand).toHaveBeenLastCalledWith({
+      id: "mixer.setCrossfader",
+      payload: { value: 0.2 },
     });
   });
 
@@ -351,6 +397,8 @@ describe("M1 desktop workspace", () => {
       selectedDevice: "system-out-1",
       onSelectDevice,
       engineConnected: true,
+      onShortcuts: () => undefined,
+      shortcutHelpHint: "F1",
       children: null,
     });
     const controls = findElements(tree);
@@ -362,6 +410,26 @@ describe("M1 desktop workspace", () => {
       target: { value: "usb-out-2" },
     });
     expect(onSelectDevice).toHaveBeenCalledWith("usb-out-2");
+  });
+
+  it("renders the searchable, editable shortcut reference with platform mappings", () => {
+    const markup = renderToStaticMarkup(
+      <ShortcutOverlay
+        bindings={getDefaultShortcutBindings("windows")}
+        platform="windows"
+        warning={null}
+        onClose={() => undefined}
+        onBind={() => null}
+        onReset={() => undefined}
+      />,
+    );
+
+    expect(markup).toContain('role="dialog"');
+    expect(markup).toContain('type="search"');
+    expect(markup).toContain("Search commands");
+    expect(markup).toContain("Change shortcut for Play / pause focused deck");
+    expect(markup).toContain("Reset defaults");
+    expect(markup).toContain("Alt+1");
   });
 
   it("routes each quick-crate load action to its deck", () => {

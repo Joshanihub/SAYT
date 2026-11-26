@@ -3,7 +3,16 @@
 **Status:** ACTIVE<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.4.8
+**Version:** 0.4.10
+
+## 2026-11-26 — First DJ expansion: keyboard command system
+
+- Continued in the isolated `feat/dj-command-system` worktree based on M1 head `ee137e288b324a50e6f9b1574c4aee9d4eee1c09`. Added a comprehensive official-source capability tracker for Serato DJ Pro and VirtualDJ and a separate keyboard-command acceptance contract and runbook.
+- Added a typed command registry with global/focused-deck contexts, platform-aware defaults, editable mappings, conflict/reserved-key checks, versioned local persistence, reset, command search, and an in-app help overlay. Existing deck, mixer, device and workspace controls plus keyboard shortcuts share the same `AppCommand` dispatcher and existing Tauri APIs.
+- Added visible, remapping-aware key hints beside deck focus, transport, gain/EQ, mixer and help controls. Deck pointer/focus and successful load selection update the focused-deck target. Unsupported cue, stutter, pitch, sync, loop, effects, sampler, library search, recording and controller commands remain absent until their real systems exist.
+- Extracted the production keydown path into `dispatchShortcutKeydown` so shortcut matching, typed dispatch, repeat rules, modal/input exclusion and native Space handling can be exercised directly. The App window listener calls the same helper.
+- Verification checkpoint: frontend format, lint, typecheck, 46 tests and production build pass. Two intentional mutation canaries failed their expected assertions (platform default and typed command dispatch); restored focused tests passed. Rust format, Clippy, 25 engine tests plus 1 desktop actor test, and locked all-target check passed on this worktree.
+- Windows Tauri runtime launched from this worktree at `127.0.0.1:1421`, 1282×832 window. The initial DJ workspace, footer help button, shortcut dialog, crossfader search results and Done close action were observed. Global key actions sent via `sky.press_key` (F1, Alt+2, Ctrl+Alt+2, Ctrl+Alt+Up and Alt+Shift+Q) produced no visible command-state change; the cause is unresolved between this automation input path and the application. No physical keyboard, fixture load, audio output or remapping persistence claim is made. Exact-head CI is still pending and no commit or push has been made for this branch.
 
 ## 2026-11-26 — M1 responsive workspace correction
 
@@ -11,7 +20,7 @@
 - Added named desktop, compact, and narrow grid areas so the 1060 px layout places both decks above the mixer, and the 720 px layout stacks Deck A, Deck B, then mixer. Lowered Tauri's minimum width to 480 px to make the established narrow styles usable.
 - Added a stylesheet regression test for each grid mode and added responsive placement to the M1 requirements. The complete UI suite passes; four screenshots were captured from the running Tauri window using Win32 `PrintWindow` at client sizes verified by `GetClientRect` and are stored in `docs/evidence/m1-responsive/`.
 - Compared the captured M1 empty workspace with the supplied Screen 01 reference. The deck colors, dark surfaces, type roles, and high-level deck/mixer arrangement are present. The screen remains a partial implementation: cue/loop/pad controls, pitch/key, per-deck meters, effects/recording, and the full library browser are not implemented.
-- Local verification passed: Rust format, Clippy, workspace tests (25 engine, 1 desktop actor), and locked all-target check; frontend format, lint, typecheck, 23 UI tests, and production build. A controlled mutation of the desktop grid order made the regression test fail; source bytes were restored and the test rerun passed. This working-tree change has not yet been committed or pushed. Exact-head CI for current pushed source `b3fe45c` passed Windows, macOS, and Ubuntu.
+- Local verification passed: Rust format, Clippy, workspace tests (25 engine, 1 desktop actor), and locked all-target check; frontend format, lint, typecheck, 23 UI tests, and production build. A controlled mutation of the desktop grid order made the regression test fail; source bytes were restored and the test rerun passed. Responsive change `ee137e2` is committed and pushed. Exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) passed Windows, macOS, and Ubuntu.
 
 ## 2026-11-26 — M1 output-switch recovery
 

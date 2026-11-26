@@ -3,9 +3,26 @@
 **Status:** ACTIVE; M1 acceptance incomplete<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-26<br>
-**Version:** 0.3.16
+**Version:** 0.3.18
 
-This file records reproduced evidence separately from historical agent reports. The base is unchanged `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`; PR #1 and #2 are open and unmerged. For pushed source `b3fe45c1091226df1f1304962e86d8f7cdd04102`, exact-head run [45827515625](https://github.com/Joshanihub/SAYT/actions/runs/45827515625) passed on Windows, macOS, and Ubuntu. The responsive correction described below is a newer local working-tree change and has not yet run in CI.
+This file records reproduced evidence separately from historical agent reports. Remote `main` remains at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. PR #1 is open and PR #2 remains draft. The M1 feature branch head `ee137e288b324a50e6f9b1574c4aee9d4eee1c09` passed exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) on Windows, macOS, and Ubuntu. The current keyboard-command work is on the unpushed review branch `feat/dj-command-system` in `C:\Dev\SAYT-dj-feature-expansion`.
+
+## Keyboard-command expansion — local checks and Windows runtime observation
+
+The expansion is isolated in `C:\Dev\SAYT-dj-feature-expansion` on `feat/dj-command-system`, based on M1 head `ee137e288b324a50e6f9b1574c4aee9d4eee1c09`. The registry's production keydown path is `dispatchShortcutKeydown`; the App window listener invokes it, and the helper has direct tests for matching and typed dispatch, repeat behavior, editable fields, modal state and native Space buttons.
+
+| Check                         | Command / environment                                                                                                                                                            | Result                                                                                               |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Shortcut mutation canaries    | Temporarily changed the Windows primary-modifier expectation and the expected `shortcuts.open` command ID; ran each focused Vitest test; restored source and reran both          | Both expected assertion failures were observed; both restored focused tests passed.                  |
+| Frontend lint                 | `corepack pnpm lint`                                                                                                                                                             | PASS, exit 0.                                                                                        |
+| Frontend types                | `corepack pnpm typecheck`                                                                                                                                                        | PASS, exit 0.                                                                                        |
+| Frontend tests                | `corepack pnpm test`                                                                                                                                                             | PASS, 46 tests across 3 files.                                                                       |
+| Production build / formatting | `corepack pnpm build`; `corepack pnpm format:check`                                                                                                                              | PASS, exit 0; Vite production output generated and all matched files pass Prettier.                  |
+| Rust workspace checks         | `cargo fmt --all --check`; `cargo clippy --workspace --all-targets --locked -- -D warnings`; `cargo test --workspace --locked`; `cargo check --workspace --all-targets --locked` | PASS, 25 engine tests and 1 desktop actor test; formatting, Clippy and all-target check also passed. |
+
+The feature worktree launched as a Windows Tauri app from `C:\Dev\SAYT-dj-feature-expansion\target\debug\sayt-desktop.exe` at `http://127.0.0.1:1421`. The observed window measured 1282×832 logical pixels and rendered the M1 workspace with empty decks and the system-default output. The footer opened the shortcut dialog; searching `crossfader` showed the three matching commands; the Done button closed it. No shortcut mapping was edited or reset.
+
+Global keyboard operation is not verified: automation presses for F1, Alt+2, Ctrl+Alt+2, Ctrl+Alt+Up and Alt+Shift+Q returned without a visible command-state change. This does not identify whether the input automation failed to deliver page key events or the app failed to handle them. A human physical-key check is required before marking shortcut actuation runtime verified. No WAV was loaded in this runtime session and no playback, audible output, remapping persistence, or audio-device behavior is claimed. The original M1 app window was left untouched. Exact-head remote CI is pending for this expansion branch.
 
 ## M1 responsive workspace correction — local runtime verification
 
@@ -15,7 +32,7 @@ The initial actual Tauri capture at 800×700 exposed a CSS auto-placement defect
 
 Observed: the two desktop sizes retain deck A / mixer / deck B columns; 800×700 keeps both decks side by side above the mixer; 480×700 stacks deck A, deck B, then mixer and uses vertical page scrolling. I compared these captures with the supplied 1600×1200 Screen 01 Stitch PNG. Color roles, typography, and overall deck/mixer hierarchy are present, but the production screen is still an M1 subset; the reference's pitch/key controls, cue/loop/pad modes, deck meters, FX/record controls, and full library browser are absent. This is runtime placement verification, not full design acceptance or audio verification.
 
-The responsive stylesheet regression suite passed as part of `corepack pnpm test` (23 tests). A controlled mutation changed the expected desktop area from `deck-a mixer deck-b` to `deck-a deck-b mixer`; `corepack pnpm --filter @sayt/desktop test -- src/styles.test.ts` failed on that assertion as expected, and the source file was restored byte-for-byte before the passing rerun. The complete local source check set also passed: `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` (25 engine and 1 audio-service actor test), `cargo check --workspace --all-targets --locked`, `corepack pnpm format:check`, `corepack pnpm lint`, `corepack pnpm typecheck`, and `corepack pnpm build`. The new source and captures remain uncommitted at this evidence revision.
+The responsive stylesheet regression suite passed as part of `corepack pnpm test` (23 tests). A controlled mutation changed the expected desktop area from `deck-a mixer deck-b` to `deck-a deck-b mixer`; `corepack pnpm --filter @sayt/desktop test -- src/styles.test.ts` failed on that assertion as expected, and the source file was restored byte-for-byte before the passing rerun. The complete M1 local source check set passed: `cargo fmt --all --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked` (25 engine and 1 audio-service actor test), `cargo check --workspace --all-targets --locked`, `corepack pnpm format:check`, `corepack pnpm lint`, `corepack pnpm typecheck`, and `corepack pnpm build`. Responsive source and captures are committed and pushed in `ee137e2`; its exact-head CI passed as linked above.
 
 ## M1 output-switch recovery — local working-tree verification
 
@@ -36,7 +53,7 @@ The engine tests exercise the transition policy for opening a replacement after 
 
 On 2026-11-26 the owner stated that all requested manual audio checks passed. The response did not include device, viewport, per-test observations, or error text. This is retained as an owner-reported result and is not presented as an independent reproduction. The live SAYT accessibility snapshot showed two populated decks in the stopped state, but did not identify the tested fixtures. See [`audio-validation/OWNER_REPORTED_RESULTS_2026-11-26.md`](audio-validation/OWNER_REPORTED_RESULTS_2026-11-26.md).
 
-Two Computer Use screenshot attempts returned unrelated Chrome content while the selected SAYT window returned a SAYT accessibility tree. The recovery selection did not correct the mismatch, so the three requested viewport captures and Stitch visual comparisons remain NOT RUN.
+At an earlier capture attempt, Computer Use returned unrelated Chrome content while the selected SAYT window exposed a SAYT accessibility tree. That mismatch was later resolved by the committed Win32 Tauri captures linked above. Full Stitch visual acceptance remains open because the production screen still omits several supplied controls.
 
 ## M1 interaction motion and reduced-motion regression
 
@@ -62,9 +79,9 @@ Manifest SHA-256: `1FA8F84E47C17F6FC017F99D5023AC8CE4C683B400BE788BE98C5E6E586A4
 
 The first local toolkit run failed because CP1252 could not encode the contributed checkmark output. The generator and verifier output was changed to ASCII; the rerun above passed. A first frontend check used Node 24.16.0, which did not match `.node-version`; it was superseded by the exact Node 24.22.3 run recorded above.
 
-## Latest exact-head CI before this batch
+## Historical exact-head CI for the audio-validation integration
 
-The previous documentation head `8e38a432f529f0b118bc3f804d7867e5a3f5dda7` passed push run [45736072298](https://github.com/Joshanihub/SAYT/actions/runs/45736072298) and PR run [45736076490](https://github.com/Joshanihub/SAYT/actions/runs/45736076490) on all three OSes. This batch changes source assets, UI code, tests, and workflow; CI has not yet run on it.
+The earlier integration head `8e38a432f529f0b118bc3f804d7867e5a3f5dda7` passed push run [45736072298](https://github.com/Joshanihub/SAYT/actions/runs/45736072298) and PR run [45736076490](https://github.com/Joshanihub/SAYT/actions/runs/45736076490) on all three OSes. This historical result predates M1 closeout; the current M1 exact-head result is recorded at the start of this file.
 
 - Push run [45736072298](https://github.com/Joshanihub/SAYT/actions/runs/45736072298): Windows, macOS, and Ubuntu passed.
 - Pull request run [45736076490](https://github.com/Joshanihub/SAYT/actions/runs/45736076490): Windows, macOS, and Ubuntu passed. Its Ubuntu job records `Ran 52 tests`, `test_symlink_escape_rejected ... ok`, and `77 checks passed, 0 checks failed` across seven fixtures.

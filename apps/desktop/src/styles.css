@@ -295,6 +295,13 @@ a:focus-visible {
   gap: 0.8rem;
   padding: 0.9rem;
 }
+.deck-panel.keyboard-focused {
+  outline: 1px solid #c7f36b75;
+  outline-offset: -2px;
+}
+.deck-b.keyboard-focused {
+  outline-color: #37d8f075;
+}
 .deck-a {
   grid-area: deck-a;
 }
@@ -362,6 +369,15 @@ a:focus-visible {
   margin: 0.25rem 0 0;
   color: var(--muted);
   font-size: 0.68rem;
+}
+.deck-identity .deck-keyboard-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  margin-top: 0.28rem;
+  color: #8d959e;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
 }
 .deck-state {
   flex: 0 0 auto;
@@ -488,6 +504,17 @@ a:focus-visible {
   align-items: center;
   gap: 0.45rem;
 }
+.deck-transport kbd {
+  padding: 0.12rem 0.26rem;
+  border: 1px solid #303640;
+  border-radius: 3px;
+  color: #9da5af;
+  background: #15181e;
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
 .transport-primary,
 .transport-secondary,
 .load-button {
@@ -570,9 +597,24 @@ input[type="range"]:disabled {
   background: #171a20;
 }
 .channel-control > span {
+  display: block;
   color: #c2c6cc;
   font-size: 0.62rem;
   font-weight: 700;
+}
+.shortcut-inline-hint {
+  display: block;
+  margin-top: 0.18rem;
+  color: #7e8792;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  font-weight: 450;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.shortcut-inline-hint kbd {
+  color: #9da5af;
+  font: inherit;
 }
 .channel-control input {
   width: calc(100% - 0.2rem);
@@ -964,6 +1006,185 @@ input[type="range"]:disabled {
   align-items: center;
   gap: 0.4rem;
 }
+.shortcut-help-button {
+  min-height: 24px;
+  padding: 0.18rem 0.38rem;
+  border: 1px solid #292d35;
+  border-radius: 3px;
+  color: #a7adb5;
+  background: #14171c;
+  font-size: 0.58rem;
+}
+.shortcut-help-button kbd {
+  margin-left: 0.25rem;
+  color: var(--lime);
+  font-family: var(--font-mono);
+  font-size: inherit;
+}
+
+.shortcut-overlay-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: #05070bd9;
+  backdrop-filter: blur(5px);
+}
+.shortcut-dialog {
+  width: min(760px, 100%);
+  max-height: min(86vh, 820px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #343a44;
+  border-radius: 8px;
+  color: var(--text);
+  background: linear-gradient(155deg, #1a1e25, #111318 72%);
+  box-shadow: 0 24px 90px #000b;
+}
+.shortcut-dialog-header,
+.shortcut-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+}
+.shortcut-dialog-header {
+  border-bottom: 1px solid #292e37;
+}
+.shortcut-dialog-header .eyebrow {
+  margin-bottom: 0.2rem;
+  color: var(--lime);
+}
+.shortcut-dialog-header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+.shortcut-close-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #373d47;
+  border-radius: 4px;
+  color: #bdc3ca;
+  background: #20242b;
+  font-size: 1.3rem;
+}
+.shortcut-dialog-description {
+  margin: 0;
+  padding: 0.8rem 1.1rem 0;
+  color: #a3abb5;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.shortcut-search {
+  display: block;
+  padding: 0.75rem 1.1rem;
+}
+.shortcut-search input {
+  width: 100%;
+  min-height: 38px;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #363d48;
+  border-radius: 4px;
+  outline: none;
+  color: var(--text);
+  background: #0e1015;
+  font: inherit;
+  font-size: 0.75rem;
+}
+.shortcut-search input:focus-visible {
+  border-color: var(--lime);
+  box-shadow: 0 0 0 2px #c7f36b30;
+}
+.shortcut-feedback {
+  margin: 0 1.1rem 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #394b30;
+  border-radius: 4px;
+  color: #d1e8b5;
+  background: #1b2818;
+  font-size: 0.68rem;
+}
+.shortcut-command-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border-top: 1px solid #242830;
+  border-bottom: 1px solid #292e37;
+}
+.shortcut-command-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, auto) auto;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 1.1rem;
+  border-bottom: 1px solid #252a32;
+}
+.shortcut-command-row:last-child {
+  border-bottom: 0;
+}
+.shortcut-command-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+.shortcut-command-copy strong {
+  color: #e6e9e5;
+  font-size: 0.7rem;
+}
+.shortcut-command-copy span {
+  color: #929ba5;
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+.shortcut-binding {
+  justify-self: end;
+  padding: 0.22rem 0.4rem;
+  border: 1px solid #363d48;
+  border-radius: 3px;
+  color: #c7f36b;
+  background: #101319;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  white-space: nowrap;
+}
+.shortcut-map-button {
+  min-width: 70px;
+  min-height: 30px;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid #363d48;
+  border-radius: 4px;
+  color: #c5cbd1;
+  background: #20242b;
+  font-size: 0.62rem;
+}
+.shortcut-map-button.recording {
+  border-color: #c7f36b;
+  color: #c7f36b;
+  background: #29351c;
+}
+.shortcut-no-results {
+  padding: 1rem 1.1rem;
+  color: #aab1b9;
+  font-size: 0.72rem;
+}
+.shortcut-dialog-footer {
+  color: #8f98a2;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+}
+.shortcut-dialog-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.shortcut-dialog-footer button {
+  min-height: 32px;
+}
 
 @media (max-width: 1279px) {
   .dj-grid {
@@ -1161,6 +1382,38 @@ input[type="range"]:disabled {
     flex-direction: column;
     gap: 0.25rem;
     padding: 0.45rem 0.7rem;
+  }
+  .shortcut-dialog {
+    max-height: calc(100vh - 1rem);
+  }
+  .shortcut-dialog-header,
+  .shortcut-dialog-footer {
+    padding-right: 0.7rem;
+    padding-left: 0.7rem;
+  }
+  .shortcut-dialog-description {
+    padding-right: 0.7rem;
+    padding-left: 0.7rem;
+  }
+  .shortcut-search {
+    padding-right: 0.7rem;
+    padding-left: 0.7rem;
+  }
+  .shortcut-command-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.35rem 0.5rem;
+    padding-right: 0.7rem;
+    padding-left: 0.7rem;
+  }
+  .shortcut-command-copy {
+    grid-column: 1 / -1;
+  }
+  .shortcut-binding {
+    justify-self: start;
+  }
+  .shortcut-dialog-footer {
+    align-items: start;
+    flex-direction: column;
   }
   .settings-card-heading {
     align-items: start;

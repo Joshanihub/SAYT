@@ -31,3 +31,18 @@ describe("responsive deck workspace placement", () => {
     );
   });
 });
+
+describe("keyboard command surfaces", () => {
+  it("shows focused deck state and styles the searchable shortcut overlay", () => {
+    expect(styles).toContain(".deck-panel.keyboard-focused");
+    expect(styles).toContain(".deck-b.keyboard-focused");
+    expect(styles).toContain(".deck-keyboard-hint");
+    expect(styles).toContain(".shortcut-inline-hint");
+    expect(styles).toContain(".shortcut-overlay-backdrop");
+    expect(styles).toContain(".shortcut-command-list");
+    expect(styles).toContain(".shortcut-map-button.recording");
+    expect(styles).toMatch(
+      /@media\s*\(max-width:\s*480px\)[\s\S]*?\.shortcut-command-row\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+auto/s,
+    );
+  });
+});
