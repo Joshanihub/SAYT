@@ -6,7 +6,7 @@ export type BeatPerformanceAction =
   "setManualBpm" | "beatJump" | "beginLoopRoll" | "endLoopRoll";
 export type HotCueColor =
   "coral" | "orange" | "amber" | "lime" | "cyan" | "blue" | "violet" | "pink";
-export type WorkspaceId = "dj" | "library" | "settings";
+export type WorkspaceId = "dj" | "library" | "preparation" | "settings";
 export type DeckControlId = "gain" | "low" | "mid" | "high";
 
 export const COMMAND_ADJUSTMENTS = {

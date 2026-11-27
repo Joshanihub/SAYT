@@ -1199,3 +1199,115 @@
     grid-template-columns: minmax(100px, 0.35fr) minmax(0, 1fr);
   }
 }
+
+.music-library--preparation .library-layout {
+  grid-template-columns: minmax(17rem, 0.72fr) minmax(0, 1.28fr);
+  min-height: clamp(38rem, calc(100vh - 15rem), 62rem);
+}
+
+.music-library--preparation .library-sidebar {
+  display: none;
+}
+
+.music-library--preparation .library-inspector {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 0.18fr) minmax(12rem, 0.82fr);
+  align-content: start;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.music-library--preparation .library-inspector-heading,
+.music-library--preparation .library-inspector-empty,
+.music-library--preparation .library-metadata-grid,
+.music-library--preparation .library-analysis-panel,
+.music-library--preparation .library-load-actions,
+.music-library--preparation .library-source-note,
+.music-library--preparation .library-metadata-form {
+  grid-column: 1 / -1;
+}
+
+.music-library--preparation .library-artwork,
+.music-library--preparation .library-artwork-placeholder {
+  grid-column: 1;
+  grid-row: 2;
+  width: min(100%, 112px);
+  align-self: start;
+}
+
+.music-library--preparation .library-inspector-title {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+}
+
+.music-library--preparation .library-track-waveform,
+.music-library--preparation .library-track-waveform-state {
+  height: clamp(112px, 18vh, 220px);
+  min-height: clamp(112px, 18vh, 220px);
+}
+
+.music-library--preparation .library-metadata-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.music-library--preparation .library-metadata-grid .metadata-full-width {
+  display: none;
+}
+
+.music-library--preparation .library-analysis-panel {
+  gap: 0.7rem;
+  padding: 0.9rem 0;
+}
+
+.music-library--preparation .library-analysis-result {
+  font-size: 0.76rem;
+}
+
+.music-library--preparation .library-bpm-correction input {
+  min-height: 40px;
+}
+
+.music-library--preparation .library-tempo-presets .library-button,
+.music-library--preparation .library-analysis-actions .library-button {
+  min-height: 40px;
+}
+
+.library-tempo-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.library-tempo-presets > span {
+  color: #89929b;
+  font-size: 0.62rem;
+}
+
+@media (max-width: 980px) {
+  .music-library--preparation .library-layout {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: auto;
+  }
+
+  .music-library--preparation .library-inspector {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .music-library--preparation .library-inspector {
+    grid-template-columns: minmax(5rem, 0.24fr) minmax(0, 0.76fr);
+  }
+
+  .music-library--preparation .library-metadata-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .music-library--preparation .library-track-waveform,
+  .music-library--preparation .library-track-waveform-state {
+    height: 128px;
+    min-height: 128px;
+  }
+}

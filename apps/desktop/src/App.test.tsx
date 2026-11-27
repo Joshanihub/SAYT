@@ -155,6 +155,31 @@ describe("M1 desktop workspace", () => {
     expect(markup).not.toContain("Output: System default output");
   });
 
+  it("exposes Preparation as an implemented workspace route", () => {
+    const markup = renderToStaticMarkup(
+      <AppShell
+        page="preparation"
+        onNavigate={() => undefined}
+        devices={[]}
+        selectedDevice={null}
+        onSelectDevice={() => undefined}
+        engineConnected={false}
+        onShortcuts={() => undefined}
+        shortcutHelpHint="Ctrl+/"
+      >
+        <div />
+      </AppShell>,
+    );
+
+    expect(markup).toContain('aria-current="page"');
+    expect(markup).toMatch(
+      /nav-item active" aria-current="page"[^>]*>Preparation<\/button>/,
+    );
+    expect(markup).not.toContain(
+      'title="Preparation is not implemented in M1"',
+    );
+  });
+
   it("renders the persistent music-library controls without seeded tracks", () => {
     const markup = renderToStaticMarkup(
       <MusicLibrary loadingDeck={null} onLoadTrack={vi.fn(async () => true)} />,
@@ -166,6 +191,21 @@ describe("M1 desktop workspace", () => {
     expect(markup).toContain("Create");
     expect(markup).toContain("Search title, artist, album, or folder");
     expect(markup).toContain("Select a track");
+    expect(markup).not.toContain("Dreams in Motion");
+  });
+
+  it("renders the same catalog as an honest Track Preparation workspace", () => {
+    const markup = renderToStaticMarkup(
+      <MusicLibrary
+        workspace="preparation"
+        loadingDeck={null}
+        onLoadTrack={vi.fn(async () => true)}
+      />,
+    );
+
+    expect(markup).toContain('aria-label="Track preparation workspace"');
+    expect(markup).toContain("music-library--preparation");
+    expect(markup).toContain("Loading your local catalog");
     expect(markup).not.toContain("Dreams in Motion");
   });
 

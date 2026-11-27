@@ -2,8 +2,8 @@
 
 **Status:** PROPOSED acceptance contract<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-28<br>
-**Version:** 0.1.11
+**Date:** 2026-11-27<br>
+**Version:** 0.1.12
 
 ## Functional requirements
 
@@ -82,10 +82,10 @@ The 10,000-row test verifies search paging against catalog rows; it is not evide
 
 **Status:** PROPOSED feature-track contract<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-28<br>
-**Version:** 0.2
+**Date:** 2026-11-27<br>
+**Version:** 0.3
 
-The first real Track Preparation capability is available in the selected-track inspector in the local library. It is not the complete supplied Screen 04 workspace. The screen reference also depicts beatgrid editing, key and phrase analysis, vocal/stem analysis, cue/loop preparation, and precision beat-jump controls; these remain unavailable and must not be represented as working until their algorithms, persisted state, controls, and verification exist.
+The first real Track Preparation capability is available both in the selected-track inspector in the local library and through the dedicated Preparation workspace. The workspace reuses the native catalog's track list, selected-track identity, BPM state, corrections, and saved waveform; it does not accept arbitrary paths or create a second analysis store. Its wider responsive layout emphasizes the selected track, catalog-backed metadata, and the actual saved 160-peak preview. Half/double presets stage a manual correction in the existing input and require an explicit Save correction action before persistence. This is a partial Screen 04 implementation. Beatgrid editing, key and phrase analysis, vocal/stem analysis, cue/loop preparation, and precision beat-jump controls remain unavailable and must not be represented as working until their algorithms, persisted state, controls, and verification exist.
 
 1. Analysis is started for a selected catalog track ID; the UI cannot submit an arbitrary filesystem path. The native catalog resolves and canonicalizes the file under its registered root. Missing, unsupported, unreadable, or changed files fail with an actionable message and do not receive a result.
 2. The current analyzer accepts only the existing decoder's 16/24/32-bit integer PCM WAV, mono/stereo, 8,000–192,000 Hz, up to 512 MiB and 32,000,000 frames. It reads and analyzes on a bounded cancellable worker outside the CPAL callback. Only one BPM analysis runs at a time. The file identity is checked before and after processing; cancellation persists no partial result.
@@ -93,6 +93,8 @@ The first real Track Preparation capability is available in the selected-track i
 4. File-tag BPM remains unchanged. A user correction is stored in a separate SQLite table and accepts finite values from 30 through 300 BPM. Results are cached by content identity and algorithm version. Effective BPM is manual correction, otherwise confident analysis, otherwise an in-range file tag. Uncertain candidates are not sent to deck beat controls. Loading the selected track passes that BPM into the existing deck-local manual BPM control using the loaded deck snapshot's engine `source_track_id`; the catalog file-byte hash and engine decoded-PCM identity are different ID domains. Passing the catalog ID fails the engine's stale-track guard.
 5. The same bounded PCM pass computes 160 normalized waveform peak bins. Peaks are quantized into a 160-byte catalog record with source identity and encoding version, and shown in the selected-track inspector after analysis. Reopening the catalog restores the same peak vector; unsupported or corrupt peak records return no waveform and an actionable error.
 6. No beatgrid, key result, phrase map, loudness result, cue suggestion, loop suggestion, or music-library compatibility score is inferred from BPM or waveform analysis.
+7. The Preparation route uses the same catalog query and selected catalog track ID as the Library. Track selection always comes from the catalog UI; changing selection must keep asynchronous waveform results attached to their track ID.
+8. BPM `/2` and `×2` presets use the valid correction draft when present, otherwise the effective BPM. They stage a one-decimal correction only when the input and result are within 30–300 BPM; they never save automatically. Missing, uncertain-only, non-finite, or out-of-range tempo values disable the applicable preset.
 
 | Scenario                                                     | Automated evidence                                                                                                              | Live desktop evidence                                                                                           |
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |

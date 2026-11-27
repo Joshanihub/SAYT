@@ -1440,9 +1440,10 @@ export function AppShell({
   const pages: { id: Page; label: string }[] = [
     { id: "dj", label: "SAYT DJ" },
     { id: "library", label: "Library" },
+    { id: "preparation", label: "Preparation" },
     { id: "settings", label: "Settings" },
   ];
-  const futurePages = ["Bridge", "Preparation", "Studio", "FX & Sampler"];
+  const futurePages = ["Bridge", "Studio", "FX & Sampler"];
   const currentDeviceExists = devices.some(
     (device) => device.id === selectedDevice,
   );
@@ -2066,18 +2067,28 @@ export function App() {
         <main className="main-content" id="workspace">
           <div className="page-heading">
             <div>
-              <p className="eyebrow">LOCAL-FIRST PERFORMANCE</p>
+              <p className="eyebrow">
+                {page === "preparation"
+                  ? "LOCAL TRACK PREPARATION"
+                  : "LOCAL-FIRST PERFORMANCE"}
+              </p>
               <h1>
                 {page === "dj"
                   ? "DJ Workspace"
                   : page === "library"
                     ? "Music Library"
-                    : "Audio Settings"}
+                    : page === "preparation"
+                      ? "Track Preparation"
+                      : "Audio Settings"}
               </h1>
             </div>
             <div className="page-context">
               <span className="m1-pill">
-                {page === "library" ? "LOCAL CATALOG" : "M1 · TWO DECKS"}
+                {page === "library"
+                  ? "LOCAL CATALOG"
+                  : page === "preparation"
+                    ? "LOCAL WAV ANALYSIS"
+                    : "M1 · TWO DECKS"}
               </span>
               <span className="output-summary">Output: {outputSummary}</span>
             </div>
@@ -2128,8 +2139,9 @@ export function App() {
             </>
           )}
 
-          {page === "library" && (
+          {(page === "library" || page === "preparation") && (
             <MusicLibrary
+              workspace={page}
               loadingDeck={loadingDeck}
               onLoadTrack={(trackId, deck) => loadLibraryTrack(trackId, deck)}
             />

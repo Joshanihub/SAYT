@@ -12,7 +12,12 @@ import {
   initialLibraryCollectionSelection,
   reduceLibraryCollectionSelection,
 } from "./libraryCollectionSelection";
-import { effectiveBpm } from "./libraryTempo";
+import {
+  effectiveBpm,
+  scaleBpmCorrection,
+  BPM_CORRECTION_MAX,
+  BPM_CORRECTION_MIN,
+} from "./libraryTempo";
 import { validateLibraryWaveform } from "./libraryWaveform";
 import { LibraryWaveformPreview } from "./LibraryWaveformPreview";
 
@@ -102,6 +107,7 @@ type BackgroundProgress<T> = {
 type MusicLibraryProps = {
   loadingDeck: number | null;
   onLoadTrack: (trackId: string, deck: 0 | 1) => Promise<boolean>;
+  workspace?: "library" | "preparation";
 };
 
 const PAGE_SIZE = 100;
@@ -132,7 +138,11 @@ function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
-export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
+export function MusicLibrary({
+  loadingDeck,
+  onLoadTrack,
+  workspace = "library",
+}: MusicLibraryProps) {
   const [tracks, setTracks] = useState<TrackPage>({
     items: [],
     total: 0,
@@ -204,8 +214,15 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
   const bpmCorrectionValid =
     bpmCorrectionDraft.trim().length > 0 &&
     Number.isFinite(parsedBpmCorrection) &&
-    parsedBpmCorrection >= 30 &&
-    parsedBpmCorrection <= 300;
+    parsedBpmCorrection >= BPM_CORRECTION_MIN &&
+    parsedBpmCorrection <= BPM_CORRECTION_MAX;
+  const bpmCorrectionBase = bpmCorrectionValid
+    ? parsedBpmCorrection
+    : selectedTrack
+      ? effectiveBpm(selectedTrack)
+      : null;
+  const halfTempoCorrection = scaleBpmCorrection(bpmCorrectionBase, 0.5);
+  const doubleTempoCorrection = scaleBpmCorrection(bpmCorrectionBase, 2);
   const pageCount = Math.max(1, Math.ceil(tracks.total / PAGE_SIZE));
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const collectionGroups = useMemo(
@@ -797,7 +814,14 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
     ));
 
   return (
-    <section className="music-library" aria-label="Music library manager">
+    <section
+      className={`music-library${workspace === "preparation" ? " music-library--preparation" : ""}`}
+      aria-label={
+        workspace === "preparation"
+          ? "Track preparation workspace"
+          : "Music library manager"
+      }
+    >
       <header className="library-toolbar">
         <label className="library-search">
           <span className="library-search-glyph" aria-hidden="true">
@@ -1577,8 +1601,8 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                   Manual BPM correction
                   <input
                     type="number"
-                    min={30}
-                    max={300}
+                    min={BPM_CORRECTION_MIN}
+                    max={BPM_CORRECTION_MAX}
                     step={0.1}
                     value={bpmCorrectionDraft}
                     onChange={(event) =>
@@ -1587,6 +1611,40 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                     aria-label="Manual BPM correction"
                   />
                 </label>
+                <div
+                  className="library-tempo-presets"
+                  aria-label="Tempo correction presets"
+                >
+                  <button
+                    className="library-button secondary compact"
+                    type="button"
+                    aria-label="Set correction to half the current BPM"
+                    disabled={bpmCorrectionBusy || halfTempoCorrection === null}
+                    onClick={() => {
+                      if (halfTempoCorrection !== null) {
+                        setBpmCorrectionDraft(halfTempoCorrection.toFixed(1));
+                      }
+                    }}
+                  >
+                    BPM /2
+                  </button>
+                  <button
+                    className="library-button secondary compact"
+                    type="button"
+                    aria-label="Set correction to double the current BPM"
+                    disabled={
+                      bpmCorrectionBusy || doubleTempoCorrection === null
+                    }
+                    onClick={() => {
+                      if (doubleTempoCorrection !== null) {
+                        setBpmCorrectionDraft(doubleTempoCorrection.toFixed(1));
+                      }
+                    }}
+                  >
+                    BPM ×2
+                  </button>
+                  <span>Preset values need Save correction.</span>
+                </div>
                 <div className="library-analysis-actions">
                   <button
                     className="library-button primary compact"

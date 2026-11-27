@@ -2,8 +2,8 @@
 
 **Status:** PROPOSED implementation decision<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-28<br>
-**Version:** 1.1
+**Date:** 2026-11-27<br>
+**Version:** 1.2
 
 ## Decision
 
@@ -28,9 +28,9 @@ SQLite schema version 2 adds `bpm_analysis` and `bpm_corrections`; version 3 add
 
 ## Verification and limits
 
-Automated fixtures cover a known 60 BPM pulse, an ambiguous 120 BPM pulse, silence, short audio, unsupported float PCM, malformed input, cancellation during decode and autocorrelation, stereo frame-counted progress, waveform bounds/silence/persistence, changed source identity, v1→v3 and v2→v3 migration, caching, correction bounds, persistence, and deck-tempo precedence. These establish behavior on generated fixtures only. They do not establish BPM accuracy on commercial music, personal collections, perceived beat timing, beatgrids, key detection, or physical audio output.
+Automated fixtures cover a known 60 BPM pulse, an ambiguous 120 BPM pulse, silence, short audio, unsupported float PCM, malformed input, cancellation during decode and autocorrelation, stereo frame-counted progress, waveform bounds/silence/persistence, changed source identity, v1→v3 and v2→v3 migration, caching, correction bounds, persistence, and deck-tempo precedence. Frontend tests also cover the Preparation route, responsive layout wiring, tempo preset rounding and bounds. These establish behavior on generated fixtures and source-rendered UI only. They do not establish BPM accuracy on commercial music, personal collections, perceived beat timing, runtime appearance, beatgrids, key detection, or physical audio output.
 
-The current UI places the analysis, correction, and saved waveform preview in the local library track inspector. The supplied Screen 04 workspace remains incomplete; editable beatgrids, key/phrase analysis, cue/loop preparation, runtime verification of the current waveform UI, and a dedicated Preparation workspace remain open work.
+The Library inspector and dedicated Preparation route use the same catalog selection and analysis state. Preparation widens the real waveform and BPM controls and adds half/double tempo presets that stage a manual correction; persistence still requires the existing Save correction action. This is a focused first workspace slice, not the full supplied Screen 04 composition. Editable beatgrids, key/phrase analysis, cue/loop preparation, and runtime verification of the current waveform UI remain open work.
 
 ## Reversibility and review trigger
 

@@ -2,8 +2,8 @@
 
 **Status:** PROPOSED operator guide<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-28<br>
-**Version:** 1.3
+**Date:** 2026-11-27<br>
+**Version:** 1.4
 
 ## What the library stores
 
@@ -20,13 +20,14 @@ SAYT stores selected folder paths, file content hashes, detected metadata, missi
 
 ## Local BPM preparation
 
-1. Select a track whose current library location is available and marked as a supported PCM WAV, then use **Analyze local WAV** in the inspector. The worker reads only the catalog-selected file and does not send PCM samples through Tauri.
-2. Analysis can be cancelled while the worker reads or correlates the file. A cancelled result is not saved. An error saying the file changed after import means rescan its registered folder and retry.
-3. A confident result is cached by file identity and algorithm version. An uncertain result can show a candidate, but it is not applied to Beat Jump or Loop Roll. The periodicity score is heuristic, not a probability or a claim of commercial-music accuracy.
-4. Enter a manual correction from 30 to 300 BPM and choose **Save correction**; use **Clear** to remove it. SAYT stores the correction apart from file tags and analysis. When you load this track into a deck, a saved correction takes precedence, then confident analysis, then an in-range BPM tag. Open that deck's **Roll / Jump** tab and confirm the deck-local Manual BPM value before using Beat Jump or Loop Roll. The deck's own manual edit remains temporary and clears when its loaded track changes.
-5. After analysis, the inspector displays the saved 160-bin waveform preview. It is a compact peak summary of the PCM samples, not a playback buffer. Reopening the catalog restores it; a changed or rescanned source requires analysis for the new content identity.
+1. Open **Preparation** and select a track from the catalog list, or use the same controls in the Library inspector. The focused workspace uses the existing catalog selection and does not accept an arbitrary file path.
+2. For a track whose current location is available and marked as supported PCM WAV, use **Analyze local WAV**. The worker reads only the catalog-selected file and does not send PCM samples through Tauri.
+3. Analysis can be cancelled while the worker reads or correlates the file. A cancelled result is not saved. An error saying the file changed after import means rescan its registered folder and retry.
+4. A confident result is cached by file identity and algorithm version. An uncertain result can show a candidate, but it is not applied to Beat Jump or Loop Roll. The periodicity score is heuristic, not a probability or a claim of commercial-music accuracy.
+5. Enter a manual correction from 30 to 300 BPM and choose **Save correction**; use **Clear** to remove it. **BPM /2** and **BPM ×2** stage a one-decimal correction from a valid draft, or from the effective tempo if the draft is not valid. These presets do not save automatically. SAYT stores corrections apart from file tags and analysis. When you load this track into a deck, a saved correction takes precedence, then confident analysis, then an in-range BPM tag. Open that deck's **Roll / Jump** tab and confirm the deck-local Manual BPM value before using Beat Jump or Loop Roll. The deck's own manual edit remains temporary and clears when its loaded track changes.
+6. After analysis, the inspector displays the saved 160-bin waveform preview. It is a compact peak summary of the PCM samples, not a playback buffer. Reopening the catalog restores it; a changed or rescanned source requires analysis for the new content identity.
 
-The current preparation controls live in the Library inspector. There is no dedicated Preparation workspace yet, and automatic key detection, beatgrids, phrase mapping, loudness analysis, cue suggestions, and loop suggestions are not implemented.
+Preparation is a partial dedicated workspace that reuses the Library's real catalog data and analysis controls. The rest of the supplied Screen 04 panels remain unavailable: there is no beatgrid editing, automatic key detection, phrase mapping, loudness analysis, cue suggestion, or loop suggestion.
 
 ## Supported-format truth
 

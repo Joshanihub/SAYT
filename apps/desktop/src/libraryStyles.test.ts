@@ -21,4 +21,25 @@ describe("library deck load actions", () => {
     expect(libraryComponent).toContain("validateLibraryWaveform(payload)");
     expect(libraryComponent).toContain("<LibraryWaveformPreview");
   });
+
+  it("provides a focused responsive layout for the Preparation workspace", async () => {
+    const fileSystemModuleName = "node:fs";
+    const fileSystem = (await import(fileSystemModuleName)) as {
+      readFileSync(path: URL, encoding: string): string;
+    };
+    const libraryStyles = fileSystem.readFileSync(
+      new URL("./library.css", import.meta.url),
+      "utf8",
+    );
+
+    expect(libraryComponent).toContain('workspace === "preparation"');
+    expect(libraryStyles).toContain(
+      ".music-library--preparation .library-layout",
+    );
+    expect(libraryStyles).toContain(
+      ".music-library--preparation .library-track-waveform",
+    );
+    expect(libraryStyles).toContain("@media (max-width: 980px)");
+    expect(libraryStyles).toContain("@media (max-width: 720px)");
+  });
 });
