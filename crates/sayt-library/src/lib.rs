@@ -135,6 +135,7 @@ pub struct ScanProgress {
     pub state: String,
     pub roots_total: u32,
     pub roots_done: u32,
+    pub partial_roots: u32,
     pub files_seen: u64,
     pub tracks_indexed: u64,
     pub unsupported: u64,
@@ -147,6 +148,7 @@ pub struct ScanProgress {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ScanSummary {
     pub roots_scanned: u32,
+    pub partial_roots: u32,
     pub files_seen: u64,
     pub tracks_indexed: u64,
     pub unsupported: u64,
@@ -979,6 +981,7 @@ impl LibraryCatalog {
     ) -> Result<ScanSummary, String> {
         let mut summary = ScanSummary {
             roots_scanned: 0,
+            partial_roots: 0,
             files_seen: 0,
             tracks_indexed: 0,
             unsupported: 0,
@@ -1021,7 +1024,7 @@ impl LibraryCatalog {
                     |row| row.get::<_, i64>(0),
                 )
                 .map_err(|error| format!("Could not read folder scan state: {error}"))?;
-            let mut root_had_traversal_errors = false;
+            let mut root_had_incomplete_entries = false;
 
             for entry in WalkDir::new(&root).follow_links(false).into_iter() {
                 if cancellation.load(Ordering::Relaxed) {
@@ -1032,7 +1035,7 @@ impl LibraryCatalog {
                     Ok(entry) => entry,
                     Err(_error) => {
                         summary.traversal_errors += 1;
-                        root_had_traversal_errors = true;
+                        root_had_incomplete_entries = true;
                         report(progress(
                             "scanning",
                             roots_total,
@@ -1081,6 +1084,7 @@ impl LibraryCatalog {
                         }
                     }
                     Err(error) => {
+                        root_had_incomplete_entries = true;
                         summary.unreadable += 1;
                         report(progress(
                             "scanning",
@@ -1098,7 +1102,8 @@ impl LibraryCatalog {
                 summary.cancelled = true;
             }
             if !summary.cancelled {
-                if root_had_traversal_errors {
+                if root_had_incomplete_entries {
+                    summary.partial_roots += 1;
                     database
                         .execute(
                             "UPDATE roots SET scan_state = 'partial', last_scan_at = ?2 WHERE id = ?1",
@@ -1151,6 +1156,8 @@ impl LibraryCatalog {
         report(progress(
             if summary.cancelled {
                 "cancelled"
+            } else if summary.partial_roots > 0 {
+                "partial"
             } else {
                 "complete"
             },
@@ -1527,6 +1534,7 @@ fn progress(
         state: state.to_string(),
         roots_total,
         roots_done,
+        partial_roots: summary.partial_roots,
         files_seen: summary.files_seen,
         tracks_indexed: summary.tracks_indexed,
         unsupported: summary.unsupported,
@@ -1816,6 +1824,55 @@ mod tests {
         let old_track = catalog.list_tracks(&old_query).unwrap().items.remove(0);
         assert!(!old_track.missing);
         assert_eq!(catalog.list_tracks(&query_all()).unwrap().total, 3);
+    }
+
+    #[test]
+    fn unreadable_candidate_makes_root_partial_and_does_not_mark_old_location_missing() {
+        let fixture = FixtureDirectory::new();
+        let root = fixture.path().join("music");
+        fs::create_dir(&root).unwrap();
+        let disappearing = root.join("Disappearing.wav");
+        write_pcm_wav(&disappearing, 100);
+        let catalog = LibraryCatalog::open(fixture.path().join("app-data")).unwrap();
+        catalog
+            .scan_roots(std::slice::from_ref(&root), &AtomicBool::new(false), |_| {})
+            .unwrap();
+
+        let mut removed = false;
+        let mut final_state = None;
+        let summary = catalog
+            .scan_roots(
+                std::slice::from_ref(&root),
+                &AtomicBool::new(false),
+                |progress| {
+                    if progress.state != "scanning" {
+                        final_state = Some(progress.state.clone());
+                    }
+                    if progress
+                        .current_file
+                        .as_deref()
+                        .is_some_and(|path| path.ends_with("Disappearing.wav"))
+                        && !removed
+                    {
+                        fs::remove_file(&disappearing).unwrap();
+                        removed = true;
+                    }
+                },
+            )
+            .unwrap();
+
+        assert_eq!(summary.unreadable, 1);
+        assert_eq!(summary.roots_scanned, 1);
+        assert_eq!(summary.partial_roots, 1);
+        assert_eq!(final_state.as_deref(), Some("partial"));
+        let connection = catalog.connection().unwrap();
+        let scan_state: String = connection
+            .query_row("SELECT scan_state FROM roots", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(scan_state, "partial");
+        let mut query = query_all();
+        query.search = "disappearing".to_string();
+        assert!(!catalog.list_tracks(&query).unwrap().items[0].missing);
     }
 
     #[test]

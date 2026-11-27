@@ -47,9 +47,10 @@ type Collection = {
 };
 
 type ScanProgress = {
-  state: "scanning" | "complete" | "cancelled" | "failed";
+  state: "scanning" | "complete" | "partial" | "cancelled" | "failed";
   roots_total: number;
   roots_done: number;
+  partial_roots: number;
   files_seen: number;
   tracks_indexed: number;
   unsupported: number;
@@ -209,6 +210,11 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
       if (progress.state === "complete") {
         setStatusMessage(
           `Scanned ${progress.roots_done} folder${progress.roots_done === 1 ? "" : "s"}: ${progress.tracks_indexed} tracks indexed, ${progress.unsupported} not loadable, ${progress.unreadable} unreadable.`,
+        );
+        setRefreshNumber((value) => value + 1);
+      } else if (progress.state === "partial") {
+        setStatusMessage(
+          `Partial scan: ${progress.partial_roots} folder${progress.partial_roots === 1 ? " was" : "s were"} not fully readable. Existing missing-file state was preserved. ${progress.tracks_indexed} tracks indexed; ${progress.unreadable} unreadable.`,
         );
         setRefreshNumber((value) => value + 1);
       } else if (progress.state === "cancelled") {
