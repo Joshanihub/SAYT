@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import {
+  initialLibraryCollectionSelection,
+  reduceLibraryCollectionSelection,
+} from "./libraryCollectionSelection";
 
 type TrackFilter =
   "all" | "recent" | "missing" | "unanalyzed" | "favorites" | "unsupported";
@@ -103,7 +107,12 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [filter, setFilter] = useState<TrackFilter>("all");
   const [folderId, setFolderId] = useState<number | null>(null);
-  const [collectionId, setCollectionId] = useState<string | null>(null);
+  const [collectionSelection, dispatchCollectionSelection] = useReducer(
+    reduceLibraryCollectionSelection,
+    initialLibraryCollectionSelection,
+  );
+  const { viewCollectionId: collectionId, addTargetCollectionId } =
+    collectionSelection;
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("title");
@@ -132,6 +141,9 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
 
   const activeCollection = collections.find(
     (collection) => collection.id === collectionId,
+  );
+  const addTargetCollection = collections.find(
+    (collection) => collection.id === addTargetCollectionId,
   );
   const selectedTrack = tracks.items.find((track) => track.id === selectedId);
   const pageCount = Math.max(1, Math.ceil(tracks.total / PAGE_SIZE));
@@ -262,7 +274,7 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
   const selectView = (nextFilter: TrackFilter) => {
     setFilter(nextFilter);
     setFolderId(null);
-    setCollectionId(null);
+    dispatchCollectionSelection({ type: "browse", collectionId: null });
     setOffset(0);
   };
 
@@ -311,7 +323,10 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
         kind: collectionKind,
       });
       setCollectionName("");
-      setCollectionId(collection.id);
+      dispatchCollectionSelection({
+        type: "browse",
+        collectionId: collection.id,
+      });
       setFolderId(null);
       setFilter("all");
       refresh();
@@ -352,7 +367,7 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
       await invoke("library_delete_collection", {
         collectionId: activeCollection.id,
       });
-      setCollectionId(null);
+      dispatchCollectionSelection({ type: "browse", collectionId: null });
       setFilter("all");
       refresh();
       setStatusMessage(
@@ -366,17 +381,17 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
   };
 
   const addSelectedToCollection = async () => {
-    if (!selectedTrack || !collectionId) return;
+    if (!selectedTrack || !addTargetCollectionId) return;
     setActionBusy(true);
     setError("");
     try {
       await invoke("library_add_track_to_collection", {
-        collectionId,
+        collectionId: addTargetCollectionId,
         trackId: selectedTrack.id,
       });
       refresh();
       setStatusMessage(
-        `Added “${selectedTrack.title}” to ${activeCollection?.name ?? "collection"}`,
+        `Added “${selectedTrack.title}” to ${addTargetCollection?.name ?? "collection"}`,
       );
     } catch (cause) {
       setError(errorMessage(cause));
@@ -464,7 +479,10 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
   };
 
   const chooseCollection = (collection: Collection) => {
-    setCollectionId(collection.id);
+    dispatchCollectionSelection({
+      type: "browse",
+      collectionId: collection.id,
+    });
     setFolderId(null);
     setFilter("all");
     setOffset(0);
@@ -640,7 +658,10 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                 aria-current={folderId === folder.id ? "page" : undefined}
                 onClick={() => {
                   setFolderId(folder.id);
-                  setCollectionId(null);
+                  dispatchCollectionSelection({
+                    type: "browse",
+                    collectionId: null,
+                  });
                   setFilter("all");
                   setOffset(0);
                 }}
@@ -787,9 +808,12 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
               <>
                 <select
                   aria-label="Choose collection for selected track"
-                  value={collectionId ?? ""}
+                  value={addTargetCollectionId ?? ""}
                   onChange={(event) =>
-                    setCollectionId(event.target.value || null)
+                    dispatchCollectionSelection({
+                      type: "choose-add-target",
+                      collectionId: event.target.value || null,
+                    })
                   }
                 >
                   <option value="">Choose collection</option>
@@ -802,7 +826,7 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                 <button
                   className="library-button secondary compact"
                   type="button"
-                  disabled={actionBusy || !collectionId}
+                  disabled={actionBusy || !addTargetCollectionId}
                   onClick={() => void addSelectedToCollection()}
                 >
                   Add selected
@@ -1179,7 +1203,7 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                 <p className="library-eyebrow">LOAD TO DECK</p>
                 <div>
                   <button
-                    className="library-deck-load deck-a"
+                    className="library-deck-load library-deck-a"
                     type="button"
                     disabled={
                       !selectedTrack.load_supported ||
@@ -1191,7 +1215,7 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                     {loadingDeck === 0 ? "Loading A…" : "Deck A"}
                   </button>
                   <button
-                    className="library-deck-load deck-b"
+                    className="library-deck-load library-deck-b"
                     type="button"
                     disabled={
                       !selectedTrack.load_supported ||

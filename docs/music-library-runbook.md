@@ -14,7 +14,7 @@ SAYT stores selected folder paths, file content hashes, detected metadata, missi
 1. Open **Library** and choose **Import folders**.
 2. In the native folder picker, select only the folder or folders you want indexed. Recursive scan ignores symbolic links and reports progress.
 3. Use **All Tracks**, **Recently Added**, **Missing Files**, **Unanalyzed**, **Favorites**, or **Unsupported**, plus search, sort headers, folder, crate, and playlist views.
-4. Create a crate for an unordered collection or a playlist when order matters. Select a track to edit SAYT-only title/artist/album metadata or add it to the current collection.
+4. Create a crate for an unordered collection or a playlist when order matters. Select a track to edit SAYT-only title/artist/album metadata. To add it, choose a destination collection in the track action row; the destination choice does not change the collection currently being browsed.
 5. Use **Load to A** or **Load to B** only when the track is marked as a current-decoder candidate. SAYT confirms only after the existing engine accepts the file.
 6. Use **Export backup** and choose a local save location in the native dialog before making changes that should be recoverable.
 

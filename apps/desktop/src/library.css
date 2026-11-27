@@ -897,14 +897,18 @@
   min-height: 37px;
   border: 1px solid #4b5b31;
   border-radius: 4px;
-  color: #d4f39a;
-  background: #222a19;
   font-family: var(--font-display);
   font-size: 0.69rem;
   font-weight: 700;
 }
 
-.library-deck-load.deck-b {
+.library-deck-load.library-deck-a {
+  border-color: #4b5b31;
+  color: #d4f39a;
+  background: #222a19;
+}
+
+.library-deck-load.library-deck-b {
   border-color: #26536a;
   color: #94e2ff;
   background: #14242d;
