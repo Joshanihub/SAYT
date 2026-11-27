@@ -1,13 +1,13 @@
-# ADR-009: Analyze local track tempo outside the audio callback
+# ADR-009: Analyze local tempo and retain PCM waveform peaks
 
 **Status:** PROPOSED implementation decision<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-27<br>
-**Version:** 1.0
+**Date:** 2026-11-28<br>
+**Version:** 1.1
 
 ## Decision
 
-Use a deterministic, bounded RMS-onset autocorrelation estimator for selected catalog PCM WAV files; store its versioned result separately from source BPM tags and user corrections, and never promote an uncertain candidate into deck beat controls.
+Use one deterministic, bounded PCM pass for selected catalog WAV files to compute a 160-peak waveform and an RMS-onset autocorrelation BPM estimate; persist each result separately from source tags and user corrections, and never promote an uncertain candidate into deck beat controls.
 
 ## Context
 
@@ -22,15 +22,15 @@ The library already extracts BPM tags, while the DJ engine accepts a deck-local 
 
 Choose a 100 Hz RMS envelope, positive-onset differences, and normalized autocorrelation over 60–200 BPM. The work runs on one cancellable native worker thread at a time, outside the real-time callback. It accepts only files resolved from the native-picker-owned catalog, canonicalized beneath their registered root, and already marked loadable by the current integer PCM WAV decoder. The file's SHA-256 identity is checked before and after analysis. The file-size and decoded-frame limits match the decoder.
 
-The result has an algorithm version, candidate BPM, 0–1 periodicity score, and `estimated` or `uncertain` status. The score is a heuristic, not a probability. Silent, short, weakly periodic, and plausible half/double-tempo material must not be reported as a confident estimate. A manual BPM correction is stored in its own table and is limited to 30–300 BPM. Source tag BPM remains untouched. For deck controls the precedence is manual correction, confident analysis, then an in-range file tag; uncertain analysis is skipped. This makes current BPM values available to existing beat controls without claiming a beatgrid. The catalog track ID hashes original file bytes, while the deck identity hashes normalized decoded PCM; after loading, the integration must use the selected deck's `source_track_id` from its engine snapshot or the stale-generation guard rejects the BPM command.
+The tempo result has an algorithm version, candidate BPM, 0–1 periodicity score, and `estimated` or `uncertain` status. The score is a heuristic, not a probability. Silent, short, weakly periodic, and plausible half/double-tempo material must not be reported as a confident estimate. The same PCM pass also computes 160 normalized absolute-peak bins; these are quantized into a fixed-size catalog record and rendered only as a display summary, never as an audio signal. A manual BPM correction is stored in its own table and is limited to 30–300 BPM. Source tag BPM remains untouched. For deck controls the precedence is manual correction, confident analysis, then an in-range file tag; uncertain analysis is skipped. This makes current BPM values available to existing beat controls without claiming a beatgrid. The catalog track ID hashes original file bytes, while the deck identity hashes normalized decoded PCM; after loading, the integration must use the selected deck's `source_track_id` from its engine snapshot or the stale-generation guard rejects the BPM command.
 
-SQLite schema version 2 adds `bpm_analysis` and `bpm_corrections` and migrates version 1 transactionally. Analysis is cached by content identity and algorithm version. Cancellation saves no partial result. No dependency or lockfile change is required.
+SQLite schema version 2 adds `bpm_analysis` and `bpm_corrections`; version 3 adds `track_waveforms`. Version 1 upgrades transactionally through both versions, and an existing version 2 catalog gains waveform storage without losing corrections. Analysis is cached by content identity and per-result version. Cancellation saves no partial result. No dependency or lockfile change is required.
 
 ## Verification and limits
 
-Automated fixtures cover a known 60 BPM pulse, an ambiguous 120 BPM pulse, silence, short audio, unsupported float PCM, malformed input, cancellation during decode and autocorrelation, changed source identity, migration, caching, correction bounds, persistence, and deck-tempo precedence. These establish behavior on generated fixtures only. They do not establish accuracy on commercial music, personal collections, perceived beat timing, beatgrids, key detection, or physical audio output.
+Automated fixtures cover a known 60 BPM pulse, an ambiguous 120 BPM pulse, silence, short audio, unsupported float PCM, malformed input, cancellation during decode and autocorrelation, stereo frame-counted progress, waveform bounds/silence/persistence, changed source identity, v1→v3 and v2→v3 migration, caching, correction bounds, persistence, and deck-tempo precedence. These establish behavior on generated fixtures only. They do not establish BPM accuracy on commercial music, personal collections, perceived beat timing, beatgrids, key detection, or physical audio output.
 
-The current UI places the analysis and correction controls in the local library track inspector. The supplied Screen 04 workspace remains incomplete; waveform persistence, editable beatgrids, key/phrase analysis, cue/loop preparation, and a dedicated Preparation workspace remain open work.
+The current UI places the analysis, correction, and saved waveform preview in the local library track inspector. The supplied Screen 04 workspace remains incomplete; editable beatgrids, key/phrase analysis, cue/loop preparation, runtime verification of the current waveform UI, and a dedicated Preparation workspace remain open work.
 
 ## Reversibility and review trigger
 

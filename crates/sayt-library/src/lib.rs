@@ -29,7 +29,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
-const SCHEMA_VERSION: i32 = 2;
+const SCHEMA_VERSION: i32 = 3;
 const SEARCH_PAGE_SIZE: u32 = 100;
 const MAX_PAGE_SIZE: u32 = 200;
 const MAX_SEARCH_CHARS: usize = 256;
@@ -43,6 +43,7 @@ const MAX_ARTWORK_SOURCE_BYTES: u64 = 128 * 1024 * 1024;
 const MAX_ARTWORK_BYTES: usize = 3 * 1024 * 1024;
 const MIN_BPM_CORRECTION: f64 = 30.0;
 const MAX_BPM_CORRECTION: f64 = 300.0;
+const WAVEFORM_ENCODING_VERSION: i32 = 1;
 const SUPPORTED_AUDIO_EXTENSIONS: &[&str] = &[
     "aac", "aif", "aiff", "ape", "flac", "m4a", "m4b", "mp1", "mp2", "mp3", "mp4", "mpc", "ogg",
     "opus", "spx", "wav", "wv",
@@ -123,6 +124,17 @@ pub struct BpmAnalysisRecord {
     pub status: String,
     pub algorithm_version: String,
     pub analyzed_at: i64,
+}
+
+struct StoredTrackWaveform {
+    encoding_version: i32,
+    source_sha256: String,
+    peaks: Vec<u8>,
+}
+
+struct StoredBpmAnalysis {
+    record: BpmAnalysisRecord,
+    source_sha256: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -382,6 +394,23 @@ impl LibraryCatalog {
                      COMMIT;",
                 )
                 .map_err(|error| format!("Could not add track analysis storage: {error}"))?;
+            version = 2;
+        }
+        if version == 2 {
+            connection
+                .execute_batch(
+                    "BEGIN IMMEDIATE;
+                     CREATE TABLE track_waveforms (
+                         track_id TEXT PRIMARY KEY REFERENCES tracks(id) ON DELETE CASCADE,
+                         encoding_version INTEGER NOT NULL,
+                         source_sha256 TEXT NOT NULL,
+                         peaks BLOB NOT NULL CHECK(length(peaks) = 160),
+                         analyzed_at INTEGER NOT NULL
+                     );
+                     PRAGMA user_version = 3;
+                     COMMIT;",
+                )
+                .map_err(|error| format!("Could not add persistent track waveforms: {error}"))?;
         }
         Ok(())
     }
@@ -602,7 +631,7 @@ impl LibraryCatalog {
     }
 
     /// Analyze a catalog-owned PCM WAV file outside the real-time audio path.
-    /// Results are cached by content identity and algorithm version.
+    /// BPM and waveform results are cached by content identity and version.
     pub fn analyze_bpm(
         &self,
         track_id: &str,
@@ -644,26 +673,35 @@ impl LibraryCatalog {
 
         let connection = self.connection()?;
         let cached = read_bpm_analysis(&connection, track_id)?;
-        if let Some(cached) =
-            cached.filter(|record| record.algorithm_version == bpm_analysis::algorithm_version())
-        {
-            let state = if cached.status == "estimated" {
-                "complete"
+        let cached_waveform = read_track_waveform(&connection, track_id)?;
+        if let (Some(cached), Some(waveform)) = (cached, cached_waveform) {
+            if cached.record.algorithm_version != bpm_analysis::algorithm_version()
+                || cached.source_sha256 != expected_digest
+                || waveform.encoding_version != WAVEFORM_ENCODING_VERSION
+                || waveform.source_sha256 != expected_digest
+                || waveform.peaks.len() != bpm_analysis::WAVEFORM_PEAK_COUNT
+            {
+                drop(connection);
             } else {
-                "uncertain"
-            };
-            report(analysis_progress(
-                track_id,
-                state,
-                0,
-                None,
-                cached.candidate_bpm,
-                Some(cached.confidence),
-                "Using the saved result for this track and analysis version",
-            ));
-            return Ok(Some(cached));
+                let state = if cached.record.status == "estimated" {
+                    "complete"
+                } else {
+                    "uncertain"
+                };
+                report(analysis_progress(
+                    track_id,
+                    state,
+                    0,
+                    None,
+                    cached.record.candidate_bpm,
+                    Some(cached.record.confidence),
+                    "Using saved BPM and waveform analysis for this track",
+                ));
+                return Ok(Some(cached.record));
+            }
+        } else {
+            drop(connection);
         }
-        drop(connection);
 
         let analysis = bpm_analysis::analyze_wav(&path, cancellation, |processed, total| {
             report(analysis_progress(
@@ -673,10 +711,10 @@ impl LibraryCatalog {
                 total,
                 None,
                 None,
-                "Analyzing local PCM audio",
+                "Analyzing local BPM and waveform",
             ));
         })?;
-        let bpm_analysis::AnalysisAttempt::Complete(estimate) = analysis else {
+        let bpm_analysis::AnalysisAttempt::Complete(analysis) = analysis else {
             report(analysis_progress(
                 track_id,
                 "cancelled",
@@ -721,9 +759,21 @@ impl LibraryCatalog {
         }
 
         let analyzed_at = unix_time_millis();
+        let estimate = analysis.tempo;
         let status = estimate.status.as_str();
-        let connection = self.connection()?;
-        connection
+        if analysis.waveform_peaks.len() != bpm_analysis::WAVEFORM_PEAK_COUNT {
+            return Err("Waveform analysis returned an invalid number of peaks".to_string());
+        }
+        let quantized_peaks = analysis
+            .waveform_peaks
+            .iter()
+            .map(|peak| (peak.clamp(0.0, 1.0) * u8::MAX as f32).round() as u8)
+            .collect::<Vec<_>>();
+        let mut connection = self.connection()?;
+        let transaction = connection
+            .transaction()
+            .map_err(|error| format!("Could not begin saving track analysis: {error}"))?;
+        transaction
             .execute(
                 "INSERT INTO bpm_analysis(
                     track_id, algorithm_version, source_sha256, candidate_bpm, confidence, status, analyzed_at
@@ -746,6 +796,27 @@ impl LibraryCatalog {
                 ],
             )
             .map_err(|error| format!("Could not save the BPM analysis result: {error}"))?;
+        transaction
+            .execute(
+                "INSERT INTO track_waveforms(track_id, encoding_version, source_sha256, peaks, analyzed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)
+                 ON CONFLICT(track_id) DO UPDATE SET
+                    encoding_version = excluded.encoding_version,
+                    source_sha256 = excluded.source_sha256,
+                    peaks = excluded.peaks,
+                    analyzed_at = excluded.analyzed_at",
+                params![
+                    track_id,
+                    WAVEFORM_ENCODING_VERSION,
+                    current_digest,
+                    quantized_peaks,
+                    analyzed_at,
+                ],
+            )
+            .map_err(|error| format!("Could not save the track waveform: {error}"))?;
+        transaction
+            .commit()
+            .map_err(|error| format!("Could not commit track analysis: {error}"))?;
         let record = BpmAnalysisRecord {
             track_id: track_id.to_string(),
             candidate_bpm: estimate.candidate_bpm,
@@ -772,6 +843,39 @@ impl LibraryCatalog {
             },
         ));
         Ok(Some(record))
+    }
+
+    /// Return persisted waveform peaks only when they match the current format
+    /// version and catalog content identity.
+    pub fn waveform_peaks(&self, track_id: &str) -> Result<Option<Vec<f32>>, String> {
+        let expected_digest = track_id.strip_prefix("sha256:").ok_or_else(|| {
+            "This catalog track has no supported content identity. Re-scan its folder.".to_string()
+        })?;
+        let connection = self.connection()?;
+        let Some(record) = read_track_waveform(&connection, track_id)? else {
+            return Ok(None);
+        };
+        if record.source_sha256 != expected_digest {
+            return Ok(None);
+        }
+        if record.encoding_version != WAVEFORM_ENCODING_VERSION {
+            return Err(
+                "The saved waveform uses an unsupported format. Analyze the track again."
+                    .to_string(),
+            );
+        }
+        if record.peaks.len() != bpm_analysis::WAVEFORM_PEAK_COUNT {
+            return Err(
+                "The saved waveform data is incomplete. Analyze the track again.".to_string(),
+            );
+        }
+        Ok(Some(
+            record
+                .peaks
+                .into_iter()
+                .map(|peak| f32::from(peak) / f32::from(u8::MAX))
+                .collect(),
+        ))
     }
 
     /// Store a user BPM correction independently from file tags and analysis.
@@ -1788,25 +1892,49 @@ fn analysis_progress(
 fn read_bpm_analysis(
     connection: &Connection,
     track_id: &str,
-) -> Result<Option<BpmAnalysisRecord>, String> {
+) -> Result<Option<StoredBpmAnalysis>, String> {
     connection
         .query_row(
-            "SELECT track_id, candidate_bpm, confidence, status, algorithm_version, analyzed_at
+            "SELECT track_id, source_sha256, candidate_bpm, confidence, status, algorithm_version, analyzed_at
              FROM bpm_analysis WHERE track_id = ?1",
             [track_id],
             |row| {
-                Ok(BpmAnalysisRecord {
-                    track_id: row.get(0)?,
-                    candidate_bpm: row.get(1)?,
-                    confidence: row.get(2)?,
-                    status: row.get(3)?,
-                    algorithm_version: row.get(4)?,
-                    analyzed_at: row.get(5)?,
+                Ok(StoredBpmAnalysis {
+                    record: BpmAnalysisRecord {
+                        track_id: row.get(0)?,
+                        candidate_bpm: row.get(2)?,
+                        confidence: row.get(3)?,
+                        status: row.get(4)?,
+                        algorithm_version: row.get(5)?,
+                        analyzed_at: row.get(6)?,
+                    },
+                    source_sha256: row.get(1)?,
                 })
             },
         )
         .optional()
         .map_err(|error| format!("Could not read the saved BPM analysis: {error}"))
+}
+
+fn read_track_waveform(
+    connection: &Connection,
+    track_id: &str,
+) -> Result<Option<StoredTrackWaveform>, String> {
+    connection
+        .query_row(
+            "SELECT encoding_version, source_sha256, peaks
+             FROM track_waveforms WHERE track_id = ?1",
+            [track_id],
+            |row| {
+                Ok(StoredTrackWaveform {
+                    encoding_version: row.get(0)?,
+                    source_sha256: row.get(1)?,
+                    peaks: row.get(2)?,
+                })
+            },
+        )
+        .optional()
+        .map_err(|error| format!("Could not read the saved track waveform: {error}"))
 }
 
 fn is_candidate_audio(path: &Path) -> bool {
@@ -2381,12 +2509,16 @@ mod tests {
         assert_eq!(saved.bpm_analysis_status.as_deref(), Some("uncertain"));
         assert_eq!(saved.bpm_correction, Some(124.5));
         assert_eq!(catalog.playback_bpm(&track.id).unwrap(), Some(124.5));
+        let waveform = catalog.waveform_peaks(&track.id).unwrap().unwrap();
+        assert_eq!(waveform.len(), bpm_analysis::WAVEFORM_PEAK_COUNT);
+        assert!(waveform.iter().any(|peak| *peak > 0.9));
 
         drop(catalog);
         let reopened = LibraryCatalog::open(data).unwrap();
         let restored = reopened.list_tracks(&query_all()).unwrap().items.remove(0);
         assert_eq!(restored.bpm_analysis_candidate, analyzed.candidate_bpm);
         assert_eq!(restored.bpm_correction, Some(124.5));
+        assert_eq!(reopened.waveform_peaks(&track.id).unwrap(), Some(waveform));
         let cached = reopened
             .analyze_bpm(&track.id, &AtomicBool::new(false), |_| {})
             .unwrap()
@@ -2447,6 +2579,7 @@ mod tests {
         assert!(catalog.list_tracks(&query_all()).unwrap().items[0]
             .bpm_analysis_status
             .is_none());
+        assert_eq!(catalog.waveform_peaks(&track.id).unwrap(), None);
 
         write_pcm_wav(&wav, 2_000);
         assert!(catalog
@@ -2456,6 +2589,7 @@ mod tests {
         assert!(catalog.list_tracks(&query_all()).unwrap().items[0]
             .bpm_analysis_status
             .is_none());
+        assert_eq!(catalog.waveform_peaks(&track.id).unwrap(), None);
     }
 
     #[test]
@@ -2481,7 +2615,7 @@ mod tests {
     }
 
     #[test]
-    fn schema_v1_migration_preserves_tracks_and_adds_analysis_tables() {
+    fn schema_v1_migration_preserves_tracks_and_adds_analysis_and_waveform_tables() {
         let fixture = FixtureDirectory::new();
         let root = fixture.path().join("music");
         fs::create_dir(&root).unwrap();
@@ -2504,6 +2638,7 @@ mod tests {
             .execute_batch(
                 "DROP TABLE bpm_corrections;
                  DROP TABLE bpm_analysis;
+                 DROP TABLE track_waveforms;
                  PRAGMA user_version = 1;",
             )
             .unwrap();
@@ -2529,6 +2664,107 @@ mod tests {
             )
             .unwrap();
         assert_eq!(analysis_table, "bpm_analysis");
+        let waveform_table: String = connection
+            .query_row(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'track_waveforms'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(waveform_table, "track_waveforms");
+    }
+
+    #[test]
+    fn schema_v2_migration_preserves_corrections_and_adds_waveform_storage() {
+        let fixture = FixtureDirectory::new();
+        let root = fixture.path().join("music");
+        fs::create_dir(&root).unwrap();
+        write_pcm_wav(&root.join("Existing.wav"), 2_000);
+        let data = fixture.path().join("app-data");
+        let catalog = LibraryCatalog::open(&data).unwrap();
+        catalog
+            .scan_roots(std::slice::from_ref(&root), &AtomicBool::new(false), |_| {})
+            .unwrap();
+        let track_id = catalog
+            .list_tracks(&query_all())
+            .unwrap()
+            .items
+            .remove(0)
+            .id;
+        catalog.set_bpm_correction(&track_id, Some(118.5)).unwrap();
+        drop(catalog);
+
+        let database = Connection::open(data.join("music-library.sqlite3")).unwrap();
+        database
+            .execute_batch("DROP TABLE track_waveforms; PRAGMA user_version = 2;")
+            .unwrap();
+        drop(database);
+
+        let migrated = LibraryCatalog::open(&data).unwrap();
+        let restored = migrated.list_tracks(&query_all()).unwrap().items.remove(0);
+        assert_eq!(restored.id, track_id);
+        assert_eq!(restored.bpm_correction, Some(118.5));
+        assert_eq!(migrated.waveform_peaks(&track_id).unwrap(), None);
+        let connection = migrated.connection().unwrap();
+        assert_eq!(
+            connection
+                .pragma_query_value(None, "user_version", |row| row.get::<_, i32>(0))
+                .unwrap(),
+            SCHEMA_VERSION
+        );
+    }
+
+    #[test]
+    fn waveform_read_rejects_unsupported_and_corrupt_records_actionably() {
+        let fixture = FixtureDirectory::new();
+        let root = fixture.path().join("music");
+        fs::create_dir(&root).unwrap();
+        write_pcm_wav(&root.join("Waveform.wav"), 2_000);
+        let data = fixture.path().join("app-data");
+        let catalog = LibraryCatalog::open(&data).unwrap();
+        catalog
+            .scan_roots(std::slice::from_ref(&root), &AtomicBool::new(false), |_| {})
+            .unwrap();
+        let track_id = catalog
+            .list_tracks(&query_all())
+            .unwrap()
+            .items
+            .remove(0)
+            .id;
+        catalog
+            .analyze_bpm(&track_id, &AtomicBool::new(false), |_| {})
+            .unwrap();
+
+        let connection = catalog.connection().unwrap();
+        connection
+            .execute(
+                "UPDATE track_waveforms SET encoding_version = 99 WHERE track_id = ?1",
+                [&track_id],
+            )
+            .unwrap();
+        let unsupported = catalog.waveform_peaks(&track_id).unwrap_err();
+        assert!(unsupported.contains("unsupported format"));
+
+        connection
+            .execute(
+                "UPDATE track_waveforms SET encoding_version = ?1 WHERE track_id = ?2",
+                params![WAVEFORM_ENCODING_VERSION, track_id],
+            )
+            .unwrap();
+        connection
+            .pragma_update(None, "ignore_check_constraints", "ON")
+            .unwrap();
+        connection
+            .execute(
+                "UPDATE track_waveforms SET peaks = X'00' WHERE track_id = ?1",
+                [&track_id],
+            )
+            .unwrap();
+        connection
+            .pragma_update(None, "ignore_check_constraints", "OFF")
+            .unwrap();
+        let corrupt = catalog.waveform_peaks(&track_id).unwrap_err();
+        assert!(corrupt.contains("incomplete"));
     }
 
     #[test]

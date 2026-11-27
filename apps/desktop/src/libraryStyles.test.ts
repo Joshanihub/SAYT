@@ -13,4 +13,12 @@ describe("library deck load actions", () => {
       /className="library-deck-load deck-[ab]"/,
     );
   });
+
+  it("loads the selected track's persisted waveform through the Tauri command", () => {
+    expect(libraryComponent).toContain(
+      'invoke<unknown>("library_track_waveform"',
+    );
+    expect(libraryComponent).toContain("validateLibraryWaveform(payload)");
+    expect(libraryComponent).toContain("<LibraryWaveformPreview");
+  });
 });

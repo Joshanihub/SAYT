@@ -13,6 +13,8 @@ import {
   reduceLibraryCollectionSelection,
 } from "./libraryCollectionSelection";
 import { effectiveBpm } from "./libraryTempo";
+import { validateLibraryWaveform } from "./libraryWaveform";
+import { LibraryWaveformPreview } from "./LibraryWaveformPreview";
 
 type TrackFilter =
   "all" | "recent" | "missing" | "unanalyzed" | "favorites" | "unsupported";
@@ -176,6 +178,11 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
   const [bpmCorrectionBusy, setBpmCorrectionBusy] = useState(false);
   const [bpmAnalysisProgress, setBpmAnalysisProgress] =
     useState<BpmAnalysisProgress | null>(null);
+  const [trackWaveform, setTrackWaveform] = useState<{
+    trackId: string;
+    peaks: number[] | null;
+    loading: boolean;
+  } | null>(null);
   const scanCompletionHandled = useRef(false);
   const bpmCompletionHandled = useRef(false);
 
@@ -450,6 +457,43 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
       active = false;
     };
   }, [selectedTrack?.id]);
+
+  useEffect(() => {
+    let active = true;
+    if (!selectedTrack) {
+      setTrackWaveform(null);
+      return;
+    }
+
+    setTrackWaveform({
+      trackId: selectedTrack.id,
+      peaks: null,
+      loading: true,
+    });
+    void invoke<unknown>("library_track_waveform", {
+      trackId: selectedTrack.id,
+    })
+      .then((payload) => {
+        if (!active) return;
+        setTrackWaveform({
+          trackId: selectedTrack.id,
+          peaks: validateLibraryWaveform(payload),
+          loading: false,
+        });
+      })
+      .catch((cause: unknown) => {
+        if (!active) return;
+        setError(errorMessage(cause));
+        setTrackWaveform({
+          trackId: selectedTrack.id,
+          peaks: null,
+          loading: false,
+        });
+      });
+    return () => {
+      active = false;
+    };
+  }, [refreshNumber, selectedTrack?.id]);
 
   const refresh = () => setRefreshNumber((value) => value + 1);
 
@@ -1480,6 +1524,19 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                           ? `File tag: ${selectedTrack.bpm.toFixed(1)} BPM · not analyzed`
                           : "Not analyzed · results come from local integer PCM WAV audio"}
                 </p>
+                <LibraryWaveformPreview
+                  trackTitle={selectedTrack.title}
+                  loading={
+                    trackWaveform === null ||
+                    trackWaveform.trackId !== selectedTrack.id ||
+                    trackWaveform.loading
+                  }
+                  peaks={
+                    trackWaveform?.trackId === selectedTrack.id
+                      ? trackWaveform.peaks
+                      : null
+                  }
+                />
                 {selectedAnalysisProgress?.state === "analyzing" &&
                 selectedAnalysisProgress.totalFrames !== null &&
                 selectedAnalysisProgress.totalFrames > 0 ? (

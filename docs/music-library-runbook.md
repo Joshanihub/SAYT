@@ -2,8 +2,8 @@
 
 **Status:** PROPOSED operator guide<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-27<br>
-**Version:** 1.2
+**Date:** 2026-11-28<br>
+**Version:** 1.3
 
 ## What the library stores
 
@@ -24,6 +24,7 @@ SAYT stores selected folder paths, file content hashes, detected metadata, missi
 2. Analysis can be cancelled while the worker reads or correlates the file. A cancelled result is not saved. An error saying the file changed after import means rescan its registered folder and retry.
 3. A confident result is cached by file identity and algorithm version. An uncertain result can show a candidate, but it is not applied to Beat Jump or Loop Roll. The periodicity score is heuristic, not a probability or a claim of commercial-music accuracy.
 4. Enter a manual correction from 30 to 300 BPM and choose **Save correction**; use **Clear** to remove it. SAYT stores the correction apart from file tags and analysis. When you load this track into a deck, a saved correction takes precedence, then confident analysis, then an in-range BPM tag. Open that deck's **Roll / Jump** tab and confirm the deck-local Manual BPM value before using Beat Jump or Loop Roll. The deck's own manual edit remains temporary and clears when its loaded track changes.
+5. After analysis, the inspector displays the saved 160-bin waveform preview. It is a compact peak summary of the PCM samples, not a playback buffer. Reopening the catalog restores it; a changed or rescanned source requires analysis for the new content identity.
 
 The current preparation controls live in the Library inspector. There is no dedicated Preparation workspace yet, and automatic key detection, beatgrids, phrase mapping, loudness analysis, cue suggestions, and loop suggestions are not implemented.
 
@@ -37,6 +38,7 @@ The index recognizes files with AAC, AIF/AIFF, APE, FLAC, M4A/M4B, MP1/MP2/MP3/M
 - **A track is missing:** reconnect the drive and rescan the registered root. A complete scan reconciles unseen paths; a cancelled or partially unreadable scan preserves previous missing state. If a renamed/moved file is included in a selected root, its content hash can reconnect the old track identity.
 - **A track is unsupported:** check its format and PCM WAV properties above. Metadata recognition does not add a decoder. Loading still passes through the engine and its sample checks.
 - **A file is malformed or unreadable:** the scanner reports it and marks its import state when it can read its content identity. If an audio candidate or directory cannot be read, the affected root finishes as partial; SAYT preserves previous missing-file flags because it could not prove the scan was complete. Correct access or file issues and scan again. Automated regression covers an audio candidate disappearing after enumeration; permission-error runtime testing remains open.
+- **A saved waveform is missing or invalid:** analyze the supported PCM WAV again. Unsupported waveform encodings and truncated peak data produce an actionable error; a track with no current waveform shows the analyze prompt.
 - **A crate or playlist is deleted:** only the catalog collection is deleted; source tracks and files remain. Use an exported SQLite backup to preserve catalog state. The current UI exports backups but does not import/restore them.
 - **The catalog fails its integrity check:** startup preserves the damaged database and its SQLite sidecars under a timestamped `.corrupt-*` name, then opens a fresh empty catalog. Do not delete the preserved files; keep the backup and contact the project owner before recovery.
 

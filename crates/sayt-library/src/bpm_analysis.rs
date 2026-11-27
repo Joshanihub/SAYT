@@ -14,6 +14,7 @@ use hound::{SampleFormat, WavReader};
 
 const ANALYSIS_VERSION: &str = "rms-onset-autocorrelation-v1";
 const ENVELOPE_RATE_HZ: usize = 100;
+pub(crate) const WAVEFORM_PEAK_COUNT: usize = 160;
 const MIN_ANALYSIS_SECONDS: usize = 8;
 const MIN_BPM: f64 = 60.0;
 const MAX_BPM: f64 = 200.0;
@@ -23,10 +24,16 @@ const MAX_FILE_BYTES: u64 = 512 * 1024 * 1024;
 const MAX_AUDIO_FRAMES: u64 = 32_000_000;
 const PROGRESS_FRAME_INTERVAL: u64 = 48_000;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum AnalysisAttempt {
     Cancelled,
-    Complete(TempoEstimate),
+    Complete(AudioAnalysisResult),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct AudioAnalysisResult {
+    pub tempo: TempoEstimate,
+    pub waveform_peaks: Vec<f32>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -88,6 +95,9 @@ pub(crate) fn analyze_wav(
     // `hound::WavReader::duration` is already expressed in frames, independent
     // of channel count. Keep progress in frames to match `processed_frames`.
     let total_frames = u64::from(reader.duration());
+    if total_frames == 0 {
+        return Err("This WAV contains no audio frames to analyze".to_string());
+    }
     if total_frames > MAX_AUDIO_FRAMES {
         return Err("This WAV exceeds the 32,000,000-frame BPM analysis limit".to_string());
     }
@@ -100,9 +110,11 @@ pub(crate) fn analyze_wav(
     let mut next_window_end = (u64::from(spec.sample_rate) / ENVELOPE_RATE_HZ as u64).max(1);
     let mut frame_samples = 0_u16;
     let mut frame_energy = 0.0_f64;
+    let mut frame_peak = 0.0_f32;
     let mut window_energy = 0.0_f64;
     let mut window_frames = 0_u64;
     let mut processed_frames = 0_u64;
+    let mut waveform_peaks = vec![0.0_f32; WAVEFORM_PEAK_COUNT];
     let scale = 2.0_f64.powi(i32::from(spec.bits_per_sample) - 1);
 
     loop {
@@ -116,16 +128,24 @@ pub(crate) fn analyze_wav(
             sample.map_err(|error| format!("Invalid PCM data during BPM analysis: {error}"))?;
         let normalized = f64::from(sample) / scale;
         frame_energy += normalized * normalized;
+        frame_peak = frame_peak.max(normalized.abs() as f32);
         frame_samples += 1;
         if frame_samples < spec.channels {
             continue;
         }
 
         frame_samples = 0;
+        let frame_index = processed_frames;
         processed_frames += 1;
         if processed_frames > MAX_AUDIO_FRAMES {
             return Err("This WAV exceeds the 32,000,000-frame BPM analysis limit".to_string());
         }
+        let waveform_bin =
+            (frame_index.saturating_mul(WAVEFORM_PEAK_COUNT as u64) / total_frames.max(1)) as usize;
+        if let Some(peak) = waveform_peaks.get_mut(waveform_bin) {
+            *peak = peak.max(frame_peak.clamp(0.0, 1.0));
+        }
+        frame_peak = 0.0;
         let channel_mean_square = frame_energy / f64::from(spec.channels);
         frame_energy = 0.0;
         window_energy += channel_mean_square;
@@ -160,7 +180,10 @@ pub(crate) fn analyze_wav(
     let Some(estimate) = estimate_envelope(&envelope, cancellation) else {
         return Ok(AnalysisAttempt::Cancelled);
     };
-    Ok(AnalysisAttempt::Complete(estimate))
+    Ok(AnalysisAttempt::Complete(AudioAnalysisResult {
+        tempo: estimate,
+        waveform_peaks,
+    }))
 }
 
 fn estimate_envelope(envelope: &[f32], cancellation: &AtomicBool) -> Option<TempoEstimate> {
@@ -329,19 +352,22 @@ mod tests {
         let fixture = WavFixture::new();
         write_click_track(fixture.path(), 120.0, 16);
         let result = analyze_wav(fixture.path(), &AtomicBool::new(false), |_, _| {}).unwrap();
-        let AnalysisAttempt::Complete(estimate) = result else {
+        let AnalysisAttempt::Complete(analysis) = result else {
             panic!("analysis should complete");
         };
 
-        let candidate = estimate
+        let candidate = analysis
+            .tempo
             .candidate_bpm
             .expect("a tempo candidate is available");
         assert!(
             (candidate - 60.0).abs() < 2.0 || (candidate - 120.0).abs() < 2.0,
             "candidate was {candidate}"
         );
-        assert!(estimate.confidence > 0.5);
-        assert_eq!(estimate.status, TempoStatus::Uncertain);
+        assert!(analysis.tempo.confidence > 0.5);
+        assert_eq!(analysis.tempo.status, TempoStatus::Uncertain);
+        assert_eq!(analysis.waveform_peaks.len(), WAVEFORM_PEAK_COUNT);
+        assert!(analysis.waveform_peaks.iter().any(|peak| *peak > 0.9));
     }
 
     #[test]
@@ -349,16 +375,19 @@ mod tests {
         let fixture = WavFixture::new();
         write_click_track(fixture.path(), 60.0, 16);
         let result = analyze_wav(fixture.path(), &AtomicBool::new(false), |_, _| {}).unwrap();
-        let AnalysisAttempt::Complete(estimate) = result else {
+        let AnalysisAttempt::Complete(analysis) = result else {
             panic!("analysis should complete");
         };
 
-        let candidate = estimate
+        let candidate = analysis
+            .tempo
             .candidate_bpm
             .expect("a tempo candidate is available");
         assert!((candidate - 60.0).abs() < 2.0, "candidate was {candidate}");
-        assert!(estimate.confidence > 0.5);
-        assert_eq!(estimate.status, TempoStatus::Estimated);
+        assert!(analysis.tempo.confidence > 0.5);
+        assert_eq!(analysis.tempo.status, TempoStatus::Estimated);
+        assert_eq!(analysis.waveform_peaks.len(), WAVEFORM_PEAK_COUNT);
+        assert!(analysis.waveform_peaks.iter().any(|peak| *peak > 0.9));
     }
 
     #[test]
@@ -379,7 +408,11 @@ mod tests {
         }
         writer.finalize().unwrap();
         let result = analyze_wav(fixture.path(), &AtomicBool::new(false), |_, _| {}).unwrap();
-        assert_eq!(result, AnalysisAttempt::Complete(uncertain(None, 0.0)));
+        let AnalysisAttempt::Complete(analysis) = result else {
+            panic!("silence analysis should complete");
+        };
+        assert_eq!(analysis.tempo, uncertain(None, 0.0));
+        assert!(analysis.waveform_peaks.iter().all(|peak| *peak == 0.0));
     }
 
     #[test]
@@ -413,7 +446,10 @@ mod tests {
         )
         .unwrap();
 
-        assert!(matches!(result, AnalysisAttempt::Complete(_)));
+        let AnalysisAttempt::Complete(analysis) = result else {
+            panic!("stereo analysis should complete");
+        };
+        assert_eq!(analysis.waveform_peaks.len(), WAVEFORM_PEAK_COUNT);
         assert_eq!(
             last_progress,
             Some((
@@ -431,8 +467,8 @@ mod tests {
         let AnalysisAttempt::Complete(estimate) = result else {
             panic!("short analysis should complete as uncertain");
         };
-        assert_eq!(estimate.status, TempoStatus::Uncertain);
-        assert_eq!(estimate.candidate_bpm, None);
+        assert_eq!(estimate.tempo.status, TempoStatus::Uncertain);
+        assert_eq!(estimate.tempo.candidate_bpm, None);
 
         let cancelled = AtomicBool::new(true);
         assert_eq!(

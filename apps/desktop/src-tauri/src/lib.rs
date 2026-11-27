@@ -528,6 +528,14 @@ fn library_set_bpm_correction(
     library.catalog()?.set_bpm_correction(&track_id, bpm)
 }
 
+#[tauri::command]
+fn library_track_waveform(
+    library: tauri::State<'_, LibraryService>,
+    track_id: String,
+) -> Result<Option<Vec<f32>>, String> {
+    library.catalog()?.waveform_peaks(&track_id)
+}
+
 impl LibraryService {
     fn end_bpm_analysis(&self) {
         self.bpm_analysis_active.store(false, Ordering::Release);
@@ -969,6 +977,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             library_start_bpm_analysis,
             library_cancel_bpm_analysis,
             library_set_bpm_correction,
+            library_track_waveform,
             library_create_collection,
             library_rename_collection,
             library_delete_collection,
