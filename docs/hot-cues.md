@@ -1,6 +1,6 @@
 # Hot Cues
 
-**Status:** Implemented; automated verified; awaiting exact-head desktop runtime evidence<br>
+**Status:** Implemented; automated verified; Windows runtime verified for fixture loading, paused cue triggers, deck isolation, and restart restoration<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-27<br>
 **Version:** 1.0
@@ -21,7 +21,7 @@ Cue JSON is stored beneath Tauri's application-local data directory in `hot-cues
 
 ## Verification record
 
-Automated status is recorded in `FEATURE_ACCEPTANCE_MATRIX.md`. Build/test commands and the exact desktop runtime, persistence, and screenshot evidence will be recorded there after the running Tauri app is exercised. Automated tests do not establish physical audibility, sample-accurate cue timing, or long-duration performance.
+Automated status and Windows runtime evidence are recorded in `FEATURE_ACCEPTANCE_MATRIX.md` and `VERIFICATION_EVIDENCE.md`. The run used generated fixtures at 1282×832, saved cues on both decks, restarted SAYT, reloaded both tracks, and observed paused cue triggers without moving the other deck. Cue-trigger behavior while playing, edit controls in the live owner workflow, physical audibility, sample-accurate timing, and long-duration performance remain open.
 
 ## Owner testing
 

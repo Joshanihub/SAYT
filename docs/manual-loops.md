@@ -1,6 +1,6 @@
 # Manual loops
 
-**Status:** IMPLEMENTED in source; desktop runtime verification pending<br>
+**Status:** IMPLEMENTED in source; Windows runtime controls verified on generated fixtures; physical seam listening pending<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-27<br>
 **Version:** 1.0
@@ -22,6 +22,6 @@ The callback wraps at the loop boundary without beat alignment or a crossfade. T
 
 ## Verification
 
-Automated cases cover region limits, track identity, deck isolation, queue saturation, stale generations, loop wrapping, first-frame boundary normalization, immediate paused release, and release at the next playing boundary. Frontend cases cover state display, empty-deck gating, typed pad commands, and keyboard bindings sharing the same typed actions. Windows Tauri fixture playback and audio listening remain pending; a software test or desktop build does not prove physical output.
+Automated cases cover region limits, track identity, deck isolation, queue saturation, stale generations, loop wrapping, first-frame boundary normalization, immediate paused release, and release at the next playing boundary. Frontend cases cover state display, empty-deck gating, typed pad commands, and keyboard bindings sharing the same typed actions. Windows Tauri fixture runtime exercised sized loops, wrapping, release, seek-outside deactivation, and stop reset at 1282×832. Physical loop-seam listening and output-device recovery remain pending; a software test or desktop UI state does not prove audible quality.
 
 See [ADR-006](DECISIONS/ADR-006-manual-loop-runtime.md), the [acceptance matrix](FEATURE_ACCEPTANCE_MATRIX.md), and the [shortcut runbook](runbook/keyboard-shortcuts.md).
