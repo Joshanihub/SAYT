@@ -52,6 +52,10 @@ enum ServiceCommand {
     SetLoopOut(usize, String, EngineReply<MixerSnapshot>),
     SetLoopSize(usize, String, f64, EngineReply<MixerSnapshot>),
     ReleaseLoop(usize, String, EngineReply<MixerSnapshot>),
+    SetManualBpm(usize, String, f64, EngineReply<MixerSnapshot>),
+    BeatJump(usize, String, f64, EngineReply<MixerSnapshot>),
+    BeginLoopRoll(usize, String, f64, EngineReply<MixerSnapshot>),
+    EndLoopRoll(usize, String, EngineReply<MixerSnapshot>),
     Snapshot(EngineReply<MixerSnapshot>),
     Shutdown,
 }
@@ -229,6 +233,45 @@ impl AudioService {
         self.request(|reply| ServiceCommand::ReleaseLoop(deck, source_track_id, reply))
     }
 
+    pub fn set_manual_bpm(
+        &self,
+        deck: usize,
+        source_track_id: &str,
+        bpm: f64,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::SetManualBpm(deck, source_track_id, bpm, reply))
+    }
+
+    pub fn beat_jump(
+        &self,
+        deck: usize,
+        source_track_id: &str,
+        beats: f64,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::BeatJump(deck, source_track_id, beats, reply))
+    }
+
+    pub fn begin_loop_roll(
+        &self,
+        deck: usize,
+        source_track_id: &str,
+        beats: f64,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::BeginLoopRoll(deck, source_track_id, beats, reply))
+    }
+
+    pub fn end_loop_roll(
+        &self,
+        deck: usize,
+        source_track_id: &str,
+    ) -> Result<MixerSnapshot, String> {
+        let source_track_id = source_track_id.to_string();
+        self.request(|reply| ServiceCommand::EndLoopRoll(deck, source_track_id, reply))
+    }
+
     pub fn snapshot(&self) -> Result<MixerSnapshot, String> {
         self.request(ServiceCommand::Snapshot)
     }
@@ -395,6 +438,18 @@ fn run_engine_actor(
             }
             ServiceCommand::ReleaseLoop(deck, source_track_id, reply) => {
                 reply_with(reply, engine.release_loop(deck, &source_track_id));
+            }
+            ServiceCommand::SetManualBpm(deck, source_track_id, bpm, reply) => {
+                reply_with(reply, engine.set_manual_bpm(deck, &source_track_id, bpm));
+            }
+            ServiceCommand::BeatJump(deck, source_track_id, beats, reply) => {
+                reply_with(reply, engine.beat_jump(deck, &source_track_id, beats));
+            }
+            ServiceCommand::BeginLoopRoll(deck, source_track_id, beats, reply) => {
+                reply_with(reply, engine.begin_loop_roll(deck, &source_track_id, beats));
+            }
+            ServiceCommand::EndLoopRoll(deck, source_track_id, reply) => {
+                reply_with(reply, engine.end_loop_roll(deck, &source_track_id));
             }
             ServiceCommand::Snapshot(reply) => reply_with(reply, Ok(engine.snapshot())),
             ServiceCommand::Shutdown => break,

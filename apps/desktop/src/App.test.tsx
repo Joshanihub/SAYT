@@ -19,6 +19,7 @@ import {
   App,
   AppShell,
   AudioSettings,
+  BeatPerformanceControls,
   DeckPanel,
   HotCueControls,
   ManualLoopControls,
@@ -87,6 +88,8 @@ const emptyDeck = {
   loop_size_seconds: 1,
   loop_active: false,
   loop_release_pending: false,
+  manual_bpm: null,
+  loop_roll_active: false,
 };
 
 const loadedDeck = {
@@ -310,8 +313,37 @@ describe("M1 desktop workspace", () => {
     expect(activeMarkup).toContain("Releasing at loop boundary");
     expect(activeMarkup).toContain('aria-pressed="true"');
     expect(activeMarkup).toContain(
-      "Sizes use seconds because beatgrid and BPM analysis are not available yet.",
+      "Manual loop sizes use seconds. Automatic BPM detection and beatgrids are not implemented.",
     );
+  });
+
+  it("renders manual tempo, beat jumps and held Loop Roll with explicit track limits", () => {
+    const emptyMarkup = renderToStaticMarkup(
+      <BeatPerformanceControls
+        deck={emptyDeck}
+        deckIndex={0}
+        loading={false}
+        onCommand={() => undefined}
+      />,
+    );
+    const loadedMarkup = renderToStaticMarkup(
+      <BeatPerformanceControls
+        deck={{ ...loadedDeck, playing: true, manual_bpm: 124.5 }}
+        deckIndex={1}
+        loading={false}
+        onCommand={() => undefined}
+      />,
+    );
+
+    expect(emptyMarkup).toContain('aria-label="Deck A manual BPM"');
+    expect(emptyMarkup).toContain('min="30" max="300"');
+    expect(emptyMarkup).toContain('disabled=""');
+    expect(loadedMarkup).toContain('aria-label="Forward 4 beats on Deck B"');
+    expect(loadedMarkup).toContain(
+      'aria-label="Hold 1/4 beat Loop Roll on Deck B"',
+    );
+    expect(loadedMarkup).toContain("124.5 BPM · manual");
+    expect(loadedMarkup).toContain("no auto-detection or beatgrid is used.");
   });
 
   it("routes manual-loop pad actions through the typed dispatcher with source identity", () => {

@@ -2,6 +2,8 @@ export type DeckId = 0 | 1;
 export type HotCueSlot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type HotCueAction = "set" | "trigger" | "clear";
 export type ManualLoopAction = "setIn" | "setOut" | "setSize" | "release";
+export type BeatPerformanceAction =
+  "setManualBpm" | "beatJump" | "beginLoopRoll" | "endLoopRoll";
 export type HotCueColor =
   "coral" | "orange" | "amber" | "lime" | "cyan" | "blue" | "violet" | "pink";
 export type WorkspaceId = "dj" | "library" | "settings";
@@ -82,6 +84,25 @@ export type CommandPayloadMap = {
     sizeSeconds: number;
   };
   "loop.release": { deck: DeckId; sourceTrackId: string | null };
+  "performance.setManualBpm": {
+    deck: DeckId;
+    sourceTrackId: string | null;
+    bpm: number;
+  };
+  "performance.beatJump": {
+    deck: DeckId;
+    sourceTrackId: string | null;
+    beats: number;
+  };
+  "performance.beginLoopRoll": {
+    deck: DeckId;
+    sourceTrackId: string | null;
+    beats: number;
+  };
+  "performance.endLoopRoll": {
+    deck: DeckId;
+    sourceTrackId: string | null;
+  };
   "mixer.setMaster": { value: number };
   "mixer.adjustMaster": { delta: number };
   "mixer.setCrossfader": { value: number };
@@ -604,6 +625,42 @@ export function createManualLoopCommand(
   return {
     id: "loop.setSize",
     payload: { deck, sourceTrackId, sizeSeconds },
+  };
+}
+
+export function createBeatPerformanceCommand(
+  action: BeatPerformanceAction,
+  deck: DeckId,
+  sourceTrackId: string | null,
+  value?: number,
+): AppCommand {
+  if (action === "endLoopRoll") {
+    return {
+      id: "performance.endLoopRoll",
+      payload: { deck, sourceTrackId },
+    };
+  }
+  if (value === undefined || !Number.isFinite(value)) {
+    throw new RangeError(`${action} commands require a finite value`);
+  }
+  if (action === "setManualBpm") {
+    return {
+      id: "performance.setManualBpm",
+      payload: { deck, sourceTrackId, bpm: value },
+    };
+  }
+  if (action === "beatJump") {
+    return {
+      id: "performance.beatJump",
+      payload: { deck, sourceTrackId, beats: value },
+    };
+  }
+  if (value <= 0) {
+    throw new RangeError("Loop Roll commands require positive beat counts");
+  }
+  return {
+    id: "performance.beginLoopRoll",
+    payload: { deck, sourceTrackId, beats: value },
   };
 }
 

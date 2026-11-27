@@ -184,6 +184,45 @@ fn release_loop(
     audio.release_loop(deck, &source_track_id)
 }
 
+#[tauri::command]
+fn set_manual_bpm(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    source_track_id: String,
+    bpm: f64,
+) -> Result<MixerSnapshot, String> {
+    audio.set_manual_bpm(deck, &source_track_id, bpm)
+}
+
+#[tauri::command]
+fn beat_jump(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    source_track_id: String,
+    beats: f64,
+) -> Result<MixerSnapshot, String> {
+    audio.beat_jump(deck, &source_track_id, beats)
+}
+
+#[tauri::command]
+fn begin_loop_roll(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    source_track_id: String,
+    beats: f64,
+) -> Result<MixerSnapshot, String> {
+    audio.begin_loop_roll(deck, &source_track_id, beats)
+}
+
+#[tauri::command]
+fn end_loop_roll(
+    audio: tauri::State<'_, AudioService>,
+    deck: usize,
+    source_track_id: String,
+) -> Result<MixerSnapshot, String> {
+    audio.end_loop_roll(deck, &source_track_id)
+}
+
 /// Starts the desktop shell and reports startup or runtime failures.
 pub fn run() -> Result<(), Box<dyn Error>> {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
@@ -224,7 +263,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             set_loop_in,
             set_loop_out,
             set_loop_size,
-            release_loop
+            release_loop,
+            set_manual_bpm,
+            beat_jump,
+            begin_loop_roll,
+            end_loop_roll
         ))
         .run(tauri::generate_context!())
     {

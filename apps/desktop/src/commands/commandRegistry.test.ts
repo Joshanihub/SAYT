@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  createBeatPerformanceCommand,
   createHotCueCommand,
   createManualLoopCommand,
   createShortcutCommand,
@@ -319,6 +320,37 @@ describe("central keyboard command registry", () => {
     expect(() =>
       createManualLoopCommand("setSize", 0, sourceTrackId, 0),
     ).toThrow("positive finite seconds");
+  });
+
+  it("builds typed manual BPM, beat jump and Loop Roll actions", () => {
+    const sourceTrackId = `sha256:${"f".repeat(64)}`;
+    expect(
+      createBeatPerformanceCommand("setManualBpm", 1, sourceTrackId, 124.5),
+    ).toEqual({
+      id: "performance.setManualBpm",
+      payload: { deck: 1, sourceTrackId, bpm: 124.5 },
+    });
+    expect(
+      createBeatPerformanceCommand("beatJump", 0, sourceTrackId, -4),
+    ).toEqual({
+      id: "performance.beatJump",
+      payload: { deck: 0, sourceTrackId, beats: -4 },
+    });
+    expect(
+      createBeatPerformanceCommand("beginLoopRoll", 1, sourceTrackId, 0.25),
+    ).toEqual({
+      id: "performance.beginLoopRoll",
+      payload: { deck: 1, sourceTrackId, beats: 0.25 },
+    });
+    expect(
+      createBeatPerformanceCommand("endLoopRoll", 1, sourceTrackId),
+    ).toEqual({
+      id: "performance.endLoopRoll",
+      payload: { deck: 1, sourceTrackId },
+    });
+    expect(() =>
+      createBeatPerformanceCommand("beginLoopRoll", 0, sourceTrackId, 0),
+    ).toThrow("positive beat counts");
   });
 
   it("persists and reloads valid local overrides", () => {

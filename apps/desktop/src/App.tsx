@@ -5,6 +5,7 @@ import { ShortcutOverlay } from "./ShortcutOverlay";
 import {
   DECK_CONTROL_LIMITS,
   createHotCueCommand,
+  createBeatPerformanceCommand,
   createManualLoopCommand,
   detectShortcutPlatform,
   dispatchShortcutKeydown,
@@ -16,6 +17,7 @@ import {
   saveShortcutOverrides,
   validateShortcutBinding,
   type AppCommand,
+  type BeatPerformanceAction,
   type CommandDispatcher,
   type DeckControlId,
   type DeckId,
@@ -54,6 +56,8 @@ type DeckSnapshot = {
   loop_size_seconds: number;
   loop_active: boolean;
   loop_release_pending: boolean;
+  manual_bpm: number | null;
+  loop_roll_active: boolean;
 };
 
 type HotCueSnapshot = {
@@ -100,6 +104,8 @@ const emptyDeck = (): DeckSnapshot => ({
   loop_size_seconds: 1,
   loop_active: false,
   loop_release_pending: false,
+  manual_bpm: null,
+  loop_roll_active: false,
 });
 
 const emptyMixer = (): MixerSnapshot => ({
@@ -199,6 +205,16 @@ const HOT_CUE_COLORS: readonly HotCueColor[] = [
 
 const HOT_CUE_SLOT_IDS: readonly HotCueSlot[] = [0, 1, 2, 3, 4, 5, 6, 7];
 const MANUAL_LOOP_SIZE_PRESETS_SECONDS = [0.25, 0.5, 1, 2, 4, 8] as const;
+const MANUAL_BPM_MIN = 30;
+const MANUAL_BPM_MAX = 300;
+const BEAT_JUMP_PRESETS = [1, 2, 4, 8, 16] as const;
+const LOOP_ROLL_PRESETS_BEATS = [0.25, 0.5, 1, 2, 4, 8, 16] as const;
+
+function formatBeats(beats: number) {
+  if (beats === 0.25) return "1/4";
+  if (beats === 0.5) return "1/2";
+  return String(beats);
+}
 
 export function ManualLoopControls({
   deck,
@@ -318,9 +334,256 @@ export function ManualLoopControls({
       </div>
 
       <p className="manual-loop-note">
-        Sizes use seconds because beatgrid and BPM analysis are not available
-        yet.
+        Manual loop sizes use seconds. Automatic BPM detection and beatgrids are
+        not implemented.
       </p>
+    </div>
+  );
+}
+
+export function BeatPerformanceControls({
+  deck,
+  deckIndex,
+  loading,
+  onCommand,
+}: {
+  deck: DeckSnapshot;
+  deckIndex: DeckId;
+  loading: boolean;
+  onCommand: CommandDispatcher;
+}) {
+  const deckLabel = deckIndex === 0 ? "A" : "B";
+  const [bpmDraft, setBpmDraft] = useState(deck.manual_bpm?.toString() ?? "");
+  const [rollHeld, setRollHeld] = useState(false);
+  const rollHeldRef = useRef(false);
+  const rollSourceTrackIdRef = useRef<string | null>(null);
+  const rollBeatsRef = useRef<number | null>(null);
+  const suppressKeyboardClickRef = useRef(false);
+  const commandRef = useRef(onCommand);
+  const endRollRef = useRef<() => void>(() => undefined);
+  commandRef.current = onCommand;
+
+  useEffect(() => {
+    setBpmDraft(deck.manual_bpm?.toString() ?? "");
+  }, [deck.source_track_id, deck.manual_bpm]);
+
+  const dispatchPerformance = (
+    action: BeatPerformanceAction,
+    value?: number,
+    sourceTrackId = deck.source_track_id,
+  ) => {
+    onCommand(
+      createBeatPerformanceCommand(action, deckIndex, sourceTrackId, value),
+    );
+  };
+
+  const endRoll = (force = false) => {
+    const sourceTrackId = rollSourceTrackIdRef.current ?? deck.source_track_id;
+    if (!rollHeldRef.current && !(force && deck.loop_roll_active)) return;
+    rollHeldRef.current = false;
+    rollBeatsRef.current = null;
+    rollSourceTrackIdRef.current = null;
+    setRollHeld(false);
+    if (sourceTrackId) {
+      dispatchPerformance("endLoopRoll", undefined, sourceTrackId);
+    }
+  };
+  endRollRef.current = endRoll;
+
+  const beginRoll = (beats: number) => {
+    if (rollHeldRef.current || !deck.loaded || !deck.playing || loading) return;
+    if (!deck.source_track_id || deck.manual_bpm === null) return;
+    rollHeldRef.current = true;
+    rollSourceTrackIdRef.current = deck.source_track_id;
+    rollBeatsRef.current = beats;
+    setRollHeld(true);
+    dispatchPerformance("beginLoopRoll", beats);
+  };
+
+  useEffect(() => {
+    rollHeldRef.current = false;
+    rollSourceTrackIdRef.current = null;
+    rollBeatsRef.current = null;
+    setRollHeld(false);
+  }, [deck.source_track_id]);
+
+  useEffect(() => {
+    if (deck.playing || !rollHeldRef.current) return;
+    rollHeldRef.current = false;
+    rollSourceTrackIdRef.current = null;
+    rollBeatsRef.current = null;
+    setRollHeld(false);
+  }, [deck.playing]);
+
+  useEffect(() => {
+    const releaseOnWindowBlur = () => endRollRef.current();
+    window.addEventListener("blur", releaseOnWindowBlur);
+    return () => window.removeEventListener("blur", releaseOnWindowBlur);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (rollHeldRef.current && rollSourceTrackIdRef.current) {
+        commandRef.current(
+          createBeatPerformanceCommand(
+            "endLoopRoll",
+            deckIndex,
+            rollSourceTrackIdRef.current,
+          ),
+        );
+      }
+    },
+    [deckIndex],
+  );
+
+  const parsedBpm = Number(bpmDraft);
+  const canApplyBpm =
+    deck.loaded &&
+    !loading &&
+    bpmDraft.trim() !== "" &&
+    Number.isFinite(parsedBpm) &&
+    parsedBpm >= MANUAL_BPM_MIN &&
+    parsedBpm <= MANUAL_BPM_MAX;
+
+  return (
+    <div
+      className="beat-performance-controls"
+      aria-label={`Deck ${deckLabel} Loop Roll and Beat Jump controls`}
+    >
+      <div className="manual-bpm-control">
+        <label htmlFor={`deck-${deckLabel}-manual-bpm`}>Manual BPM</label>
+        <input
+          id={`deck-${deckLabel}-manual-bpm`}
+          type="number"
+          min={MANUAL_BPM_MIN}
+          max={MANUAL_BPM_MAX}
+          step="0.1"
+          value={bpmDraft}
+          disabled={!deck.loaded || loading}
+          aria-label={`Deck ${deckLabel} manual BPM`}
+          onChange={(event) => setBpmDraft(event.target.value)}
+        />
+        <button
+          type="button"
+          disabled={!canApplyBpm}
+          onClick={() => dispatchPerformance("setManualBpm", parsedBpm)}
+        >
+          Apply BPM
+        </button>
+        <span className="beat-performance-bpm-state" role="status">
+          {deck.manual_bpm === null
+            ? "Required for beat controls"
+            : `${deck.manual_bpm.toFixed(1)} BPM · manual`}
+        </span>
+      </div>
+
+      <section
+        className="beat-control-section"
+        aria-label={`Deck ${deckLabel} Beat Jump`}
+      >
+        <div className="beat-control-heading">
+          <strong>Beat Jump</strong>
+          <span>Move the playhead by beats</span>
+        </div>
+        <div className="beat-jump-grid">
+          {BEAT_JUMP_PRESETS.flatMap((beats) => [-beats, beats]).map(
+            (beats) => (
+              <button
+                key={beats}
+                type="button"
+                disabled={!deck.loaded || loading || deck.manual_bpm === null}
+                aria-label={`${beats > 0 ? "Forward" : "Back"} ${Math.abs(beats)} ${Math.abs(beats) === 1 ? "beat" : "beats"} on Deck ${deckLabel}`}
+                onClick={() => dispatchPerformance("beatJump", beats)}
+              >
+                {beats > 0 ? "+" : "−"}
+                {Math.abs(beats)}
+              </button>
+            ),
+          )}
+        </div>
+      </section>
+
+      <section
+        className="beat-control-section"
+        aria-label={`Deck ${deckLabel} Loop Roll`}
+      >
+        <div className="beat-control-heading">
+          <strong>Loop Roll</strong>
+          <span>Hold a pad; playback resumes at the advancing position</span>
+        </div>
+        <div className="loop-roll-grid">
+          {LOOP_ROLL_PRESETS_BEATS.map((beats) => (
+            <button
+              key={beats}
+              type="button"
+              className={
+                rollHeld && rollBeatsRef.current === beats ? "is-held" : ""
+              }
+              disabled={
+                !deck.loaded ||
+                !deck.playing ||
+                loading ||
+                deck.manual_bpm === null
+              }
+              aria-label={`Hold ${formatBeats(beats)} beat${beats > 1 ? "s" : ""} Loop Roll on Deck ${deckLabel}`}
+              aria-pressed={rollHeld && rollBeatsRef.current === beats}
+              onPointerDown={(event) => {
+                if (event.button !== 0) return;
+                event.currentTarget.setPointerCapture(event.pointerId);
+                beginRoll(beats);
+              }}
+              onPointerUp={() => endRoll()}
+              onPointerCancel={() => endRoll()}
+              onLostPointerCapture={() => endRoll()}
+              onBlur={() => endRoll()}
+              onKeyDown={(event) => {
+                if (
+                  event.repeat ||
+                  (event.key !== " " && event.key !== "Enter")
+                ) {
+                  return;
+                }
+                event.preventDefault();
+                suppressKeyboardClickRef.current = true;
+                beginRoll(beats);
+              }}
+              onKeyUp={(event) => {
+                if (event.key !== " " && event.key !== "Enter") return;
+                event.preventDefault();
+                endRoll();
+                window.setTimeout(() => {
+                  suppressKeyboardClickRef.current = false;
+                }, 0);
+              }}
+              onClick={(event) => {
+                if (event.detail !== 0) return;
+                if (suppressKeyboardClickRef.current) {
+                  suppressKeyboardClickRef.current = false;
+                  return;
+                }
+                if (rollHeldRef.current) endRoll();
+                else beginRoll(beats);
+              }}
+            >
+              {formatBeats(beats)} beat{beats > 1 ? "s" : ""}
+            </button>
+          ))}
+        </div>
+        <p className="manual-loop-note" role="status">
+          {deck.loop_roll_active
+            ? "Loop Roll active · release the pad to resume the track"
+            : "BPM is entered manually per deck and clears when its track changes; no auto-detection or beatgrid is used."}
+        </p>
+        {deck.loop_roll_active && !rollHeld && (
+          <button
+            className="loop-roll-release"
+            type="button"
+            onClick={() => endRoll(true)}
+          >
+            Release active Loop Roll
+          </button>
+        )}
+      </section>
     </div>
   );
 }
@@ -339,7 +602,9 @@ export function HotCueControls({
   onCommand: CommandDispatcher;
 }) {
   const deckLabel = deckIndex === 0 ? "A" : "B";
-  const [selectedMode, setSelectedMode] = useState<"hotCue" | "loop">("hotCue");
+  const [selectedMode, setSelectedMode] = useState<"hotCue" | "loop" | "roll">(
+    "hotCue",
+  );
   const [selectedSlot, setSelectedSlot] = useState<HotCueSlot | null>(null);
   const selectedCue =
     selectedSlot === null ? null : (deck.hot_cues[selectedSlot] ?? null);
@@ -383,11 +648,19 @@ export function HotCueControls({
     >
       <div className="hot-cue-heading">
         <div>
-          <h3>{selectedMode === "hotCue" ? "Hot Cues" : "Manual Loop"}</h3>
+          <h3>
+            {selectedMode === "hotCue"
+              ? "Hot Cues"
+              : selectedMode === "loop"
+                ? "Manual Loop"
+                : "Loop Roll & Beat Jump"}
+          </h3>
           <p id={`deck-${deckLabel}-hot-cue-description`}>
             {selectedMode === "hotCue"
               ? "8 per-track positions · click an empty pad to set, an assigned pad to trigger"
-              : "Set boundaries at the playhead or start a sized loop · sizes shown in seconds"}
+              : selectedMode === "loop"
+                ? "Set boundaries at the playhead or start a sized loop · sizes shown in seconds"
+                : "Enter BPM, jump by beats, or hold a slip Loop Roll pad"}
           </p>
         </div>
         <span className="hot-cue-track-state">
@@ -395,9 +668,11 @@ export function HotCueControls({
             ? deck.loaded
               ? "Saved with track"
               : "Load a track to begin"
-            : deck.loaded
+            : selectedMode === "loop" && deck.loaded
               ? "Deck-local · not persisted"
-              : "Load a track to begin"}
+              : deck.loaded
+                ? "Deck-local · manual BPM"
+                : "Load a track to begin"}
         </span>
       </div>
 
@@ -420,6 +695,14 @@ export function HotCueControls({
           onClick={() => setSelectedMode("loop")}
         >
           Loop
+        </button>
+        <button
+          type="button"
+          aria-pressed={selectedMode === "roll"}
+          className={selectedMode === "roll" ? "is-selected" : ""}
+          onClick={() => setSelectedMode("roll")}
+        >
+          Roll / Jump
         </button>
       </div>
 
@@ -469,12 +752,19 @@ export function HotCueControls({
             );
           })}
         </div>
-      ) : (
+      ) : selectedMode === "loop" ? (
         <ManualLoopControls
           deck={deck}
           deckIndex={deckIndex}
           loading={loading}
           shortcutText={shortcutText}
+          onCommand={onCommand}
+        />
+      ) : (
+        <BeatPerformanceControls
+          deck={deck}
+          deckIndex={deckIndex}
+          loading={loading}
           onCommand={onCommand}
         />
       )}
@@ -1579,6 +1869,39 @@ export function App() {
           loopArgs.sizeSeconds = command.payload.sizeSeconds;
         }
         runMixerCommand(nativeCommand, loopArgs);
+        break;
+      }
+      case "performance.setManualBpm":
+      case "performance.beatJump":
+      case "performance.beginLoopRoll":
+      case "performance.endLoopRoll": {
+        const { deck, sourceTrackId } = command.payload;
+        if (!sourceTrackId) {
+          setError(
+            `Load a WAV into Deck ${deck === 0 ? "A" : "B"} before using beat performance controls.`,
+          );
+          return;
+        }
+        const nativeCommand = {
+          "performance.setManualBpm": "set_manual_bpm",
+          "performance.beatJump": "beat_jump",
+          "performance.beginLoopRoll": "begin_loop_roll",
+          "performance.endLoopRoll": "end_loop_roll",
+        }[command.id];
+        const performanceArgs: Record<string, unknown> = {
+          deck,
+          sourceTrackId,
+        };
+        if (command.id === "performance.setManualBpm") {
+          performanceArgs.bpm = command.payload.bpm;
+        }
+        if (
+          command.id === "performance.beatJump" ||
+          command.id === "performance.beginLoopRoll"
+        ) {
+          performanceArgs.beats = command.payload.beats;
+        }
+        runMixerCommand(nativeCommand, performanceArgs);
         break;
       }
       case "mixer.setMaster":

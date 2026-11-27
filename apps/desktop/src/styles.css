@@ -751,6 +751,125 @@ a:focus-visible {
   font-size: 0.5rem;
   line-height: 1.4;
 }
+.beat-performance-controls {
+  min-width: 0;
+  display: grid;
+  gap: 0.42rem;
+}
+.manual-bpm-control {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(4.5rem, 6rem) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.38rem;
+  border: 1px solid #292e36;
+  border-radius: 3px;
+  background: #111318;
+}
+.manual-bpm-control label,
+.beat-control-heading strong {
+  color: #c8ced4;
+  font-family: var(--font-display);
+  font-size: 0.52rem;
+  font-weight: 750;
+}
+.manual-bpm-control input,
+.manual-bpm-control button,
+.beat-jump-grid button,
+.loop-roll-grid button,
+.loop-roll-release {
+  min-width: 0;
+  min-height: 29px;
+  padding: 0.24rem 0.32rem;
+  border: 1px solid #3a414b;
+  border-radius: 3px;
+  color: #d4d8dd;
+  background: #20242b;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+}
+.manual-bpm-control input {
+  width: 100%;
+  padding-inline: 0.35rem;
+}
+.manual-bpm-control button,
+.loop-roll-release {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.manual-bpm-control button:hover:not(:disabled),
+.beat-jump-grid button:hover:not(:disabled),
+.loop-roll-grid button:hover:not(:disabled),
+.loop-roll-release:hover {
+  border-color: #727c88;
+  background: #292e37;
+}
+.manual-bpm-control button:disabled,
+.manual-bpm-control input:disabled,
+.beat-jump-grid button:disabled,
+.loop-roll-grid button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+.beat-performance-bpm-state {
+  min-width: 0;
+  overflow: hidden;
+  color: #8d99a4;
+  font-family: var(--font-mono);
+  font-size: 0.47rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.beat-control-section {
+  min-width: 0;
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.35rem;
+  border: 1px solid #292e36;
+  border-radius: 3px;
+  background: #14171c;
+}
+.beat-control-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.beat-control-heading span {
+  color: #858d97;
+  font-size: 0.47rem;
+  text-align: right;
+}
+.beat-jump-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+.beat-jump-grid button {
+  font-weight: 700;
+}
+.loop-roll-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+.loop-roll-grid button {
+  touch-action: none;
+  user-select: none;
+}
+.loop-roll-grid button.is-held {
+  border-color: #718b42;
+  color: #c7f36b;
+  background: #27321d;
+  box-shadow:
+    inset 0 0 0 1px #c7f36b66,
+    0 0 9px #c7f36b26;
+}
+.loop-roll-release {
+  justify-self: end;
+  color: #c7f36b;
+}
 .manual-loop-size:disabled,
 .manual-loop-actions button:disabled {
   cursor: not-allowed;

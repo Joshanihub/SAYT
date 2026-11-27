@@ -14,13 +14,14 @@
 - Return replaced tracks through a bounded queue so their final destruction stays off the callback. A full return queue defers replacement.
 - Keep CPAL error reporting callback-safe: the callback sets an atomic error signal; the control side logs and displays it.
 - Compute EQ coefficients on the control side and run fixed-size biquad state in the callback.
+- Beat Jump, manual Loop and Loop Roll controls share the Rust callback and the existing bounded command queue. Loop Roll advances a stored natural position while wrapping the audible deck position, and restores that natural position on release. Tempo is manually entered per loaded deck and is reset on track replacement.
 - Device replacement is attempted even if pausing the current stream fails. If the new stream cannot be opened, the control side attempts to resume and retains the previous stream; resume failure is exposed through the output-error snapshot. Unit tests cover this transition policy, not OS or hardware recovery.
 
 These properties are implemented in source and covered in part by unit tests. No allocator instrumentation or physical-device test has been run, so they are not a real-time safety or dropout guarantee.
 
 ## Current gaps
 
-No headphone cue output, output-device hot-plug recovery, callback-load/xrun telemetry, deterministic offline render, controller input, or 60-minute soak is implemented. Device IDs are enumeration indexes and may change when devices appear or disappear. Track samples are held in memory within the limits documented in `REQUIREMENTS.md`.
+No automatic BPM analysis, editable beatgrid, beat quantization, Sync, key lock, headphone cue output, output-device hot-plug recovery, callback-load/xrun telemetry, deterministic offline render, controller input, or 60-minute soak is implemented. Device IDs are enumeration indexes and may change when devices appear or disappear. Track samples are held in memory within the limits documented in `REQUIREMENTS.md`.
 
 ## Local checks
 
