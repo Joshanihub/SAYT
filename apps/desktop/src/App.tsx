@@ -1580,6 +1580,7 @@ export function App() {
     useState<DeviceListStatus>("loading");
   const [page, setPage] = useState<Page>("dj");
   const [error, setError] = useState("");
+  const [outputErrorMessage, setOutputErrorMessage] = useState("");
   const [loadingDeck, setLoadingDeck] = useState<number | null>(null);
   const [engineConnected, setEngineConnected] = useState(false);
   const [focusedDeck, setFocusedDeck] = useState<DeckId>(0);
@@ -1681,7 +1682,7 @@ export function App() {
           setEngineConnected(true);
         }
       } catch (cause) {
-        if (active) setError(getErrorMessage(cause));
+        if (active) setOutputErrorMessage(getErrorMessage(cause));
       }
       if (active) void pollSnapshot();
     };
@@ -1694,10 +1695,19 @@ export function App() {
   }, []);
 
   const runMixerCommand = (command: string, args: Record<string, unknown>) => {
+    const isOutputCommand = command === "select_device";
     setError("");
+    if (isOutputCommand) setOutputErrorMessage("");
     void invoke<MixerSnapshot>(command, args)
-      .then(setMixer)
-      .catch((cause) => setError(getErrorMessage(cause)));
+      .then((snapshot) => {
+        setMixer(snapshot);
+        if (isOutputCommand) setOutputErrorMessage("");
+      })
+      .catch((cause) => {
+        const message = getErrorMessage(cause);
+        if (isOutputCommand) setOutputErrorMessage(message);
+        else setError(message);
+      });
   };
 
   const loadTrack = async (deck: DeckId) => {
@@ -2086,30 +2096,15 @@ export function App() {
             </div>
           </div>
 
-          {(error || mixer.output_error) && (
-            <div className="error-banner" role="alert">
-              <span>
-                {error ||
-                  "Audio output stopped. Re-select an output device to retry."}
-              </span>
-              <button
-                type="button"
-                onClick={() =>
-                  dispatchCommand({ id: "output.retry", payload: {} })
-                }
-              >
-                Retry output
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  dispatchCommand({ id: "output.refreshDevices", payload: {} })
-                }
-              >
-                Refresh devices
-              </button>
-            </div>
-          )}
+          <CommandErrorBanner
+            error={error}
+            outputError={mixer.output_error}
+            outputErrorMessage={outputErrorMessage}
+            onRetry={() => dispatchCommand({ id: "output.retry", payload: {} })}
+            onRefresh={() =>
+              dispatchCommand({ id: "output.refreshDevices", payload: {} })
+            }
+          />
 
           {page === "dj" && (
             <>
@@ -2180,6 +2175,44 @@ export function App() {
           onBind={bindShortcut}
           onReset={resetShortcuts}
         />
+      )}
+    </>
+  );
+}
+
+export function CommandErrorBanner({
+  error,
+  outputError,
+  outputErrorMessage,
+  onRetry,
+  onRefresh,
+}: {
+  error: string;
+  outputError: boolean;
+  outputErrorMessage: string;
+  onRetry: () => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <>
+      {error && (
+        <div className="error-banner" role="alert">
+          <span>{error}</span>
+        </div>
+      )}
+      {(outputError || outputErrorMessage) && (
+        <div className="error-banner" role="alert">
+          <span>
+            {outputErrorMessage ||
+              "Audio output stopped. Re-select an output device to retry."}
+          </span>
+          <button type="button" onClick={onRetry}>
+            Retry output
+          </button>
+          <button type="button" onClick={onRefresh}>
+            Refresh devices
+          </button>
+        </div>
       )}
     </>
   );

@@ -20,6 +20,7 @@ import {
   AppShell,
   AudioSettings,
   BeatPerformanceControls,
+  CommandErrorBanner,
   DeckPanel,
   HotCueControls,
   ManualLoopControls,
@@ -674,6 +675,45 @@ describe("M1 desktop workspace", () => {
     buttons[1]?.props.onClick?.();
     expect(onRefresh).toHaveBeenCalledOnce();
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it("does not offer output recovery actions for a WAV decoder error", () => {
+    const markup = renderToStaticMarkup(
+      <CommandErrorBanner
+        error="Only uncompressed integer PCM WAV files are supported"
+        outputError={false}
+        outputErrorMessage=""
+        onRetry={() => undefined}
+        onRefresh={() => undefined}
+      />,
+    );
+
+    expect(markup).toContain(
+      "Only uncompressed integer PCM WAV files are supported",
+    );
+    expect(markup).not.toContain("Retry output");
+    expect(markup).not.toContain("Refresh devices");
+  });
+
+  it("keeps output recovery actions attached to output failures", () => {
+    const retry = vi.fn();
+    const refresh = vi.fn();
+    const tree = CommandErrorBanner({
+      error: "",
+      outputError: false,
+      outputErrorMessage: "Could not switch to USB output",
+      onRetry: retry,
+      onRefresh: refresh,
+    });
+    const controls = findElements(tree);
+    const markup = renderToStaticMarkup(tree);
+
+    expect(markup).toContain("Could not switch to USB output");
+    const buttons = controls.filter((element) => element.type === "button");
+    buttons[0]?.props.onClick?.();
+    buttons[1]?.props.onClick?.();
+    expect(retry).toHaveBeenCalledOnce();
+    expect(refresh).toHaveBeenCalledOnce();
   });
 
   it("distinguishes device discovery, no devices, and device-list errors", () => {
