@@ -20,6 +20,7 @@ import {
 } from "./libraryTempo";
 import { validateLibraryWaveform } from "./libraryWaveform";
 import { LibraryWaveformPreview } from "./LibraryWaveformPreview";
+import { recordTempoTap, TEMPO_TAP_MIN_SAMPLES } from "./tempoTap";
 
 type TrackFilter =
   "all" | "recent" | "missing" | "unanalyzed" | "favorites" | "unsupported";
@@ -188,6 +189,9 @@ export function MusicLibrary({
   const [bpmCorrectionBusy, setBpmCorrectionBusy] = useState(false);
   const [bpmAnalysisProgress, setBpmAnalysisProgress] =
     useState<BpmAnalysisProgress | null>(null);
+  const [tempoTapMessage, setTempoTapMessage] = useState(
+    `Tap ${TEMPO_TAP_MIN_SAMPLES} times to stage a tempo correction.`,
+  );
   const [trackWaveform, setTrackWaveform] = useState<{
     trackId: string;
     peaks: number[] | null;
@@ -195,6 +199,7 @@ export function MusicLibrary({
   } | null>(null);
   const scanCompletionHandled = useRef(false);
   const bpmCompletionHandled = useRef(false);
+  const tempoTapTimesRef = useRef<number[]>([]);
 
   const activeCollection = collections.find(
     (collection) => collection.id === collectionId,
@@ -453,6 +458,10 @@ export function MusicLibrary({
   useEffect(() => {
     setArtworkDataUrl(null);
     setEditingMetadata(false);
+    tempoTapTimesRef.current = [];
+    setTempoTapMessage(
+      `Tap ${TEMPO_TAP_MIN_SAMPLES} times to stage a tempo correction.`,
+    );
     if (!selectedTrack) return;
     setMetadataDraft({
       title: selectedTrack.title,
@@ -612,6 +621,25 @@ export function MusicLibrary({
     } finally {
       setBpmCorrectionBusy(false);
     }
+  };
+
+  const tapBpm = () => {
+    const result = recordTempoTap(tempoTapTimesRef.current, performance.now());
+    tempoTapTimesRef.current = result.timestampsMs;
+
+    if (result.bpm === null) {
+      setTempoTapMessage(
+        result.restarted
+          ? `Tap sequence restarted. Tap ${TEMPO_TAP_MIN_SAMPLES} times between 30 and 300 BPM.`
+          : `Tap ${result.timestampsMs.length} of ${TEMPO_TAP_MIN_SAMPLES}; the BPM field stays unchanged until tempo is measured.`,
+      );
+      return;
+    }
+
+    setBpmCorrectionDraft(result.bpm.toFixed(1));
+    setTempoTapMessage(
+      `${result.bpm.toFixed(1)} BPM staged. Save correction to persist.`,
+    );
   };
 
   const exportBackup = async () => {
@@ -1618,6 +1646,14 @@ export function MusicLibrary({
                   <button
                     className="library-button secondary compact"
                     type="button"
+                    aria-label="Tap tempo to stage a BPM correction"
+                    onClick={tapBpm}
+                  >
+                    TAP BPM
+                  </button>
+                  <button
+                    className="library-button secondary compact"
+                    type="button"
                     aria-label="Set correction to half the current BPM"
                     disabled={bpmCorrectionBusy || halfTempoCorrection === null}
                     onClick={() => {
@@ -1643,7 +1679,9 @@ export function MusicLibrary({
                   >
                     BPM ×2
                   </button>
-                  <span>Preset values need Save correction.</span>
+                  <span aria-live="polite" aria-atomic="true">
+                    {tempoTapMessage} Preset values need Save correction.
+                  </span>
                 </div>
                 <div className="library-analysis-actions">
                   <button

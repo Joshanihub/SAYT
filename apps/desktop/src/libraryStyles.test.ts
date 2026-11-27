@@ -41,5 +41,14 @@ describe("library deck load actions", () => {
     );
     expect(libraryStyles).toContain("@media (max-width: 980px)");
     expect(libraryStyles).toContain("@media (max-width: 720px)");
+    expect(libraryComponent).toContain("recordTempoTap");
+    expect(libraryComponent).toContain("TAP BPM");
+    expect(libraryComponent).toContain("onClick={tapBpm}");
+    expect(libraryComponent).toContain("performance.now()");
+    expect(libraryComponent).toContain('aria-live="polite"');
+    expect(libraryComponent).toContain(
+      "setBpmCorrectionDraft(result.bpm.toFixed(1))",
+    );
+    expect(libraryComponent).toContain("Save correction to persist.");
   });
 });
