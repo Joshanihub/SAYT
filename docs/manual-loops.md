@@ -12,7 +12,7 @@
 - While playing, the engine repeats the half-open frame region `[Loop In, Loop Out)`. It normalizes a playhead already at Loop Out before reading another frame, so the first repeated frame comes from inside the region.
 - Release while playing exits at the next Loop Out boundary. Release while paused disables the loop immediately. A seek outside the region disables the active loop but retains its markers; a size pad or new markers can activate it again.
 - Stop disables the active loop and returns the deck to the track start. Loading a different track clears that deck's loop markers. Deck A and Deck B own independent loop state.
-- Loop regions are deck-local runtime state and are not persisted. The UI states this. Loop durations are seconds, not beats, because BPM and beatgrid analysis are not implemented.
+- Loop regions are deck-local runtime state and are not persisted. The UI states this. Loop durations are fixed in seconds because beatgrid-aligned placement and quantization are not implemented; an available BPM value alone does not create a beatgrid.
 
 ## Boundaries
 

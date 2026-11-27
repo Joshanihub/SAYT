@@ -3,7 +3,7 @@
 **Status:** PROPOSED operator guide<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-27<br>
-**Version:** 1.0
+**Version:** 1.2
 
 ## What the library stores
 
@@ -17,6 +17,15 @@ SAYT stores selected folder paths, file content hashes, detected metadata, missi
 4. Create a crate for an unordered collection or a playlist when order matters. Select a track to edit SAYT-only title/artist/album metadata. To add it, choose a destination collection in the track action row; the destination choice does not change the collection currently being browsed.
 5. Use **Load to A** or **Load to B** only when the track is marked as a current-decoder candidate. SAYT confirms only after the existing engine accepts the file.
 6. Use **Export backup** and choose a local save location in the native dialog before making changes that should be recoverable.
+
+## Local BPM preparation
+
+1. Select a track whose current library location is available and marked as a supported PCM WAV, then use **Analyze local WAV** in the inspector. The worker reads only the catalog-selected file and does not send PCM samples through Tauri.
+2. Analysis can be cancelled while the worker reads or correlates the file. A cancelled result is not saved. An error saying the file changed after import means rescan its registered folder and retry.
+3. A confident result is cached by file identity and algorithm version. An uncertain result can show a candidate, but it is not applied to Beat Jump or Loop Roll. The periodicity score is heuristic, not a probability or a claim of commercial-music accuracy.
+4. Enter a manual correction from 30 to 300 BPM and choose **Save correction**; use **Clear** to remove it. SAYT stores the correction apart from file tags and analysis. When you load this track into a deck, a saved correction takes precedence, then confident analysis, then an in-range BPM tag. Open that deck's **Roll / Jump** tab and confirm the deck-local Manual BPM value before using Beat Jump or Loop Roll. The deck's own manual edit remains temporary and clears when its loaded track changes.
+
+The current preparation controls live in the Library inspector. There is no dedicated Preparation workspace yet, and automatic key detection, beatgrids, phrase mapping, loudness analysis, cue suggestions, and loop suggestions are not implemented.
 
 ## Supported-format truth
 

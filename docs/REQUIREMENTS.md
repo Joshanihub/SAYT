@@ -3,7 +3,7 @@
 **Status:** PROPOSED acceptance contract<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-27<br>
-**Version:** 0.1.8
+**Version:** 0.1.10
 
 ## Functional requirements
 
@@ -77,3 +77,27 @@ The normal user workflow and catalog recovery guidance are in [`music-library-ru
 | Runtime layout                                                                          | Frontend tests and production build                                            | Capture the running library at 1440×900, 1280×800, and narrow size; check focus, scroll areas, and error/empty states                       |
 
 The 10,000-row test verifies search paging against catalog rows; it is not evidence of 10,000-file scan throughput. Physical audio output and sustained performance-control tests remain separate M1 acceptance items.
+
+## Screen 04 — Local BPM analysis first slice
+
+**Status:** PROPOSED feature-track contract<br>
+**Owner:** SAYT project owner<br>
+**Date:** 2026-11-27<br>
+**Version:** 0.1
+
+The first real Track Preparation capability is available in the selected-track inspector in the local library. It is not the complete supplied Screen 04 workspace. The screen reference also depicts beatgrid editing, key and phrase analysis, vocal/stem analysis, cue/loop preparation, and precision beat-jump controls; these remain unavailable and must not be represented as working until their algorithms, persisted state, controls, and verification exist.
+
+1. Analysis is started for a selected catalog track ID; the UI cannot submit an arbitrary filesystem path. The native catalog resolves and canonicalizes the file under its registered root. Missing, unsupported, unreadable, or changed files fail with an actionable message and do not receive a result.
+2. The current analyzer accepts only the existing decoder's 16/24/32-bit integer PCM WAV, mono/stereo, 8,000–192,000 Hz, up to 512 MiB and 32,000,000 frames. It reads and analyzes on a bounded cancellable worker outside the CPAL callback. Only one BPM analysis runs at a time. The file identity is checked before and after processing; cancellation persists no partial result.
+3. The versioned estimator uses a 100 Hz RMS-onset envelope and normalized autocorrelation in the 60–200 BPM range. It stores a candidate, `estimated` or `uncertain` status, algorithm version, and a 0–1 periodicity heuristic. The score is not a probability. Weak/silent/short input and plausible half/double-tempo matches remain uncertain; the UI labels uncertain values as candidates for review.
+4. File-tag BPM remains unchanged. A user correction is stored in a separate SQLite table and accepts finite values from 30 through 300 BPM. Results are cached by content identity and algorithm version. Effective BPM is manual correction, otherwise confident analysis, otherwise an in-range file tag. Uncertain candidates are not sent to deck beat controls. Loading the selected track passes that BPM into the existing deck-local manual BPM control using the loaded deck snapshot's engine `source_track_id`; the catalog file-byte hash and engine decoded-PCM identity are different ID domains. Passing the catalog ID fails the engine's stale-track guard.
+5. No beatgrid, key result, phrase map, loudness result, cue suggestion, loop suggestion, or music-library compatibility score is inferred from BPM analysis.
+
+| Scenario                                                     | Automated evidence                                                                                          | Live desktop evidence                                                                                 |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Known tempo, silence, short input, and half/double ambiguity | Deterministic WAV fixtures verify a confident 60 BPM pulse, uncertain 120 BPM pulse, silent and short cases | Analyze known temporary fixtures; inspect reported candidate and uncertain state                      |
+| Unsupported, malformed, missing, stale, and changed source   | Decoder format checks, malformed WAV rejection, pre/post content identity, cancellation                     | Analyze one unsupported and one changed fixture; confirm no result is saved                           |
+| Cancellation and bounds                                      | Cancellation checks during decoding and tempo correlation; file/frame limits; no partial save               | Cancel a long temporary WAV and confirm progress stops and no BPM result appears                      |
+| Persistence and precedence                                   | Schema v1-to-v2 migration, cached result, correction persistence/clear, range, and effective-deck-BPM tests | Restart SAYT and confirm tag, analysis, correction, and deck BPM are distinct and restore as intended |
+
+The 0–1 periodicity score and the 60–200 search range are an initial engineering choice, not a validated commercial-music accuracy claim. A representative, licensed test corpus and manual beat references are required before SAYT advertises analysis accuracy beyond deterministic fixtures.

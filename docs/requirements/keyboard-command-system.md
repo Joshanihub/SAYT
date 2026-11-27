@@ -9,7 +9,7 @@
 
 Provide reliable keyboard operation for commands that SAYT already implements. Keyboard shortcuts and interface controls use the same typed application command and dispatcher; native audio remains behind the existing Tauri control API and Rust engine.
 
-This slice covers the current two-deck transport, native track loading, seeking, deck gain/EQ, master level, crossfader, audio-device refresh/retry, workspace navigation, shortcut help, Hot Cues, manual loop in/out/release, manual deck BPM, signed Beat Jump, and held slip Loop Roll. Loop-size pads use seconds; manual BPM is session-only and no automatic BPM detection, beatgrid, or quantization is claimed. Stutter outside Loop Roll, pitch, sync, effects, sampler, recording, library search and controller commands remain absent until their real behavior exists.
+This slice covers the current two-deck transport, native track loading, seeking, deck gain/EQ, master level, crossfader, audio-device refresh/retry, workspace navigation, shortcut help, Hot Cues, manual loop in/out/release, deck BPM, signed Beat Jump, and held slip Loop Roll. The Library may provide a correction or confident local WAV estimate on catalog load; deck BPM remains session-only. Loop-size pads use seconds, and no beatgrid or quantization is claimed. Stutter outside Loop Roll, pitch, sync, effects, sampler, recording, library search and controller commands remain absent until their real behavior exists.
 
 ## Functional requirements
 

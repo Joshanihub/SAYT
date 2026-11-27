@@ -14,6 +14,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+mod bpm_analysis;
+
 use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
 use hound::{SampleFormat, WavReader};
 use lofty::{
@@ -27,7 +29,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
-const SCHEMA_VERSION: i32 = 1;
+const SCHEMA_VERSION: i32 = 2;
 const SEARCH_PAGE_SIZE: u32 = 100;
 const MAX_PAGE_SIZE: u32 = 200;
 const MAX_SEARCH_CHARS: usize = 256;
@@ -39,6 +41,8 @@ const MAX_PCM_FILE_BYTES: u64 = 512 * 1024 * 1024;
 const MAX_PCM_FRAMES: u64 = 32_000_000;
 const MAX_ARTWORK_SOURCE_BYTES: u64 = 128 * 1024 * 1024;
 const MAX_ARTWORK_BYTES: usize = 3 * 1024 * 1024;
+const MIN_BPM_CORRECTION: f64 = 30.0;
+const MAX_BPM_CORRECTION: f64 = 300.0;
 const SUPPORTED_AUDIO_EXTENSIONS: &[&str] = &[
     "aac", "aif", "aiff", "ape", "flac", "m4a", "m4b", "mp1", "mp2", "mp3", "mp4", "mpc", "ogg",
     "opus", "spx", "wav", "wv",
@@ -94,6 +98,10 @@ pub struct TrackRecord {
     pub duration_seconds: Option<f64>,
     pub format: String,
     pub bpm: Option<f64>,
+    pub bpm_analysis_candidate: Option<f64>,
+    pub bpm_analysis_confidence: Option<f64>,
+    pub bpm_analysis_status: Option<String>,
+    pub bpm_correction: Option<f64>,
     pub musical_key: Option<String>,
     pub path: String,
     pub file_size: u64,
@@ -104,6 +112,36 @@ pub struct TrackRecord {
     pub favorite: bool,
     pub duplicate_locations: u32,
     pub artwork_available: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct BpmAnalysisRecord {
+    pub track_id: String,
+    pub candidate_bpm: Option<f64>,
+    pub confidence: f64,
+    pub status: String,
+    pub algorithm_version: String,
+    pub analyzed_at: i64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BpmAnalysisProgress {
+    pub track_id: String,
+    pub state: String,
+    pub processed_frames: u64,
+    pub total_frames: Option<u64>,
+    pub candidate_bpm: Option<f64>,
+    pub confidence: Option<f64>,
+    pub message: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BpmAnalysisStart {
+    pub started: bool,
+    pub message: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -240,7 +278,7 @@ impl LibraryCatalog {
     }
 
     fn migrate(&self, connection: &Connection) -> Result<(), String> {
-        let version = connection
+        let mut version = connection
             .pragma_query_value(None, "user_version", |row| row.get::<_, i32>(0))
             .map_err(|error| format!("Could not read the music catalog version: {error}"))?;
         if version > SCHEMA_VERSION {
@@ -320,6 +358,30 @@ impl LibraryCatalog {
                      COMMIT;",
                 )
                 .map_err(|error| format!("Could not create the music catalog schema: {error}"))?;
+            version = 1;
+        }
+        if version == 1 {
+            connection
+                .execute_batch(
+                    "BEGIN IMMEDIATE;
+                     CREATE TABLE bpm_analysis (
+                         track_id TEXT PRIMARY KEY REFERENCES tracks(id) ON DELETE CASCADE,
+                         algorithm_version TEXT NOT NULL,
+                         source_sha256 TEXT NOT NULL,
+                         candidate_bpm REAL,
+                         confidence REAL NOT NULL CHECK(confidence >= 0.0 AND confidence <= 1.0),
+                         status TEXT NOT NULL CHECK(status IN ('estimated', 'uncertain')),
+                         analyzed_at INTEGER NOT NULL
+                     );
+                     CREATE TABLE bpm_corrections (
+                         track_id TEXT PRIMARY KEY REFERENCES tracks(id) ON DELETE CASCADE,
+                         bpm REAL NOT NULL CHECK(bpm >= 30.0 AND bpm <= 300.0),
+                         modified_at INTEGER NOT NULL
+                     );
+                     PRAGMA user_version = 2;
+                     COMMIT;",
+                )
+                .map_err(|error| format!("Could not add track analysis storage: {error}"))?;
         }
         Ok(())
     }
@@ -415,7 +477,12 @@ impl LibraryCatalog {
             "album" => "COALESCE(t.user_album, t.album, '')",
             "duration" => "COALESCE(t.duration_seconds, 0)",
             "format" => "t.format",
-            "bpm" => "COALESCE(t.bpm, 0)",
+            "bpm" => "COALESCE(
+                (SELECT correction.bpm FROM bpm_corrections correction WHERE correction.track_id = t.id),
+                (SELECT CASE WHEN analysis.status = 'estimated' THEN analysis.candidate_bpm END
+                 FROM bpm_analysis analysis WHERE analysis.track_id = t.id),
+                t.bpm, 0
+            )",
             _ => "COALESCE(t.user_title, t.title)",
         };
         let (order_by, direction) = if query.collection_id.is_some() {
@@ -429,7 +496,8 @@ impl LibraryCatalog {
         let where_sql = "(?1 = '' OR instr(t.search_text, ?1) > 0)
              AND (?2 = 0 OR (?2 = 1 AND t.first_seen_at >= ?5)
                   OR (?2 = 2 AND t.missing = 1)
-                  OR (?2 = 3 AND t.bpm IS NULL AND t.musical_key IS NULL)
+                  OR (?2 = 3 AND t.bpm IS NULL AND t.musical_key IS NULL
+                      AND NOT EXISTS (SELECT 1 FROM bpm_analysis analysis WHERE analysis.track_id = t.id))
                   OR (?2 = 4 AND t.favorite = 1)
                   OR (?2 = 5 AND t.load_supported = 0))
              AND (?3 IS NULL OR EXISTS (
@@ -471,6 +539,10 @@ impl LibraryCatalog {
         let list_sql = format!(
             "SELECT t.id, COALESCE(t.user_title, t.title), COALESCE(t.user_artist, t.artist),
                     COALESCE(t.user_album, t.album), t.duration_seconds, t.format, t.bpm,
+                    (SELECT analysis.candidate_bpm FROM bpm_analysis analysis WHERE analysis.track_id = t.id),
+                    (SELECT analysis.confidence FROM bpm_analysis analysis WHERE analysis.track_id = t.id),
+                    (SELECT analysis.status FROM bpm_analysis analysis WHERE analysis.track_id = t.id),
+                    (SELECT correction.bpm FROM bpm_corrections correction WHERE correction.track_id = t.id),
                     t.musical_key,
                     COALESCE((SELECT l.path FROM locations l WHERE l.track_id = t.id ORDER BY l.missing ASC, l.last_seen_generation DESC, l.id LIMIT 1), ''),
                     t.file_size, t.import_state, t.load_supported, t.load_status, t.missing, t.favorite,
@@ -501,16 +573,20 @@ impl LibraryCatalog {
                         duration_seconds: row.get(4)?,
                         format: row.get(5)?,
                         bpm: row.get(6)?,
-                        musical_key: row.get(7)?,
-                        path: row.get(8)?,
-                        file_size: row.get::<_, i64>(9)?.max(0) as u64,
-                        import_state: row.get(10)?,
-                        load_supported: row.get::<_, i64>(11)? != 0,
-                        load_status: row.get(12)?,
-                        missing: row.get::<_, i64>(13)? != 0,
-                        favorite: row.get::<_, i64>(14)? != 0,
-                        duplicate_locations: row.get::<_, u32>(15)?,
-                        artwork_available: row.get::<_, i64>(16)? != 0,
+                        bpm_analysis_candidate: row.get(7)?,
+                        bpm_analysis_confidence: row.get(8)?,
+                        bpm_analysis_status: row.get(9)?,
+                        bpm_correction: row.get(10)?,
+                        musical_key: row.get(11)?,
+                        path: row.get(12)?,
+                        file_size: row.get::<_, i64>(13)?.max(0) as u64,
+                        import_state: row.get(14)?,
+                        load_supported: row.get::<_, i64>(15)? != 0,
+                        load_status: row.get(16)?,
+                        missing: row.get::<_, i64>(17)? != 0,
+                        favorite: row.get::<_, i64>(18)? != 0,
+                        duplicate_locations: row.get::<_, u32>(19)?,
+                        artwork_available: row.get::<_, i64>(20)? != 0,
                     })
                 },
             )
@@ -523,6 +599,250 @@ impl LibraryCatalog {
             offset,
             limit,
         })
+    }
+
+    /// Analyze a catalog-owned PCM WAV file outside the real-time audio path.
+    /// Results are cached by content identity and algorithm version.
+    pub fn analyze_bpm(
+        &self,
+        track_id: &str,
+        cancellation: &AtomicBool,
+        mut report: impl FnMut(BpmAnalysisProgress),
+    ) -> Result<Option<BpmAnalysisRecord>, String> {
+        let path = self.resolve_track_path(track_id)?;
+        let expected_digest = track_id.strip_prefix("sha256:").ok_or_else(|| {
+            "This catalog track has no supported content identity. Re-scan its folder.".to_string()
+        })?;
+
+        report(BpmAnalysisProgress {
+            track_id: track_id.to_string(),
+            state: "preparing".to_string(),
+            processed_frames: 0,
+            total_frames: None,
+            candidate_bpm: None,
+            confidence: None,
+            message: "Checking the selected library file before analysis".to_string(),
+        });
+        let Some(current_digest) = hash_file_cancellable(&path, cancellation)? else {
+            report(analysis_progress(
+                track_id,
+                "cancelled",
+                0,
+                None,
+                None,
+                None,
+                "BPM analysis was cancelled",
+            ));
+            return Ok(None);
+        };
+        if current_digest != expected_digest {
+            return Err(
+                "This file changed after it was added to the library. Re-scan the folder before analyzing it."
+                    .to_string(),
+            );
+        }
+
+        let connection = self.connection()?;
+        let cached = read_bpm_analysis(&connection, track_id)?;
+        if let Some(cached) =
+            cached.filter(|record| record.algorithm_version == bpm_analysis::algorithm_version())
+        {
+            let state = if cached.status == "estimated" {
+                "complete"
+            } else {
+                "uncertain"
+            };
+            report(analysis_progress(
+                track_id,
+                state,
+                0,
+                None,
+                cached.candidate_bpm,
+                Some(cached.confidence),
+                "Using the saved result for this track and analysis version",
+            ));
+            return Ok(Some(cached));
+        }
+        drop(connection);
+
+        let analysis = bpm_analysis::analyze_wav(&path, cancellation, |processed, total| {
+            report(analysis_progress(
+                track_id,
+                "analyzing",
+                processed,
+                total,
+                None,
+                None,
+                "Analyzing local PCM audio",
+            ));
+        })?;
+        let bpm_analysis::AnalysisAttempt::Complete(estimate) = analysis else {
+            report(analysis_progress(
+                track_id,
+                "cancelled",
+                0,
+                None,
+                None,
+                None,
+                "BPM analysis was cancelled",
+            ));
+            return Ok(None);
+        };
+        if cancellation.load(Ordering::Acquire) {
+            report(analysis_progress(
+                track_id,
+                "cancelled",
+                0,
+                None,
+                None,
+                None,
+                "BPM analysis was cancelled",
+            ));
+            return Ok(None);
+        }
+
+        let Some(final_digest) = hash_file_cancellable(&path, cancellation)? else {
+            report(analysis_progress(
+                track_id,
+                "cancelled",
+                0,
+                None,
+                None,
+                None,
+                "BPM analysis was cancelled",
+            ));
+            return Ok(None);
+        };
+        if final_digest != expected_digest {
+            return Err(
+                "This file changed while BPM analysis was running. Re-scan the folder and retry."
+                    .to_string(),
+            );
+        }
+
+        let analyzed_at = unix_time_millis();
+        let status = estimate.status.as_str();
+        let connection = self.connection()?;
+        connection
+            .execute(
+                "INSERT INTO bpm_analysis(
+                    track_id, algorithm_version, source_sha256, candidate_bpm, confidence, status, analyzed_at
+                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                 ON CONFLICT(track_id) DO UPDATE SET
+                    algorithm_version = excluded.algorithm_version,
+                    source_sha256 = excluded.source_sha256,
+                    candidate_bpm = excluded.candidate_bpm,
+                    confidence = excluded.confidence,
+                    status = excluded.status,
+                    analyzed_at = excluded.analyzed_at",
+                params![
+                    track_id,
+                    bpm_analysis::algorithm_version(),
+                    current_digest,
+                    estimate.candidate_bpm,
+                    estimate.confidence,
+                    status,
+                    analyzed_at,
+                ],
+            )
+            .map_err(|error| format!("Could not save the BPM analysis result: {error}"))?;
+        let record = BpmAnalysisRecord {
+            track_id: track_id.to_string(),
+            candidate_bpm: estimate.candidate_bpm,
+            confidence: estimate.confidence,
+            status: status.to_string(),
+            algorithm_version: bpm_analysis::algorithm_version().to_string(),
+            analyzed_at,
+        };
+        report(analysis_progress(
+            track_id,
+            if status == "estimated" {
+                "complete"
+            } else {
+                "uncertain"
+            },
+            0,
+            None,
+            estimate.candidate_bpm,
+            Some(estimate.confidence),
+            if status == "estimated" {
+                "BPM estimate saved"
+            } else {
+                "Analysis completed, but the tempo is uncertain"
+            },
+        ));
+        Ok(Some(record))
+    }
+
+    /// Store a user BPM correction independently from file tags and analysis.
+    pub fn set_bpm_correction(&self, track_id: &str, bpm: Option<f64>) -> Result<(), String> {
+        if let Some(bpm) = bpm {
+            if !bpm.is_finite() || !(MIN_BPM_CORRECTION..=MAX_BPM_CORRECTION).contains(&bpm) {
+                return Err(format!(
+                    "Manual BPM must be between {MIN_BPM_CORRECTION:.0} and {MAX_BPM_CORRECTION:.0}"
+                ));
+            }
+        }
+        let connection = self.connection()?;
+        let exists = connection
+            .query_row("SELECT 1 FROM tracks WHERE id = ?1", [track_id], |_| Ok(()))
+            .optional()
+            .map_err(|error| {
+                format!("Could not find the catalog track for BPM correction: {error}")
+            })?
+            .is_some();
+        if !exists {
+            return Err("That track is no longer in the library. Refresh and retry.".to_string());
+        }
+        match bpm {
+            Some(bpm) => {
+                connection
+                    .execute(
+                        "INSERT INTO bpm_corrections(track_id, bpm, modified_at)
+                         VALUES (?1, ?2, ?3)
+                         ON CONFLICT(track_id) DO UPDATE SET bpm = excluded.bpm, modified_at = excluded.modified_at",
+                        params![track_id, bpm, unix_time_millis()],
+                    )
+                    .map_err(|error| format!("Could not save the manual BPM correction: {error}"))?;
+            }
+            None => {
+                connection
+                    .execute(
+                        "DELETE FROM bpm_corrections WHERE track_id = ?1",
+                        [track_id],
+                    )
+                    .map_err(|error| {
+                        format!("Could not clear the manual BPM correction: {error}")
+                    })?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Return a tempo safe for existing beat controls: correction, confident
+    /// analysis, then a usable file tag. Uncertain analysis is intentionally skipped.
+    pub fn playback_bpm(&self, track_id: &str) -> Result<Option<f64>, String> {
+        let connection = self.connection()?;
+        let bpm = connection
+            .query_row(
+                "SELECT COALESCE(
+                    correction.bpm,
+                    CASE WHEN analysis.status = 'estimated' THEN analysis.candidate_bpm END,
+                    track.bpm
+                 )
+                 FROM tracks track
+                 LEFT JOIN bpm_analysis analysis ON analysis.track_id = track.id
+                 LEFT JOIN bpm_corrections correction ON correction.track_id = track.id
+                 WHERE track.id = ?1",
+                [track_id],
+                |row| row.get::<_, Option<f64>>(0),
+            )
+            .optional()
+            .map_err(|error| format!("Could not read the selected track tempo: {error}"))?
+            .flatten();
+        Ok(bpm.filter(|bpm| {
+            bpm.is_finite() && (MIN_BPM_CORRECTION..=MAX_BPM_CORRECTION).contains(bpm)
+        }))
     }
 
     pub fn list_folders(&self) -> Result<Vec<LibraryFolder>, String> {
@@ -1411,6 +1731,84 @@ fn hash_file(path: &Path) -> Result<String, std::io::Error> {
     Ok(hex)
 }
 
+fn hash_file_cancellable(path: &Path, cancellation: &AtomicBool) -> Result<Option<String>, String> {
+    let metadata = fs::metadata(path)
+        .map_err(|error| format!("Could not inspect the selected library file: {error}"))?;
+    if metadata.len() > MAX_PCM_FILE_BYTES {
+        return Err(format!(
+            "This file is {} bytes; BPM analysis is limited to {} bytes",
+            metadata.len(),
+            MAX_PCM_FILE_BYTES
+        ));
+    }
+    let mut file = File::open(path)
+        .map_err(|error| format!("Could not read the selected library file: {error}"))?;
+    let mut hasher = Sha256::new();
+    let mut buffer = vec![0; HASH_BUFFER_BYTES];
+    loop {
+        if cancellation.load(Ordering::Acquire) {
+            return Ok(None);
+        }
+        let count = file
+            .read(&mut buffer)
+            .map_err(|error| format!("Could not read the selected library file: {error}"))?;
+        if count == 0 {
+            break;
+        }
+        hasher.update(&buffer[..count]);
+    }
+    let mut hex = String::with_capacity(64);
+    for byte in hasher.finalize() {
+        use std::fmt::Write as _;
+        write!(&mut hex, "{byte:02x}").expect("writing a digest byte into a String cannot fail");
+    }
+    Ok(Some(hex))
+}
+
+fn analysis_progress(
+    track_id: &str,
+    state: &str,
+    processed_frames: u64,
+    total_frames: Option<u64>,
+    candidate_bpm: Option<f64>,
+    confidence: Option<f64>,
+    message: &str,
+) -> BpmAnalysisProgress {
+    BpmAnalysisProgress {
+        track_id: track_id.to_string(),
+        state: state.to_string(),
+        processed_frames,
+        total_frames,
+        candidate_bpm,
+        confidence,
+        message: message.to_string(),
+    }
+}
+
+fn read_bpm_analysis(
+    connection: &Connection,
+    track_id: &str,
+) -> Result<Option<BpmAnalysisRecord>, String> {
+    connection
+        .query_row(
+            "SELECT track_id, candidate_bpm, confidence, status, algorithm_version, analyzed_at
+             FROM bpm_analysis WHERE track_id = ?1",
+            [track_id],
+            |row| {
+                Ok(BpmAnalysisRecord {
+                    track_id: row.get(0)?,
+                    candidate_bpm: row.get(1)?,
+                    confidence: row.get(2)?,
+                    status: row.get(3)?,
+                    algorithm_version: row.get(4)?,
+                    analyzed_at: row.get(5)?,
+                })
+            },
+        )
+        .optional()
+        .map_err(|error| format!("Could not read the saved BPM analysis: {error}"))
+}
+
 fn is_candidate_audio(path: &Path) -> bool {
     path.extension()
         .and_then(|extension| extension.to_str())
@@ -1626,6 +2024,29 @@ mod tests {
         };
         let mut writer = hound::WavWriter::create(path, spec).unwrap();
         for _ in 0..4_800 {
+            writer.write_sample(sample).unwrap();
+        }
+        writer.finalize().unwrap();
+    }
+
+    fn write_click_wav(path: &Path, bpm: f64, seconds: usize) {
+        const SAMPLE_RATE: u32 = 48_000;
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: SAMPLE_RATE,
+            bits_per_sample: 16,
+            sample_format: SampleFormat::Int,
+        };
+        let mut writer = hound::WavWriter::create(path, spec).unwrap();
+        let samples_per_beat = (f64::from(SAMPLE_RATE) * 60.0 / bpm).round() as usize;
+        for sample_index in 0..SAMPLE_RATE as usize * seconds {
+            let within_beat = sample_index % samples_per_beat;
+            let sample = if within_beat < 240 {
+                let envelope = 1.0 - within_beat as f64 / 240.0;
+                (i16::MAX as f64 * envelope * (within_beat as f64 * 0.1).sin()) as i16
+            } else {
+                0_i16
+            };
             writer.write_sample(sample).unwrap();
         }
         writer.finalize().unwrap();
@@ -1920,6 +2341,194 @@ mod tests {
         let mut folder_query = query_all();
         folder_query.folder_id = Some(folder.id);
         assert_eq!(catalog.list_tracks(&folder_query).unwrap().total, 2);
+    }
+
+    #[test]
+    fn bpm_analysis_and_manual_correction_persist_as_separate_values() {
+        let fixture = FixtureDirectory::new();
+        let root = fixture.path().join("music");
+        fs::create_dir(&root).unwrap();
+        write_click_wav(&root.join("Tempo test.wav"), 120.0, 16);
+        let data = fixture.path().join("app-data");
+        let catalog = LibraryCatalog::open(&data).unwrap();
+        catalog
+            .scan_roots(std::slice::from_ref(&root), &AtomicBool::new(false), |_| {})
+            .unwrap();
+        let track = catalog.list_tracks(&query_all()).unwrap().items.remove(0);
+
+        let mut progress = Vec::new();
+        let analyzed = catalog
+            .analyze_bpm(&track.id, &AtomicBool::new(false), |item| {
+                progress.push(item.state);
+            })
+            .unwrap()
+            .unwrap();
+        let candidate = analyzed
+            .candidate_bpm
+            .expect("the fixture has a periodic pulse");
+        assert!(
+            (candidate - 60.0).abs() < 2.0 || (candidate - 120.0).abs() < 2.0,
+            "candidate was {candidate}"
+        );
+        assert_eq!(analyzed.status, "uncertain");
+        assert!(progress.iter().any(|state| state == "analyzing"));
+        assert_eq!(progress.last().map(String::as_str), Some("uncertain"));
+
+        catalog.set_bpm_correction(&track.id, Some(124.5)).unwrap();
+        let saved = catalog.list_tracks(&query_all()).unwrap().items.remove(0);
+        assert_eq!(saved.bpm, None, "analysis does not overwrite the file tag");
+        assert_eq!(saved.bpm_analysis_candidate, analyzed.candidate_bpm);
+        assert_eq!(saved.bpm_analysis_status.as_deref(), Some("uncertain"));
+        assert_eq!(saved.bpm_correction, Some(124.5));
+        assert_eq!(catalog.playback_bpm(&track.id).unwrap(), Some(124.5));
+
+        drop(catalog);
+        let reopened = LibraryCatalog::open(data).unwrap();
+        let restored = reopened.list_tracks(&query_all()).unwrap().items.remove(0);
+        assert_eq!(restored.bpm_analysis_candidate, analyzed.candidate_bpm);
+        assert_eq!(restored.bpm_correction, Some(124.5));
+        let cached = reopened
+            .analyze_bpm(&track.id, &AtomicBool::new(false), |_| {})
+            .unwrap()
+            .unwrap();
+        assert_eq!(cached, analyzed);
+        reopened.set_bpm_correction(&track.id, None).unwrap();
+        assert_eq!(
+            reopened.list_tracks(&query_all()).unwrap().items[0].bpm_correction,
+            None
+        );
+        assert_eq!(reopened.playback_bpm(&track.id).unwrap(), None);
+    }
+
+    #[test]
+    fn confident_analysis_is_available_to_the_existing_deck_bpm_control() {
+        let fixture = FixtureDirectory::new();
+        let root = fixture.path().join("music");
+        fs::create_dir(&root).unwrap();
+        write_click_wav(&root.join("Slow pulse.wav"), 60.0, 16);
+        let catalog = LibraryCatalog::open(fixture.path().join("app-data")).unwrap();
+        catalog
+            .scan_roots(std::slice::from_ref(&root), &AtomicBool::new(false), |_| {})
+            .unwrap();
+        let track = catalog.list_tracks(&query_all()).unwrap().items.remove(0);
+        let result = catalog
+            .analyze_bpm(&track.id, &AtomicBool::new(false), |_| {})
+            .unwrap()
+            .unwrap();
+        assert_eq!(result.status, "estimated");
+        assert_eq!(
+            catalog.playback_bpm(&track.id).unwrap(),
+            result.candidate_bpm
+        );
+    }
+
+    #[test]
+    fn cancelled_and_changed_source_analysis_never_persist_a_false_result() {
+        let fixture = FixtureDirectory::new();
+        let root = fixture.path().join("music");
+        fs::create_dir(&root).unwrap();
+        let wav = root.join("Tempo test.wav");
+        write_click_wav(&wav, 120.0, 16);
+        let catalog = LibraryCatalog::open(fixture.path().join("app-data")).unwrap();
+        catalog
+            .scan_roots(std::slice::from_ref(&root), &AtomicBool::new(false), |_| {})
+            .unwrap();
+        let track = catalog.list_tracks(&query_all()).unwrap().items.remove(0);
+
+        let cancelled = AtomicBool::new(true);
+        let mut final_state = String::new();
+        assert!(catalog
+            .analyze_bpm(&track.id, &cancelled, |progress| {
+                final_state = progress.state;
+            })
+            .unwrap()
+            .is_none());
+        assert_eq!(final_state, "cancelled");
+        assert!(catalog.list_tracks(&query_all()).unwrap().items[0]
+            .bpm_analysis_status
+            .is_none());
+
+        write_pcm_wav(&wav, 2_000);
+        assert!(catalog
+            .analyze_bpm(&track.id, &AtomicBool::new(false), |_| {})
+            .unwrap_err()
+            .contains("changed after it was added"));
+        assert!(catalog.list_tracks(&query_all()).unwrap().items[0]
+            .bpm_analysis_status
+            .is_none());
+    }
+
+    #[test]
+    fn bpm_correction_enforces_manual_range_and_requires_a_catalog_track() {
+        let fixture = FixtureDirectory::new();
+        let root = fixture.path().join("music");
+        fs::create_dir(&root).unwrap();
+        write_pcm_wav(&root.join("Track.wav"), 2_000);
+        let catalog = LibraryCatalog::open(fixture.path().join("app-data")).unwrap();
+        catalog
+            .scan_roots(std::slice::from_ref(&root), &AtomicBool::new(false), |_| {})
+            .unwrap();
+        let track = catalog.list_tracks(&query_all()).unwrap().items.remove(0);
+
+        catalog.set_bpm_correction(&track.id, Some(30.0)).unwrap();
+        catalog.set_bpm_correction(&track.id, Some(300.0)).unwrap();
+        assert!(catalog.set_bpm_correction(&track.id, Some(29.9)).is_err());
+        assert!(catalog.set_bpm_correction(&track.id, Some(300.1)).is_err());
+        assert!(catalog
+            .set_bpm_correction(&track.id, Some(f64::NAN))
+            .is_err());
+        assert!(catalog.set_bpm_correction("missing", Some(120.0)).is_err());
+    }
+
+    #[test]
+    fn schema_v1_migration_preserves_tracks_and_adds_analysis_tables() {
+        let fixture = FixtureDirectory::new();
+        let root = fixture.path().join("music");
+        fs::create_dir(&root).unwrap();
+        write_pcm_wav(&root.join("Existing.wav"), 2_000);
+        let data = fixture.path().join("app-data");
+        let catalog = LibraryCatalog::open(&data).unwrap();
+        catalog
+            .scan_roots(std::slice::from_ref(&root), &AtomicBool::new(false), |_| {})
+            .unwrap();
+        let track_id = catalog
+            .list_tracks(&query_all())
+            .unwrap()
+            .items
+            .remove(0)
+            .id;
+        drop(catalog);
+
+        let database = Connection::open(data.join("music-library.sqlite3")).unwrap();
+        database
+            .execute_batch(
+                "DROP TABLE bpm_corrections;
+                 DROP TABLE bpm_analysis;
+                 PRAGMA user_version = 1;",
+            )
+            .unwrap();
+        drop(database);
+
+        let migrated = LibraryCatalog::open(&data).unwrap();
+        assert_eq!(
+            migrated.list_tracks(&query_all()).unwrap().items[0].id,
+            track_id
+        );
+        let connection = migrated.connection().unwrap();
+        assert_eq!(
+            connection
+                .pragma_query_value(None, "user_version", |row| row.get::<_, i32>(0))
+                .unwrap(),
+            SCHEMA_VERSION
+        );
+        let analysis_table: String = connection
+            .query_row(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'bpm_analysis'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(analysis_table, "bpm_analysis");
     }
 
     #[test]

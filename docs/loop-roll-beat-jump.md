@@ -13,7 +13,7 @@
 - The callback loops decoded audio in the selected region while an independent natural playhead advances. Releasing resumes at that natural position. Snapshots report natural track position during the roll.
 - Pause, seek, Stop, replacing a track, selecting a new output stream, or leaving the pad mode ends the roll. If its natural position has reached track end, release stops the deck at the end.
 - All engine operations identify the track generation. Queue saturation returns an actionable error; it never claims an unapplied jump or held state succeeded.
-- The performance mode states that tempo is manual. These controls do not use automatic BPM detection, beatgrids, or quantization.
+- The performance mode exposes deck-local session BPM. A saved Library correction or confident local estimate may supply it when a catalog track loads; uncertain analysis is not applied. The engine controls do not build or use beatgrids or quantization.
 
 ## Audio-thread and trust boundary
 

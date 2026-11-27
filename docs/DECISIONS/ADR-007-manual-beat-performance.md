@@ -29,7 +29,7 @@ Loop Roll runs in the existing callback. Its natural playhead advances while aud
 
 Engine tests cover tempo validation, beat duration, deck isolation, jump direction and clamping, slip-position advancement, callback wrapping, release, cancellation, end-of-track, stale generations, and queue saturation. UI tests cover accessible controls, unloaded state, BPM bounds, and typed actions. Windows fixture runtime checks exercise the Tauri command path and UI states. Physical output listening, sample accuracy, pitch analysis, beatgrids, and quantized performance remain unverified or out of scope for this slice.
 
-Review the temporary BPM seam when automatic BPM analysis and editable beatgrids enter an approved milestone. Do not silently carry the manual value across track replacement.
+The Library now provides persisted BPM corrections and confident local estimates when loading a catalog track; the deck still stores only a session-local manual tempo and clears it on replacement. Verify the catalog-to-engine identity handoff at runtime, then revisit this seam when editable beatgrids or persisted deck tempo are scoped. Do not silently carry a deck's manual value across track replacement.
 
 ## Reversibility
 

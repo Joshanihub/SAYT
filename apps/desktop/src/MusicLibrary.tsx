@@ -1,10 +1,18 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import {
   initialLibraryCollectionSelection,
   reduceLibraryCollectionSelection,
 } from "./libraryCollectionSelection";
+import { effectiveBpm } from "./libraryTempo";
 
 type TrackFilter =
   "all" | "recent" | "missing" | "unanalyzed" | "favorites" | "unsupported";
@@ -17,6 +25,10 @@ type TrackRecord = {
   duration_seconds: number | null;
   format: string;
   bpm: number | null;
+  bpm_analysis_candidate: number | null;
+  bpm_analysis_confidence: number | null;
+  bpm_analysis_status: "estimated" | "uncertain" | null;
+  bpm_correction: number | null;
   musical_key: string | null;
   path: string;
   file_size: number;
@@ -64,6 +76,27 @@ type ScanProgress = {
   message: string;
 };
 
+type BpmAnalysisProgress = {
+  trackId: string;
+  state:
+    | "preparing"
+    | "analyzing"
+    | "complete"
+    | "uncertain"
+    | "cancelled"
+    | "failed";
+  processedFrames: number;
+  totalFrames: number | null;
+  candidateBpm: number | null;
+  confidence: number | null;
+  message: string;
+};
+
+type BackgroundProgress<T> = {
+  active: boolean;
+  progress: T | null;
+};
+
 type MusicLibraryProps = {
   loadingDeck: number | null;
   onLoadTrack: (trackId: string, deck: 0 | 1) => Promise<boolean>;
@@ -71,6 +104,7 @@ type MusicLibraryProps = {
 
 const PAGE_SIZE = 100;
 const MAX_SEARCH_CHARS = 256;
+const BACKGROUND_STATUS_POLL_MS = 250;
 
 function formatDuration(seconds: number | null): string {
   if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return "—";
@@ -138,6 +172,12 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
     album: "",
   });
   const [actionBusy, setActionBusy] = useState(false);
+  const [bpmCorrectionDraft, setBpmCorrectionDraft] = useState("");
+  const [bpmCorrectionBusy, setBpmCorrectionBusy] = useState(false);
+  const [bpmAnalysisProgress, setBpmAnalysisProgress] =
+    useState<BpmAnalysisProgress | null>(null);
+  const scanCompletionHandled = useRef(false);
+  const bpmCompletionHandled = useRef(false);
 
   const activeCollection = collections.find(
     (collection) => collection.id === collectionId,
@@ -146,6 +186,19 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
     (collection) => collection.id === addTargetCollectionId,
   );
   const selectedTrack = tracks.items.find((track) => track.id === selectedId);
+  const selectedAnalysisProgress =
+    selectedTrack && bpmAnalysisProgress?.trackId === selectedTrack.id
+      ? bpmAnalysisProgress
+      : null;
+  const bpmAnalysisBusy =
+    bpmAnalysisProgress?.state === "preparing" ||
+    bpmAnalysisProgress?.state === "analyzing";
+  const parsedBpmCorrection = Number(bpmCorrectionDraft);
+  const bpmCorrectionValid =
+    bpmCorrectionDraft.trim().length > 0 &&
+    Number.isFinite(parsedBpmCorrection) &&
+    parsedBpmCorrection >= 30 &&
+    parsedBpmCorrection <= 300;
   const pageCount = Math.max(1, Math.ceil(tracks.total / PAGE_SIZE));
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
   const collectionGroups = useMemo(
@@ -157,6 +210,66 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
     }),
     [collections],
   );
+
+  const applyScanProgress = useCallback((progress: ScanProgress) => {
+    setScanProgress(progress);
+    setScanning(progress.state === "scanning");
+    if (progress.state === "complete") {
+      if (!scanCompletionHandled.current) {
+        scanCompletionHandled.current = true;
+        setRefreshNumber((value) => value + 1);
+      }
+      setStatusMessage(
+        `Scanned ${progress.roots_done} folder${progress.roots_done === 1 ? "" : "s"}: ${progress.tracks_indexed} tracks indexed, ${progress.unsupported} not loadable, ${progress.unreadable} unreadable.`,
+      );
+    } else if (progress.state === "partial") {
+      if (!scanCompletionHandled.current) {
+        scanCompletionHandled.current = true;
+        setRefreshNumber((value) => value + 1);
+      }
+      setStatusMessage(
+        `Partial scan: ${progress.partial_roots} folder${progress.partial_roots === 1 ? " was" : "s were"} not fully readable. Existing missing-file state was preserved. ${progress.tracks_indexed} tracks indexed; ${progress.unreadable} unreadable.`,
+      );
+    } else if (progress.state === "cancelled") {
+      if (!scanCompletionHandled.current) {
+        scanCompletionHandled.current = true;
+        setRefreshNumber((value) => value + 1);
+      }
+      setStatusMessage(progress.message);
+    } else if (progress.state === "failed") {
+      scanCompletionHandled.current = true;
+      setError(progress.message);
+    }
+  }, []);
+
+  const applyBpmProgress = useCallback((progress: BpmAnalysisProgress) => {
+    setBpmAnalysisProgress(progress);
+    if (progress.state === "complete") {
+      if (!bpmCompletionHandled.current) {
+        bpmCompletionHandled.current = true;
+        setRefreshNumber((value) => value + 1);
+      }
+      setStatusMessage(
+        `BPM estimate saved${progress.candidateBpm === null ? "" : `: ${progress.candidateBpm.toFixed(1)} BPM`}`,
+      );
+    } else if (progress.state === "uncertain") {
+      if (!bpmCompletionHandled.current) {
+        bpmCompletionHandled.current = true;
+        setRefreshNumber((value) => value + 1);
+      }
+      setStatusMessage(
+        progress.candidateBpm === null
+          ? "Analysis could not find a reliable tempo. No BPM was invented."
+          : `Tempo is uncertain; candidate ${progress.candidateBpm.toFixed(1)} BPM needs review.`,
+      );
+    } else if (progress.state === "cancelled") {
+      bpmCompletionHandled.current = true;
+      setStatusMessage(progress.message);
+    } else if (progress.state === "failed") {
+      bpmCompletionHandled.current = true;
+      setError(progress.message);
+    }
+  }, []);
 
   useEffect(() => {
     const debounce = window.setTimeout(() => {
@@ -215,26 +328,7 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
     let active = true;
     let unlisten: UnlistenFn | undefined;
     void listen<ScanProgress>("library-scan-progress", (event) => {
-      if (!active) return;
-      const progress = event.payload;
-      setScanProgress(progress);
-      setScanning(progress.state === "scanning");
-      if (progress.state === "complete") {
-        setStatusMessage(
-          `Scanned ${progress.roots_done} folder${progress.roots_done === 1 ? "" : "s"}: ${progress.tracks_indexed} tracks indexed, ${progress.unsupported} not loadable, ${progress.unreadable} unreadable.`,
-        );
-        setRefreshNumber((value) => value + 1);
-      } else if (progress.state === "partial") {
-        setStatusMessage(
-          `Partial scan: ${progress.partial_roots} folder${progress.partial_roots === 1 ? " was" : "s were"} not fully readable. Existing missing-file state was preserved. ${progress.tracks_indexed} tracks indexed; ${progress.unreadable} unreadable.`,
-        );
-        setRefreshNumber((value) => value + 1);
-      } else if (progress.state === "cancelled") {
-        setStatusMessage(progress.message);
-        setRefreshNumber((value) => value + 1);
-      } else if (progress.state === "failed") {
-        setError(progress.message);
-      }
+      if (active) applyScanProgress(event.payload);
     }).then((unsubscribe) => {
       if (active) unlisten = unsubscribe;
       else unsubscribe();
@@ -243,7 +337,94 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
       active = false;
       unlisten?.();
     };
-  }, []);
+  }, [applyScanProgress]);
+
+  useEffect(() => {
+    if (!scanning) return;
+    let active = true;
+    let requestInFlight = false;
+    const pollScanStatus = async () => {
+      if (requestInFlight) return;
+      requestInFlight = true;
+      try {
+        const snapshot = await invoke<BackgroundProgress<ScanProgress>>(
+          "library_scan_status",
+        );
+        if (!active) return;
+        if (snapshot.progress) applyScanProgress(snapshot.progress);
+        else if (!snapshot.active) {
+          scanCompletionHandled.current = true;
+          setScanning(false);
+          setStatusMessage("Folder scan finished. The local catalog is ready.");
+          setRefreshNumber((value) => value + 1);
+        }
+      } catch (cause) {
+        if (active) setError(errorMessage(cause));
+      } finally {
+        requestInFlight = false;
+      }
+    };
+    void pollScanStatus();
+    const timer = window.setInterval(
+      () => void pollScanStatus(),
+      BACKGROUND_STATUS_POLL_MS,
+    );
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [applyScanProgress, scanning]);
+
+  useEffect(() => {
+    let active = true;
+    let unlisten: UnlistenFn | undefined;
+    void listen<BpmAnalysisProgress>(
+      "library-bpm-analysis-progress",
+      (event) => {
+        if (active) applyBpmProgress(event.payload);
+      },
+    ).then((unsubscribe) => {
+      if (active) unlisten = unsubscribe;
+      else unsubscribe();
+    });
+    return () => {
+      active = false;
+      unlisten?.();
+      void invoke<boolean>("library_cancel_bpm_analysis").catch(
+        () => undefined,
+      );
+    };
+  }, [applyBpmProgress]);
+
+  useEffect(() => {
+    if (!bpmAnalysisBusy) return;
+    let active = true;
+    let requestInFlight = false;
+    const pollBpmAnalysisStatus = async () => {
+      if (requestInFlight) return;
+      requestInFlight = true;
+      try {
+        const snapshot = await invoke<BackgroundProgress<BpmAnalysisProgress>>(
+          "library_bpm_analysis_status",
+        );
+        if (!active) return;
+        if (snapshot.progress) applyBpmProgress(snapshot.progress);
+      } catch (cause) {
+        if (active) setError(errorMessage(cause));
+      } finally {
+        requestInFlight = false;
+      }
+    };
+    void pollBpmAnalysisStatus();
+    const timer = window.setInterval(
+      () => void pollBpmAnalysisStatus(),
+      BACKGROUND_STATUS_POLL_MS,
+    );
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [applyBpmProgress, bpmAnalysisBusy]);
 
   useEffect(() => {
     setArtworkDataUrl(null);
@@ -254,6 +435,7 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
       artist: selectedTrack.artist ?? "",
       album: selectedTrack.album ?? "",
     });
+    setBpmCorrectionDraft(selectedTrack.bpm_correction?.toString() ?? "");
     let active = true;
     void invoke<string | null>("library_track_artwork", {
       trackId: selectedTrack.id,
@@ -286,6 +468,8 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
       const result = await invoke<{ started: boolean; message: string }>(
         "library_start_scan",
       );
+      scanCompletionHandled.current = !result.started;
+      setScanProgress(null);
       setStatusMessage(result.message);
       setScanning(result.started);
     } catch (cause) {
@@ -300,6 +484,72 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
       else setStatusMessage("Cancelling after the current file…");
     } catch (cause) {
       setError(errorMessage(cause));
+    }
+  };
+
+  const analyzeSelectedBpm = async () => {
+    if (!selectedTrack) return;
+    setError("");
+    setBpmAnalysisProgress({
+      trackId: selectedTrack.id,
+      state: "preparing",
+      processedFrames: 0,
+      totalFrames: null,
+      candidateBpm: null,
+      confidence: null,
+      message: "Preparing local analysis",
+    });
+    bpmCompletionHandled.current = false;
+    try {
+      const result = await invoke<{ started: boolean; message: string }>(
+        "library_start_bpm_analysis",
+        { trackId: selectedTrack.id },
+      );
+      setStatusMessage(result.message);
+    } catch (cause) {
+      setBpmAnalysisProgress({
+        trackId: selectedTrack.id,
+        state: "failed",
+        processedFrames: 0,
+        totalFrames: null,
+        candidateBpm: null,
+        confidence: null,
+        message: errorMessage(cause),
+      });
+      setError(errorMessage(cause));
+    }
+  };
+
+  const cancelBpmAnalysis = async () => {
+    try {
+      const cancelled = await invoke<boolean>("library_cancel_bpm_analysis");
+      setStatusMessage(
+        cancelled ? "Cancelling BPM analysis…" : "No BPM analysis is running",
+      );
+    } catch (cause) {
+      setError(errorMessage(cause));
+    }
+  };
+
+  const saveBpmCorrection = async (bpm: number | null) => {
+    if (!selectedTrack) return;
+    setBpmCorrectionBusy(true);
+    setError("");
+    try {
+      await invoke("library_set_bpm_correction", {
+        trackId: selectedTrack.id,
+        bpm,
+      });
+      setStatusMessage(
+        bpm === null
+          ? "Manual BPM correction cleared"
+          : `Manual BPM correction saved at ${bpm.toFixed(1)} BPM`,
+      );
+      setRefreshNumber((value) => value + 1);
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setBpmCorrectionBusy(false);
     }
   };
 
@@ -597,7 +847,7 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                 key={value}
                 title={
                   value === "unanalyzed"
-                    ? "No BPM or key tags are present. Automatic track analysis is not implemented yet."
+                    ? "No BPM or key tags are present. Analyze a supported WAV for tempo; key detection is not implemented."
                     : undefined
                 }
                 type="button"
@@ -932,7 +1182,7 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                       {formatDuration(track.duration_seconds)}
                     </td>
                     <td className="library-mono-cell">
-                      {track.bpm?.toFixed(1) ?? "—"}
+                      {effectiveBpm(track)?.toFixed(1) ?? "—"}
                     </td>
                     <td className="library-mono-cell">
                       {track.musical_key ?? "—"}
@@ -1178,6 +1428,12 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                   <dd>{selectedTrack.bpm?.toFixed(1) ?? "Not tagged"}</dd>
                 </div>
                 <div>
+                  <dt>BPM IN USE</dt>
+                  <dd>
+                    {effectiveBpm(selectedTrack)?.toFixed(1) ?? "Not set"}
+                  </dd>
+                </div>
+                <div>
                   <dt>KEY TAG</dt>
                   <dd>{selectedTrack.musical_key ?? "Not tagged"}</dd>
                 </div>
@@ -1198,6 +1454,111 @@ export function MusicLibrary({ loadingDeck, onLoadTrack }: MusicLibraryProps) {
                   <dd title={selectedTrack.path}>{selectedTrack.path}</dd>
                 </div>
               </dl>
+
+              <section
+                className="library-analysis-panel"
+                aria-label="Track BPM analysis"
+              >
+                <div className="library-analysis-heading">
+                  <p className="library-eyebrow">LOCAL BPM ANALYSIS</p>
+                  {selectedAnalysisProgress?.state === "preparing" ||
+                  selectedAnalysisProgress?.state === "analyzing" ? (
+                    <span>Working</span>
+                  ) : null}
+                </div>
+                <p className="library-analysis-result" aria-live="polite">
+                  {selectedAnalysisProgress?.state === "preparing" ||
+                  selectedAnalysisProgress?.state === "analyzing"
+                    ? selectedAnalysisProgress.message
+                    : selectedTrack.bpm_analysis_status === "estimated"
+                      ? `Estimated ${selectedTrack.bpm_analysis_candidate?.toFixed(1)} BPM · ${(100 * (selectedTrack.bpm_analysis_confidence ?? 0)).toFixed(0)}% periodicity score (heuristic)`
+                      : selectedTrack.bpm_analysis_status === "uncertain"
+                        ? selectedTrack.bpm_analysis_candidate === null
+                          ? "Uncertain · no stable tempo candidate found"
+                          : `Uncertain · ${selectedTrack.bpm_analysis_candidate.toFixed(1)} BPM candidate · ${(100 * (selectedTrack.bpm_analysis_confidence ?? 0)).toFixed(0)}% periodicity score (heuristic)`
+                        : selectedTrack.bpm
+                          ? `File tag: ${selectedTrack.bpm.toFixed(1)} BPM · not analyzed`
+                          : "Not analyzed · results come from local integer PCM WAV audio"}
+                </p>
+                {selectedAnalysisProgress?.state === "analyzing" &&
+                selectedAnalysisProgress.totalFrames !== null &&
+                selectedAnalysisProgress.totalFrames > 0 ? (
+                  <progress
+                    className="library-analysis-progress"
+                    aria-label="BPM analysis progress"
+                    max={selectedAnalysisProgress.totalFrames}
+                    value={Math.min(
+                      selectedAnalysisProgress.processedFrames,
+                      selectedAnalysisProgress.totalFrames,
+                    )}
+                  />
+                ) : null}
+                <div className="library-analysis-actions">
+                  <button
+                    className="library-button secondary compact"
+                    type="button"
+                    disabled={
+                      bpmAnalysisBusy ||
+                      !selectedTrack.load_supported ||
+                      selectedTrack.missing
+                    }
+                    onClick={() => void analyzeSelectedBpm()}
+                  >
+                    Analyze local WAV
+                  </button>
+                  {bpmAnalysisBusy ? (
+                    <button
+                      className="library-button secondary compact"
+                      type="button"
+                      onClick={() => void cancelBpmAnalysis()}
+                    >
+                      Cancel
+                    </button>
+                  ) : null}
+                </div>
+                <label className="library-bpm-correction">
+                  Manual BPM correction
+                  <input
+                    type="number"
+                    min={30}
+                    max={300}
+                    step={0.1}
+                    value={bpmCorrectionDraft}
+                    onChange={(event) =>
+                      setBpmCorrectionDraft(event.target.value)
+                    }
+                    aria-label="Manual BPM correction"
+                  />
+                </label>
+                <div className="library-analysis-actions">
+                  <button
+                    className="library-button primary compact"
+                    type="button"
+                    disabled={bpmCorrectionBusy || !bpmCorrectionValid}
+                    onClick={() => void saveBpmCorrection(parsedBpmCorrection)}
+                  >
+                    Save correction
+                  </button>
+                  <button
+                    className="library-button secondary compact"
+                    type="button"
+                    disabled={
+                      bpmCorrectionBusy || selectedTrack.bpm_correction === null
+                    }
+                    onClick={() => {
+                      setBpmCorrectionDraft("");
+                      void saveBpmCorrection(null);
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                <small>
+                  Corrections are stored in SAYT and never written into the
+                  audio file. Analysis is cached by track identity and algorithm
+                  version.
+                </small>
+              </section>
 
               <div className="library-load-actions">
                 <p className="library-eyebrow">LOAD TO DECK</p>

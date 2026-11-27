@@ -21,7 +21,7 @@ These properties are implemented in source and covered in part by unit tests. No
 
 ## Current gaps
 
-No automatic BPM analysis, editable beatgrid, beat quantization, Sync, key lock, headphone cue output, output-device hot-plug recovery, callback-load/xrun telemetry, deterministic offline render, controller input, or 60-minute soak is implemented. Device IDs are enumeration indexes and may change when devices appear or disappear. Track samples are held in memory within the limits documented in `REQUIREMENTS.md`.
+The engine itself has no BPM analyzer. The separate library crate now offers bounded local WAV analysis and corrections, and catalog loading can pass a confident/corrected BPM into the existing deck-local control; the fixed live handoff still needs UI verification. Editable beatgrids, beat quantization, Sync, key lock, headphone cue output, output-device hot-plug recovery, callback-load/xrun telemetry, deterministic offline render, controller input, and a 60-minute soak are not implemented. Device IDs are enumeration indexes and may change when devices appear or disappear. Track samples are held in memory within the limits documented in `REQUIREMENTS.md`.
 
 ## Local checks
 

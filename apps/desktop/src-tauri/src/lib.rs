@@ -5,7 +5,7 @@ use std::{
     path::PathBuf,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc, OnceLock,
+        Arc, Mutex, OnceLock,
     },
     thread,
     time::{Duration, Instant},
@@ -14,8 +14,8 @@ use std::{
 use crate::audio_service::AudioService;
 use sayt_engine::{DeviceInfo, HotCueColor, MixerSnapshot};
 use sayt_library::{
-    LibraryCatalog, LibraryCollection, LibraryFolder, ScanCancellation, ScanProgress, ScanStart,
-    TrackPage, TrackQuery,
+    BpmAnalysisProgress, BpmAnalysisStart, LibraryCatalog, LibraryCollection, LibraryFolder,
+    ScanCancellation, ScanProgress, ScanStart, TrackPage, TrackQuery,
 };
 use tauri::{Emitter, Manager};
 use tracing_subscriber::EnvFilter;
@@ -27,7 +27,11 @@ mod hot_cues;
 struct LibraryService {
     data_directory: PathBuf,
     scan_active: Arc<AtomicBool>,
+    scan_progress: Arc<Mutex<Option<ScanProgress>>>,
     cancellation: ScanCancellation,
+    bpm_analysis_active: Arc<AtomicBool>,
+    bpm_analysis_progress: Arc<Mutex<Option<BpmAnalysisProgress>>>,
+    bpm_analysis_cancellation: Arc<AtomicBool>,
     initialized: Arc<OnceLock<Result<(), String>>>,
 }
 
@@ -36,7 +40,11 @@ impl LibraryService {
         Self {
             data_directory,
             scan_active: Arc::new(AtomicBool::new(false)),
+            scan_progress: Arc::new(Mutex::new(None)),
             cancellation: ScanCancellation::default(),
+            bpm_analysis_active: Arc::new(AtomicBool::new(false)),
+            bpm_analysis_progress: Arc::new(Mutex::new(None)),
+            bpm_analysis_cancellation: Arc::new(AtomicBool::new(false)),
             initialized: Arc::new(OnceLock::new()),
         }
     }
@@ -56,16 +64,187 @@ impl LibraryService {
     }
 
     fn begin_scan(&self) -> Result<(), String> {
+        let mut progress = self
+            .scan_progress
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         self.scan_active
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .map_err(|_| "A library scan is already running".to_string())?;
+        *progress = None;
         self.cancellation.reset();
         Ok(())
+    }
+
+    fn scan_status(&self) -> BackgroundProgress<ScanProgress> {
+        BackgroundProgress {
+            active: self.scan_active.load(Ordering::Acquire),
+            progress: self
+                .scan_progress
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clone(),
+        }
+    }
+
+    fn store_scan_progress(&self, progress: ScanProgress) {
+        *self
+            .scan_progress
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(progress);
+    }
+
+    fn bpm_analysis_status(&self) -> BackgroundProgress<BpmAnalysisProgress> {
+        BackgroundProgress {
+            active: self.bpm_analysis_active.load(Ordering::Acquire),
+            progress: self
+                .bpm_analysis_progress
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clone(),
+        }
+    }
+
+    fn store_bpm_analysis_progress(&self, progress: BpmAnalysisProgress) {
+        *self
+            .bpm_analysis_progress
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(progress);
     }
 
     fn end_scan(&self) {
         self.scan_active.store(false, Ordering::Release);
     }
+
+    fn begin_bpm_analysis(&self) -> Result<(), String> {
+        self.bpm_analysis_active
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| "A track BPM analysis is already running".to_string())?;
+        self.bpm_analysis_cancellation
+            .store(false, Ordering::Release);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod background_progress_tests {
+    use std::path::PathBuf;
+
+    use super::*;
+
+    #[test]
+    fn scan_status_retains_terminal_progress_for_ui_recovery() {
+        let service = LibraryService::new(PathBuf::from("unused-test-data"));
+        service.store_scan_progress(ScanProgress {
+            state: "complete".to_string(),
+            roots_total: 1,
+            roots_done: 1,
+            partial_roots: 0,
+            files_seen: 3,
+            tracks_indexed: 2,
+            unsupported: 1,
+            unreadable: 0,
+            traversal_errors: 0,
+            current_file: None,
+            message: "Folder scan finished.".to_string(),
+        });
+
+        let status = service.scan_status();
+        assert!(!status.active);
+        let progress = status.progress.expect("terminal scan progress is retained");
+        assert_eq!(progress.state, "complete");
+        assert_eq!(progress.tracks_indexed, 2);
+
+        let serialized = serde_json::to_value(BackgroundProgress {
+            active: status.active,
+            progress: Some(progress),
+        })
+        .unwrap();
+        assert_eq!(serialized["active"], false);
+        assert_eq!(serialized["progress"]["tracks_indexed"], 2);
+    }
+
+    #[test]
+    fn starting_a_new_scan_clears_the_previous_terminal_snapshot() {
+        let service = LibraryService::new(PathBuf::from("unused-test-data"));
+        service.store_scan_progress(ScanProgress {
+            state: "complete".to_string(),
+            roots_total: 1,
+            roots_done: 1,
+            partial_roots: 0,
+            files_seen: 3,
+            tracks_indexed: 2,
+            unsupported: 1,
+            unreadable: 0,
+            traversal_errors: 0,
+            current_file: None,
+            message: "Previous scan finished.".to_string(),
+        });
+
+        service.begin_scan().unwrap();
+        let status = service.scan_status();
+        assert!(status.active);
+        assert!(status.progress.is_none());
+        service.end_scan();
+    }
+
+    #[test]
+    fn bpm_status_serializes_the_frontend_camel_case_contract() {
+        let service = LibraryService::new(PathBuf::from("unused-test-data"));
+        service.bpm_analysis_active.store(true, Ordering::Release);
+        service.store_bpm_analysis_progress(BpmAnalysisProgress {
+            track_id: "sha256:test".to_string(),
+            state: "analyzing".to_string(),
+            processed_frames: 48_000,
+            total_frames: Some(96_000),
+            candidate_bpm: None,
+            confidence: None,
+            message: "Analyzing local PCM audio".to_string(),
+        });
+
+        let status = service.bpm_analysis_status();
+        assert!(status.active);
+        let serialized = serde_json::to_value(status).unwrap();
+        assert_eq!(serialized["active"], true);
+        assert_eq!(serialized["progress"]["trackId"], "sha256:test");
+        assert_eq!(serialized["progress"]["processedFrames"], 48_000);
+        assert!(serialized["progress"].get("track_id").is_none());
+    }
+
+    #[test]
+    fn bpm_load_uses_the_engine_track_identity_for_the_selected_deck() {
+        let catalog_track_id = "sha256:file-bytes";
+        let engine_track_id = "sha256:decoded-pcm";
+        assert_ne!(catalog_track_id, engine_track_id);
+        let snapshot = MixerSnapshot {
+            deck_a: sayt_engine::DeckSnapshot {
+                source_track_id: Some(engine_track_id.to_string()),
+                ..sayt_engine::DeckSnapshot::default()
+            },
+            deck_b: sayt_engine::DeckSnapshot {
+                source_track_id: Some("sha256:other-deck-pcm".to_string()),
+                ..sayt_engine::DeckSnapshot::default()
+            },
+            ..MixerSnapshot::default()
+        };
+
+        assert_eq!(
+            source_track_id_for_deck(&snapshot, 0).unwrap(),
+            engine_track_id
+        );
+        assert_eq!(
+            source_track_id_for_deck(&snapshot, 1).unwrap(),
+            "sha256:other-deck-pcm"
+        );
+        assert!(source_track_id_for_deck(&snapshot, 2).is_err());
+    }
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BackgroundProgress<T> {
+    active: bool,
+    progress: Option<T>,
 }
 
 struct LibraryScanGuard(Arc<AtomicBool>);
@@ -104,6 +283,20 @@ fn library_collections(
     library: tauri::State<'_, LibraryService>,
 ) -> Result<Vec<LibraryCollection>, String> {
     library.catalog()?.list_collections()
+}
+
+#[tauri::command]
+fn library_scan_status(
+    library: tauri::State<'_, LibraryService>,
+) -> BackgroundProgress<ScanProgress> {
+    library.scan_status()
+}
+
+#[tauri::command]
+fn library_bpm_analysis_status(
+    library: tauri::State<'_, LibraryService>,
+) -> BackgroundProgress<BpmAnalysisProgress> {
+    library.bpm_analysis_status()
 }
 
 #[tauri::command]
@@ -163,6 +356,7 @@ async fn library_start_scan(
             let result = library_service.catalog().and_then(|catalog| {
                 let mut last_progress_at = Instant::now() - Duration::from_secs(1);
                 catalog.scan_roots(&folders, library_service.cancellation.flag(), |progress| {
+                    library_service.store_scan_progress(progress.clone());
                     let is_terminal = progress.state != "scanning";
                     if !is_terminal && last_progress_at.elapsed() < Duration::from_millis(100) {
                         return;
@@ -201,22 +395,21 @@ async fn library_start_scan(
                         error = %error,
                         "Music folder scan failed"
                     );
-                    let _ = worker_app.emit(
-                        "library-scan-progress",
-                        ScanProgress {
-                            state: "failed".to_string(),
-                            roots_total: 0,
-                            roots_done: 0,
-                            partial_roots: 0,
-                            files_seen: 0,
-                            tracks_indexed: 0,
-                            unsupported: 0,
-                            unreadable: 0,
-                            traversal_errors: 0,
-                            current_file: None,
-                            message: error,
-                        },
-                    );
+                    let progress = ScanProgress {
+                        state: "failed".to_string(),
+                        roots_total: 0,
+                        roots_done: 0,
+                        partial_roots: 0,
+                        files_seen: 0,
+                        tracks_indexed: 0,
+                        unsupported: 0,
+                        unreadable: 0,
+                        traversal_errors: 0,
+                        current_file: None,
+                        message: error,
+                    };
+                    library_service.store_scan_progress(progress.clone());
+                    let _ = worker_app.emit("library-scan-progress", progress);
                 }
             }
         })
@@ -237,6 +430,108 @@ fn library_cancel_scan(library: tauri::State<'_, LibraryService>) -> bool {
     }
     library.cancellation.cancel();
     true
+}
+
+#[tauri::command]
+fn library_start_bpm_analysis(
+    app: tauri::AppHandle,
+    library: tauri::State<'_, LibraryService>,
+    track_id: String,
+) -> Result<BpmAnalysisStart, String> {
+    library.begin_bpm_analysis()?;
+    let library_service = library.inner().clone();
+    let active = Arc::clone(&library.bpm_analysis_active);
+    let cancellation = Arc::clone(&library.bpm_analysis_cancellation);
+    let worker_app = app.clone();
+    library.store_bpm_analysis_progress(BpmAnalysisProgress {
+        track_id: track_id.clone(),
+        state: "preparing".to_string(),
+        processed_frames: 0,
+        total_frames: None,
+        candidate_bpm: None,
+        confidence: None,
+        message: "Preparing local analysis".to_string(),
+    });
+    if let Err(error) = thread::Builder::new()
+        .name("sayt-bpm-analysis".to_string())
+        .spawn(move || {
+            let _guard = LibraryScanGuard(active);
+            let result = library_service.catalog().and_then(|catalog| {
+                catalog.analyze_bpm(&track_id, &cancellation, |progress| {
+                    library_service.store_bpm_analysis_progress(progress.clone());
+                    if let Err(error) = worker_app.emit("library-bpm-analysis-progress", &progress)
+                    {
+                        tracing::warn!(
+                            component = "music-library",
+                            check = "emit_bpm_analysis_progress",
+                            error = %error,
+                            "BPM analysis progress could not reach the desktop window"
+                        );
+                    }
+                })
+            });
+            if let Err(error) = result {
+                tracing::error!(
+                    component = "music-analysis",
+                    check = "analyze_catalog_track_bpm",
+                    track_id = %track_id,
+                    error = %error,
+                    "Local BPM analysis failed"
+                );
+                let progress = BpmAnalysisProgress {
+                    track_id,
+                    state: "failed".to_string(),
+                    processed_frames: 0,
+                    total_frames: None,
+                    candidate_bpm: None,
+                    confidence: None,
+                    message: error,
+                };
+                library_service.store_bpm_analysis_progress(progress.clone());
+                if let Err(error) = worker_app.emit("library-bpm-analysis-progress", &progress) {
+                    tracing::warn!(
+                        component = "music-library",
+                        check = "emit_bpm_analysis_failure",
+                        error = %error,
+                        "BPM analysis failure could not reach the desktop window"
+                    );
+                }
+            }
+        })
+    {
+        library.end_bpm_analysis();
+        return Err(format!("Could not start the BPM analysis worker: {error}"));
+    }
+    Ok(BpmAnalysisStart {
+        started: true,
+        message: "Local BPM analysis started".to_string(),
+    })
+}
+
+#[tauri::command]
+fn library_cancel_bpm_analysis(library: tauri::State<'_, LibraryService>) -> bool {
+    if !library.bpm_analysis_active.load(Ordering::Acquire) {
+        return false;
+    }
+    library
+        .bpm_analysis_cancellation
+        .store(true, Ordering::Release);
+    true
+}
+
+#[tauri::command]
+fn library_set_bpm_correction(
+    library: tauri::State<'_, LibraryService>,
+    track_id: String,
+    bpm: Option<f64>,
+) -> Result<(), String> {
+    library.catalog()?.set_bpm_correction(&track_id, bpm)
+}
+
+impl LibraryService {
+    fn end_bpm_analysis(&self) {
+        self.bpm_analysis_active.store(false, Ordering::Release);
+    }
 }
 
 #[tauri::command]
@@ -357,8 +652,36 @@ fn load_library_track(
     track_id: String,
     deck: usize,
 ) -> Result<MixerSnapshot, String> {
-    let path = library.catalog()?.resolve_track_path(&track_id)?;
-    audio.load_track(deck, &path)
+    let catalog = library.catalog()?;
+    load_catalog_track(&catalog, &audio, &track_id, deck)
+}
+
+fn load_catalog_track(
+    catalog: &LibraryCatalog,
+    audio: &AudioService,
+    track_id: &str,
+    deck: usize,
+) -> Result<MixerSnapshot, String> {
+    let path = catalog.resolve_track_path(track_id)?;
+    let snapshot = audio.load_track(deck, &path)?;
+    if let Some(bpm) = catalog.playback_bpm(track_id)? {
+        let engine_track_id = source_track_id_for_deck(&snapshot, deck)?;
+        audio.set_manual_bpm(deck, engine_track_id, bpm)
+    } else {
+        Ok(snapshot)
+    }
+}
+
+fn source_track_id_for_deck(snapshot: &MixerSnapshot, deck: usize) -> Result<&str, String> {
+    let deck_snapshot = match deck {
+        0 => &snapshot.deck_a,
+        1 => &snapshot.deck_b,
+        _ => return Err("Deck must be A or B".to_string()),
+    };
+    deck_snapshot
+        .source_track_id
+        .as_deref()
+        .ok_or_else(|| "Audio engine did not return the loaded track identity".to_string())
 }
 
 #[tauri::command]
@@ -641,6 +964,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             library_reconcile_missing,
             library_start_scan,
             library_cancel_scan,
+            library_scan_status,
+            library_bpm_analysis_status,
+            library_start_bpm_analysis,
+            library_cancel_bpm_analysis,
+            library_set_bpm_correction,
             library_create_collection,
             library_rename_collection,
             library_delete_collection,

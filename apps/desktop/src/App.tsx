@@ -335,8 +335,8 @@ export function ManualLoopControls({
       </div>
 
       <p className="manual-loop-note">
-        Manual loop sizes use seconds. Automatic BPM detection and beatgrids are
-        not implemented.
+        Manual loop sizes use seconds. Beatgrids and quantized loop placement
+        are not implemented.
       </p>
     </div>
   );
@@ -573,7 +573,7 @@ export function BeatPerformanceControls({
         <p className="manual-loop-note" role="status">
           {deck.loop_roll_active
             ? "Loop Roll active · release the pad to resume the track"
-            : "BPM is entered manually per deck and clears when its track changes; no auto-detection or beatgrid is used."}
+            : "Library correction, confident analysis, or a file BPM tag loads into the deck. Manual deck edits clear when its track changes; no beatgrid is used."}
         </p>
         {deck.loop_roll_active && !rollHeld && (
           <button

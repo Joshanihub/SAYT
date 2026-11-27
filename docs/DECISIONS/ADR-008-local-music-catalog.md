@@ -7,11 +7,11 @@
 
 ## Decision
 
-Use an app-local SQLite catalog for selected folder roots, content-identified tracks, locations, and user-created crates/playlists.
+Use an app-local SQLite catalog for selected folder roots, content-identified tracks, locations, user-created crates/playlists, and versioned local analysis records.
 
 ## Context
 
-Screen 02 needs durable search, sorting, filters, duplicate locations, missing-file reconciliation, collection order, user metadata, and backup. The audio remains in the user's chosen folders. Catalog queries and writes must stay outside the CPAL callback and avoid sample data in Tauri IPC. The project license is still undecided; third-party dependency licensing is tracked separately.
+Screen 02 needs durable search, sorting, filters, duplicate locations, missing-file reconciliation, collection order, user metadata, and backup. Track preparation also needs durable, versioned analysis and user corrections. The audio remains in the user's chosen folders. Catalog queries and writes must stay outside the CPAL callback and avoid sample data in Tauri IPC. The project license is still undecided; third-party dependency licensing is tracked separately.
 
 ## Options
 
@@ -21,7 +21,7 @@ Screen 02 needs durable search, sorting, filters, duplicate locations, missing-f
 
 ## Choice and consequences
 
-Choose `rusqlite` with bundled SQLite, WAL journaling, foreign keys, busy timeout, and an app-local database. Use SHA-256 of full file contents for track identity and separate location rows for duplicates/moves. Scan writes are per-file transactions; incomplete scans keep existing missing-state information. Schema version 1 is migrated transactionally. A failed integrity check preserves the damaged database and sidecars under a timestamped quarantine name before creating a new empty catalog. Backup uses SQLite's online backup API and a native save dialog.
+Choose `rusqlite` with bundled SQLite, WAL journaling, foreign keys, busy timeout, and an app-local database. Use SHA-256 of full file contents for track identity and separate location rows for duplicates/moves. Scan writes are per-file transactions; incomplete scans keep existing missing-state information. Schema version 1 established the catalog tables; schema version 2 adds BPM analysis and correction tables as specified in [ADR-009](ADR-009-local-bpm-analysis.md). Migrations are transactional. A failed integrity check preserves the damaged database and sidecars under a timestamped quarantine name before creating a new empty catalog. Backup uses SQLite's online backup API and a native save dialog.
 
 The exact direct pins and third-party license strings are recorded in [`docs/licensing/third-party.md`](../licensing/third-party.md). SAYT's project license remains undecided. SQLite data contains local paths and user metadata, so it stays in app-local storage and is not uploaded.
 
@@ -31,4 +31,4 @@ Automated tests cover real-file indexing, unmodified source bytes, content dupli
 
 ## Reversibility and review trigger
 
-The store is local and can be exported with SQLite backup. Revisit this decision before cross-device sync, cloud accounts, multi-user catalogs, or track-analysis datasets; those add conflict, privacy, and migration requirements. Do not move catalog work into the real-time callback.
+The store is local and can be exported with SQLite backup. Revisit this decision before cross-device sync, cloud accounts, or multi-user catalogs; those add conflict and privacy requirements. Do not move catalog work into the real-time callback.

@@ -307,7 +307,7 @@ describe("M1 desktop workspace", () => {
     expect(activeMarkup).toContain("Releasing at loop boundary");
     expect(activeMarkup).toContain('aria-pressed="true"');
     expect(activeMarkup).toContain(
-      "Manual loop sizes use seconds. Automatic BPM detection and beatgrids are not implemented.",
+      "Manual loop sizes use seconds. Beatgrids and quantized loop placement are not implemented.",
     );
   });
 
@@ -337,7 +337,7 @@ describe("M1 desktop workspace", () => {
       'aria-label="Hold 1/4 beat Loop Roll on Deck B"',
     );
     expect(loadedMarkup).toContain("124.5 BPM · manual");
-    expect(loadedMarkup).toContain("no auto-detection or beatgrid is used.");
+    expect(loadedMarkup).toContain("no beatgrid is used.");
   });
 
   it("routes manual-loop pad actions through the typed dispatcher with source identity", () => {
