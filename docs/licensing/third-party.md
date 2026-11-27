@@ -2,8 +2,8 @@
 
 **Status:** Direct inventory, pnpm transitive license output, and RustSec scan recorded; owner and legal review pending.<br>
 **Owner:** SAYT project owner<br>
-**Checked:** 2026-11-26<br>
-**Version:** 0.1.0
+**Checked:** 2026-11-27<br>
+**Version:** 0.1.1
 
 Every direct dependency is pinned exactly in its manifest. The lockfiles are the resolution record. CI runs Cargo bans/license/source checks and RustSec advisories separately, plus pnpm's license inventory command. M1 remains partial until the transitive report is reviewed.
 
@@ -22,7 +22,12 @@ The project owner has not selected a license. No SAYT license grant is included 
 | Rust      | `futures-channel`      |                0.3.34 | MIT OR Apache-2.0 | One-shot async bridge from native file-picker callback to Tauri command                                 |
 | Rust      | `rtrb`                 |                 0.4.1 | MIT OR Apache-2.0 | Bounded single-producer/single-consumer command and retired-track queues                                |
 | Rust      | `hound`                |                 3.5.1 | Apache-2.0        | Experimental PCM WAV decoder                                                                            |
+| Rust      | `base64`               |                0.23.1 | MIT OR Apache-2.0 | Bounded embedded-artwork data URLs for the selected-track inspector                                     |
+| Rust      | `lofty`                |                0.25.5 | MIT OR Apache-2.0 | Local tag, duration, BPM/key, and on-demand artwork metadata parsing                                    |
+| Rust      | `rusqlite`             |                0.43.0 | MIT               | App-local transactional music catalog and online backup                                                 |
 | Rust      | `serde`                |               1.0.228 | MIT OR Apache-2.0 | Tauri and engine snapshot serialization                                                                 |
+| Rust      | `sha2`                 |                0.11.2 | MIT OR Apache-2.0 | Full-file content identity for duplicate/move recovery                                                  |
+| Rust      | `walkdir`              |                 2.5.1 | Unlicense/MIT     | Recursive selected-root scan with symlink following disabled                                            |
 | Rust      | `tracing`              |                0.1.44 | MIT               | Structured startup logging                                                                              |
 | Rust      | `tracing-subscriber`   |                0.3.23 | MIT               | JSON logs and environment filter                                                                        |
 | npm       | `react`                |                19.3.1 | MIT               | UI runtime                                                                                              |
@@ -52,12 +57,12 @@ Versions and license fields were retrieved from crates.io and the npm registry o
 
 The pnpm resolver license inventory is recorded in [`npm-licenses.txt`](npm-licenses.txt). It lists two development dependencies under Blue Oak Model License 1.0.0 (`@isaacs/nonrecursive-glob-match` and `minimatch`). The Blue Oak Council describes this as a permissive license with a license-notice condition and an express patent grant; it is outside the charter's named dependency license set, so the project owner must decide whether to accept it before distribution. It is a development-only transitive dependency in this lockfile.
 
-The Rust lockfile contains 519 packages. On 2026-11-25, pinned `cargo-audit 0.23.0` scanned it using `--no-fetch` against cached RustSec DB commit `b9b8a3c`: zero vulnerability advisories, five unmaintained crates, and one unsoundness advisory for transitive `glib 0.18.5` (`RUSTSEC-2024-0429`). The unmaintained notices are `chrono 0.4.45` (`RUSTSEC-2026-0543`), `proc-macro-error 1.0.4` (`RUSTSEC-2024-0370`), `zbus_names 4.3.5` (`RUSTSEC-2026-0371`), `zvariant 5.15.1` (`RUSTSEC-2026-0370`), and `zvariant_derive 5.15.1` (`RUSTSEC-2026-0372`). The GTK-related `glib` finding matters to Linux builds. Reachability of affected APIs was not established. A fresh advisory-database fetch stalled during this session; refresh before release or another consequential dependency decision. Do not treat this scan as a security clearance.
+The Rust lockfile contains 532 crate dependencies. Local `cargo audit` on 2026-11-27 refreshed the advisory database after the catalog dependency update and reported zero known vulnerability advisories, six unmaintained-package warnings, and one unsoundness warning for transitive `glib 0.18.5` (`RUSTSEC-2024-0429`). The unmaintained notices are `chrono 0.4.45` (`RUSTSEC-2026-0543`), `paste 1.0.15` (`RUSTSEC-2024-0436`), `proc-macro-error 1.0.4` (`RUSTSEC-2024-0370`), `zbus_names 4.3.5` (`RUSTSEC-2026-0371`), `zvariant 5.15.1` (`RUSTSEC-2026-0370`), and `zvariant_derive 5.15.1` (`RUSTSEC-2026-0372`). The GTK-related `glib` finding matters to Linux builds. Reachability of affected APIs was not established by this audit. Do not treat this scan as a security clearance.
 
 ## Policy and remaining checks
 
 - `deny.toml` limits Rust dependencies to the configured license allowlist, including Unicode-3.0 and Apache-2.0 WITH LLVM-exception observed in the current graph. This scanner configuration is not a legal compatibility determination.
-- `cargo deny check` currently passes bans, licenses, and sources but exits non-zero on the unmaintained `proc-macro-error` advisory. It also reports duplicate-version warnings in the transitive graph.
+- `cargo deny check --hide-inclusion-graph bans licenses sources` passed locally on 2026-11-27. It reports duplicate-version warnings in the transitive graph; this selected check does not include advisory findings.
 - `cargo audit` found zero vulnerability advisories and the unmaintained/unsound notices recorded above; the RustSec database and findings must be refreshed before release.
 - `pnpm audit` checks the complete resolved npm graph against registry advisories.
 - `pnpm licenses list --recursive` must be run after lockfile generation; its complete output must be reviewed for unknown, proprietary, copyleft, or non-allowlisted terms.

@@ -3,14 +3,16 @@
 **Status:** IN PROGRESS<br>
 **Owner:** SAYT project owner<br>
 **Date:** 2026-11-27<br>
-**Version:** 0.4.30
+**Version:** 0.4.31
 
 ## Current verified position — M1 closeout and professional performance controls
+
+- **Screen 02 local music library:** Native folder picking, no-symlink scanning, SQLite catalog, content identity, tag metadata, bounded paged search/sort/filter, persistent crates/playlists, backup, missing-file handling, and engine-mediated deck loading are implemented on this branch. Fourteen catalog tests and the 64-test frontend suite pass; the isolated Windows release build launches and rendered the empty Screen 02 at 1280×800. The owner's genuine music folder, real-track search/collection/restart, deck A/B loading, format rejection, and narrow/1440×900 captures remain open. No feature-head CI exists yet for the unpushed edits.
 
 - **M1 source branch:** `feat/stitch-m1-dj-workspace` is based on unchanged `main` at `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Responsive correction and decoder rejection coverage are pushed as `ee137e288b324a50e6f9b1574c4aee9d4eee1c09`; exact-head push run [45831799052](https://github.com/Joshanihub/SAYT/actions/runs/45831799052) and PR run [45831807175](https://github.com/Joshanihub/SAYT/actions/runs/45831807175) both passed Windows, macOS, and Ubuntu. GitHub currently shows PR #1 open and PR #2 still draft. No merge into `main` is authorized.
 - **DJ expansion branch:** Commit `3ce44522c6dc1cdc03d675579b387195aa30176f` includes Loop Roll and Beat Jump and passed exact-head GitHub Actions run [#54](https://github.com/Joshanihub/SAYT/actions/runs/45970634459) on Windows, macOS, and Ubuntu. The decoder/output-error separation fix is pushed as `80253e07dcd99687df9e7a05ff8dc8d48acc30ff`; its first check was cancelled when the following evidence-doc commit was pushed. Current branch-head CI is tracked on the [SAYT CI workflow](https://github.com/Joshanihub/SAYT/actions/workflows/ci.yml?query=branch%3Afeat%2Fdj-command-system). `main` remains `1d0323799d0a833a40b20cd58b1c79e43a11044b`. Windows fixture runtime covers Hot Cue persistence, selected Manual Loop behavior, manual BPM entry, signed Beat Jump, deck isolation, and clean restart; physical listening, device recovery, and sustained Loop Roll input remain open. Only generated fixtures were used. No merge into `main` is authorized.
 - **Stitch typography and icons:** 16 local variable WOFF2 text-font subsets and a 66-ligature Material Symbols subset are integrated. Four upstream license notices are present under `apps/desktop/public/licenses`; runtime font loading makes no network request. Exact sources, hashes, sizes, Unicode ranges, and build-tool pins are recorded in the asset manifest and dependency inventory.
-- **Local verification:** The current code fix passes Rust format, Clippy, 61 engine tests plus 10 desktop actor/cue-store tests, and the locked all-target check. Frontend format, lint, typecheck, 65 tests, production web build, and an isolated Windows Tauri release build pass. No dependencies changed. Exact commands, commit identity, CI status, and runtime limits are in `docs/VERIFICATION_EVIDENCE.md`.
+- **Local verification:** The current library change passes Rust format, Clippy, 61 engine tests, 10 desktop actor/cue-store tests, 14 library tests, and the locked all-target check. Frontend format, lint, typecheck, 64 tests, production web build, and an isolated Windows Tauri release build pass. Direct catalog dependencies were added and audited; exact commands, binary hash, CI status, and runtime limits are in `docs/VERIFICATION_EVIDENCE.md`.
 - **Decoder/output error separation:** Generic WAV and command failures now show only their actionable error; output-specific retry/refresh controls remain attached to output failures. Two frontend regressions cover both paths. In the Windows release app, the native picker rejected a floating-point WAV with the decoder message, kept the previously loaded valid track, and showed no output recovery controls. The current branch-head CI status is available from the linked workflow.
 - **M1 device discovery state:** the Settings surface now distinguishes loading, an empty device list, enumeration failure, and a selected system default. The React tests verify these states; real device enumeration and recovery still require hardware verification.
 - **Output-switch recovery:** source now attempts the replacement stream after a pause error and restores the previous stream if replacement fails. Resume failure is reported in the command error and output-error snapshot. Four hardware-independent transition tests pass; CPAL/OS recovery remains unverified.
@@ -26,7 +28,7 @@
 
 ## Current milestone
 
-**M1 closeout plus approved DJ feature expansion.** The existing Rust engine, Tauri control API, and Stitch-informed workspace remain integrated. The command system, Hot Cues, Manual Loops, Loop Roll, and Beat Jump are developed on isolated branch `feat/dj-command-system`. M1 hardware/failure-path acceptance remains open; this feature does not close M1 or authorize a merge.
+**M1 closeout plus Screen 02 library delivery.** The existing Rust engine, Tauri control API, and Stitch-informed workspace remain integrated. Keyboard commands, Hot Cues, Manual Loops, Loop Roll, and Beat Jump are preserved. The local library work is isolated on `feat/dj-command-system`; its owner-selected real-folder check is the next gate. M1 hardware/failure-path acceptance remains open independently, and no merge into `main` is authorized.
 
 ## Verified baseline before this change
 
@@ -47,17 +49,17 @@ The original Stitch export and extracted references are in `design/reference/`. 
 - Mixer: actual master meter, master gain, and crossfader only; no invented independent channel meters.
 - Quick crate: two deck slots using the native picker; no directory scan or persistent library.
 - Audio settings: device list/selection, refresh, and retry only; discovery distinguishes loading, no listed outputs, and enumeration errors. Unsupported prototype controls remain identified as unavailable.
-- Library: explicit empty state because M1 has no index storage.
+- Screen 02 Library: local index, folder scan, search/sort/filter, collections, backup, and selected-track inspector are implemented; owner-selected real-folder import, restart restoration, and deck A/B integration remain NOT RUN in this feature build.
 - Future screens: disabled navigation; not implemented.
 
 ## Outstanding exit gates
 
 1. Confirm the latest branch-head cross-platform CI run before M1 acceptance; earlier feature head `3ce4452` passed run #54, while the source fix is covered by the current workflow entry.
 2. Record physical no-device and failed-switch recovery outcomes; automated policy tests cover software paths and the unsupported floating-point WAV was exercised through the Windows native picker, but this does not verify physical output recovery.
-3. Complete remaining two-deck performance acceptance: verify Hot Cue trigger while playing and live Loop Roll hold/release/cancellation on both decks, check loop state after pause/seek/Stop/track replacement, and listen at low volume for physical loop-seam artifacts. Manual BPM, signed Beat Jump, cue persistence, and selected Manual Loop states already have Windows runtime evidence; this remaining run must record device, viewport, error text, and audible results. Update the matched Stitch comparison after each delivery; do not mark Screen 01 complete while later pads, FX, recording, or library browsing remain unavailable.
-4. Before a consequential release decision, assess reachability/impact of the five unmaintained Rust crates and `glib` unsoundness notice, review the two BlueOak npm license terms, and complete an SBOM/legal review. Fresh local scan results are recorded in `docs/DEPENDENCIES_AND_LICENSES.md`.
+3. Complete remaining two-deck performance acceptance: verify Hot Cue trigger while playing and live Loop Roll hold/release/cancellation on both decks, check loop state after pause/seek/Stop/track replacement, and listen at low volume for physical loop-seam artifacts. Manual BPM, signed Beat Jump, cue persistence, and selected Manual Loop states already have Windows runtime evidence; this remaining run must record device, viewport, error text, and audible results. Track Screen 02 owner acceptance separately.
+4. Before a consequential release decision, assess reachability/impact of the six unmaintained Rust crate warnings and `glib` unsoundness notice, review the two BlueOak npm license terms, and complete an SBOM/legal review. Fresh local scan results are recorded in `docs/DEPENDENCIES_AND_LICENSES.md`.
 5. SAYT's project license remains undecided; no license grant is added.
 
 ## Next milestone
 
-Keep M1 acceptance open until its exit requirements are reviewed and approved. Continue with the next uncompleted approved feature in [`competitive-feature-parity.md`](competitive-feature-parity.md) only after the milestone owner gate. Keep physical loop-seam listening, sustained Loop Roll runtime, cue behavior while playing, shortcut-remapping persistence, device recovery, and shutdown evidence visible as open acceptance items; retain the M2 callback-load gates before claiming timing-sensitive performance quality.
+Complete the owner-selected real music-folder workflow on this feature head: import, search/sort/filter, create/reorder persistent collections, load supported tracks into both decks, then restart and verify recovery. Capture 1440×900, 1280×800, and narrow library layouts. Keep M1 physical loop-seam listening, sustained Loop Roll runtime, cue behavior while playing, shortcut-remapping persistence, device recovery, and shutdown evidence visible as separate open acceptance items; retain the M2 callback-load gates before claiming timing-sensitive performance quality.

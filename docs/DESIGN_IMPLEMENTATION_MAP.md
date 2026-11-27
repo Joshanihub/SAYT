@@ -43,12 +43,13 @@ This maps every screen in the supplied Stitch archive to the current product bou
 ### Screen 02 — SAYT Music Library Manager
 
 - **Reference / asset:** `design/reference/SAYT-Stitch-v1/stitch_sayt_dj_audio_studio/sayt_music_library_manager/screen.png` and `code.html`.
-- **Workspace / target:** Library; M1 limited empty state, persistent library deferred.
-- **Required frontend:** Honest empty/loading/error states, track listing and collection controls when indexing exists.
-- **Required backend:** Persistent local index, metadata extraction, collection/playlist operations; not available in M1.
-- **Current source:** `LibraryEmptyState` in `apps/desktop/src/App.tsx`; direct native picker path targets Deck A.
-- **Verification:** Design complete/approved: yes, per supplied handoff. Prototype interaction complete: not verified. Source: empty state and load action only. Automated: 21 frontend tests passed; empty/loading markup, deck routing, and mocked `pick_track` command contract are tested, not real picker integration. Running desktop: not inspected. Physical: N/A. Deferred: full library/index.
-- **Manual requirements / limitations:** Confirm empty/loading display and native picker action in desktop. No scanning, index, search, sorting, playlists, persistence, or fabricated track data.
+- **Workspace / target:** Local music library; the empty state has been replaced by a functional, persistent catalog workspace. This advances Screen 02 independently; it does not close M1 physical audio acceptance.
+- **Required frontend:** Preserve the reference's left navigation/collection rail, central searchable table, and right track inspector, with honest empty/loading/error/scan states. Supplied example tracks, counts, analysis values, and artwork are not production data.
+- **Required backend:** Native folder selection, recursive no-symlink scanner, app-local SQLite catalog, metadata and selected-track artwork reads, search/sort/filter/paging, collections, missing-file recovery, backup, and deck routing through the current engine.
+- **Current source:** `apps/desktop/src/MusicLibrary.tsx` and `library.css`; app integration in `App.tsx`; Tauri commands in `apps/desktop/src-tauri/src/lib.rs`; storage/scanning in `crates/sayt-library`. Storage choice is recorded in [ADR-008](DECISIONS/ADR-008-local-music-catalog.md).
+- **Verification:** Source implemented. Automated: 14 library tests passed over real temporary audio files, plus a 10,000-row paged-search case; frontend typecheck, lint, formatting, 64 tests and production web build passed. Windows Tauri build, native folder-picker runtime, real user-folder search/collections/restart, deck A/B load, and viewport captures remain NOT RUN at this checkpoint. No exact-head CI exists for these unpushed edits.
+- **Manual requirements / limitations:** Owner must choose a genuine music folder in the running app, search a real track, save a crate/playlist, load one accepted WAV into each deck, then restart and confirm catalog/collection restoration. The current deck decoder supports only validated integer PCM WAV; MP3/FLAC/AIFF and other recognized containers are metadata-indexed but not loadable. BPM/key are displayed only from tags; automatic analysis is not implemented. Artwork is read from the selected source file on demand and is not copied into the audio or uploaded.
+- **Operator guide:** [`music-library-runbook.md`](music-library-runbook.md) documents local data, format limits, safe scanning, backup, and recovery.
 
 ### Screen 03 — Playlist & Collection Bridge
 
@@ -170,4 +171,4 @@ This maps every screen in the supplied Stitch archive to the current product bou
 
 ## M1 verification boundary
 
-The UI test suite uses static rendering and direct component callback checks; it does not exercise Tauri IPC or the native picker end to end. The app's DJ empty state rendered at a 1280×800 client viewport. Library and Settings runtime rendering, native picker interaction, 1440×900 and narrow runtime layouts, matched Stitch comparisons at every target size, and all physical output checks remain open. M1 stays **IN PROGRESS** until the CI and physical-device exit gates in `docs/REQUIREMENTS.md` pass.
+The UI test suite uses static rendering and direct component callback checks; it does not exercise Tauri IPC or the native picker end to end. The app's DJ and Library empty states rendered at 1280×800. The native library folder picker opened, but no real folder was selected yet. Settings runtime rendering, real catalog IPC/data, 1440×900 and narrow library layouts, matched Stitch comparisons at every target size, and physical output checks remain open. M1 stays **IN PROGRESS** until its CI and physical-device exit gates in `docs/REQUIREMENTS.md` pass.

@@ -2,8 +2,8 @@
 
 **Status:** PROPOSED inventory; owner and legal review pending<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-26<br>
-**Version:** 0.3.5
+**Date:** 2026-11-27<br>
+**Version:** 0.3.6
 
 ## SAYT license decision
 
@@ -38,6 +38,7 @@ Current owner-review items:
 - RustSec also lists [RUSTSEC-2026-0274](https://rustsec.org/advisories/RUSTSEC-2026-0274.html), a panic-safety memory-corruption issue in `rtrb` versions below `0.3.5` and `0.4.0`. The current lockfile pins `rtrb 0.4.1`, and `cargo tree --locked --offline --workspace --all-features --edges all --target all -i rtrb@0.4.1` confirms it is used by `sayt-engine`; the pinned version is within RustSec's stated patched range. This advisory does not show the locked version as affected.
 - `cargo tree --locked --offline --workspace --all-features --edges all --target all -i <crate>` showed `proc-macro-error@1.0.4` in the Linux GTK macro build graph, but no resolved workspace graph path for `chrono@0.4.45`, `zbus_names@4.3.5`, `zvariant@5.15.1`, or `zvariant_derive@5.15.1`. Those four remain in `Cargo.lock`, which `cargo audit` scans; they were not shown as active dependencies in the all-workspace/all-target resolution. Their RustSec records are [chrono](https://rustsec.org/advisories/RUSTSEC-2026-0543.html), [proc-macro-error](https://rustsec.org/advisories/RUSTSEC-2024-0370.html), [zbus_names](https://rustsec.org/advisories/RUSTSEC-2026-0371.html), [zvariant](https://rustsec.org/advisories/RUSTSEC-2026-0370.html), and [zvariant_derive](https://rustsec.org/advisories/RUSTSEC-2026-0372.html). No transitive upgrade was made; re-evaluate when the Linux Tauri dependency stack changes.
 - `cargo deny check --hide-inclusion-graph bans licenses sources` passed on 2026-11-26. It emitted duplicate-lockfile-entry warnings; no dependency-policy allowlist was widened.
+- Local `cargo audit` on 2026-11-27 refreshed the advisory database after the local catalog dependency addition. It found no known vulnerability advisories and reported six unmaintained crate warnings plus the existing `glib 0.18.5` unsoundness warning. `cargo deny check --hide-inclusion-graph bans licenses sources` passed on 2026-11-27 with duplicate-lock-entry warnings. Exact new direct pins and license metadata are recorded in [`licensing/third-party.md`](licensing/third-party.md); no license allowlist was widened.
 - A packaged-artifact SBOM, review of the active Linux GTK dependency path, and legal review are required before distributing binaries. The SAYT project license and third-party/font/icon approvals remain owner decisions.
 
 Do not silently widen license allowlists or describe scanner output as legal approval.

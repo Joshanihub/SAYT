@@ -25,11 +25,11 @@ import {
   HotCueControls,
   ManualLoopControls,
   invokeNativeTrackPicker,
-  LibraryEmptyState,
   MixerConsole,
   QuickCrateBrowser,
   Waveform,
 } from "./App";
+import { MusicLibrary } from "./MusicLibrary";
 import { ShortcutOverlay } from "./ShortcutOverlay";
 
 type TestElementProps = {
@@ -155,30 +155,23 @@ describe("M1 desktop workspace", () => {
     expect(markup).not.toContain("Output: System default output");
   });
 
-  it("renders an honest library empty state with a native-picker action", () => {
-    const load = vi.fn();
+  it("renders the persistent music-library controls without seeded tracks", () => {
     const markup = renderToStaticMarkup(
-      <LibraryEmptyState loading={false} onLoad={load} />,
+      <MusicLibrary loadingDeck={null} onLoadTrack={vi.fn(async () => true)} />,
     );
 
-    expect(markup).toContain("Your library is empty");
-    expect(markup).toContain("does not build or save a library index in M1");
-    expect(markup).toContain("Load WAV to Deck A");
-    expect(load).not.toHaveBeenCalled();
+    expect(markup).toContain("Loading your local catalog");
+    expect(markup).toContain("Import folders");
+    expect(markup).toContain("Export backup");
+    expect(markup).toContain("Create");
+    expect(markup).toContain("Search title, artist, album, or folder");
+    expect(markup).toContain("Select a track");
+    expect(markup).not.toContain("Dreams in Motion");
   });
 
   it("calls the native track-picker command with the requested deck", async () => {
     await invokeNativeTrackPicker(1);
     expect(invoke).toHaveBeenCalledWith("pick_track", { deck: 1 });
-  });
-
-  it("disables the library picker action while loading", () => {
-    const markup = renderToStaticMarkup(
-      <LibraryEmptyState loading onLoad={() => undefined} />,
-    );
-
-    expect(markup).toContain('disabled=""');
-    expect(markup).toContain("Opening native picker…");
   });
 
   it("shows only currently loaded deck slots in the quick crate", () => {
@@ -190,7 +183,7 @@ describe("M1 desktop workspace", () => {
     expect(markup).toContain("0 / 2 decks loaded");
     expect(markup).toContain("No WAV selected");
     expect(markup).toContain(
-      "SAYT does not scan folders or keep a library index yet.",
+      "The library catalog stores file references and does not copy or edit your audio.",
     );
     expect(markup).not.toContain("playlist");
   });

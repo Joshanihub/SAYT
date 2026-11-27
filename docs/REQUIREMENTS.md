@@ -54,3 +54,26 @@ The configured maximum is a safety bound, not a promise that every machine can c
 9. With the operating-system reduced-motion preference enabled, confirm button/select transitions stop and keyboard focus remains visible.
 
 Record device model, OS, sample rate, WAV properties, observed failures, and test duration with the result. Until every applicable item is recorded, hardware acceptance remains owner-reported and is not independently verified.
+
+## Screen 02 local music library acceptance contract
+
+This feature-track contract is separate from the open M1 physical-audio gate. The current implementation is in progress on `feat/dj-command-system`; it does not authorize a merge into `main`.
+
+The normal user workflow and catalog recovery guidance are in [`music-library-runbook.md`](music-library-runbook.md).
+
+1. The desktop accepts library roots only through the native folder picker, recursively indexes the selected local audio formats, reports progress, and can cancel. Recursive traversal does not follow symbolic links. Source audio bytes, names, and locations are never changed by the scanner.
+2. The local catalog retains content identity, selected file locations, metadata actually present in tags, format, missing state, user metadata, favorites, and user-created crate/playlist membership. Search and sort inputs are bounded/whitelisted and results are paged.
+3. A complete scan may mark unseen locations missing. A cancelled or permission-partial scan must not infer missing files from folders it could not finish reading. Rescanning a moved/renamed file with the same content recovers the same track identity. Same-name files with different contents remain separate.
+4. Crate/playlist creation, rename, deletion, membership, and playlist order persist through application restart. Deleting a collection never deletes the source music. A catalog backup is created only at a user-selected native save location.
+5. The library distinguishes metadata-indexed formats from formats supported by the current decoder. Deck loads resolve a saved track through its selected root, invoke the existing engine command, and report success only after the engine returns success.
+6. Metadata, tag artwork, BPM, and key are shown only when actually present. SAYT does not invent analysis results. Artwork preview reads the selected file on demand with explicit size/MIME checks.
+
+| Scenario                                                                                | Automated evidence                                                             | Live desktop evidence required                                                                                                              |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Real folder import, search, sort, filters, crate/playlist persistence and order         | `sayt-library` tests over temporary directories and real generated audio files | Owner selects a genuine music folder; search a real tagged/filename track; create/reorder collections; restart and confirm persistence      |
+| Deck routing and format truth                                                           | Catalog path checks plus existing engine decoder tests                         | Load one accepted PCM WAV into each deck and confirm the engine snapshot; try one unsupported indexed format and observe explicit rejection |
+| Duplicate, rename/move and missing file                                                 | Content-identity, moved-file, and missing-state regression tests               | Move/rename a selected real file, rescan its folder, and confirm identity recovery and missing state                                        |
+| Cancellation, malformed metadata, permission/traversal errors, and large catalog paging | Scanner cancellation, malformed-file, and 10,000-row paged-query tests         | Observe cancellation/progress against the chosen folder; permission error is NOT RUN until a safe representative folder can be selected     |
+| Runtime layout                                                                          | Frontend tests and production build                                            | Capture the running library at 1440×900, 1280×800, and narrow size; check focus, scroll areas, and error/empty states                       |
+
+The 10,000-row test verifies search paging against catalog rows; it is not evidence of 10,000-file scan throughput. Physical audio output and sustained performance-control tests remain separate M1 acceptance items.

@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MaterialIcon } from "./MaterialIcon";
+import { MusicLibrary } from "./MusicLibrary";
 import { ShortcutOverlay } from "./ShortcutOverlay";
 import {
   DECK_CONTROL_LIMITS,
@@ -1274,43 +1275,9 @@ export function QuickCrateBrowser({
         })}
       </div>
       <p className="crate-footnote">
-        Files are opened through the native picker. SAYT does not scan folders
-        or keep a library index yet.
+        Music stays in its source folders. The library catalog stores file
+        references and does not copy or edit your audio.
       </p>
-    </section>
-  );
-}
-
-export function LibraryEmptyState({
-  onLoad,
-  loading,
-}: {
-  onLoad: () => void;
-  loading: boolean;
-}) {
-  return (
-    <section className="empty-library" aria-labelledby="library-empty-heading">
-      <div className="empty-library-icon" aria-hidden="true">
-        <MaterialIcon name="library_music" />
-      </div>
-      <p className="eyebrow">LOCAL MUSIC LIBRARY</p>
-      <h2 id="library-empty-heading">Your library is empty</h2>
-      <p>
-        SAYT does not build or save a library index in M1. Load a WAV directly
-        into a deck with the native file picker.
-      </p>
-      <button
-        className="transport-primary lime"
-        type="button"
-        disabled={loading}
-        onClick={onLoad}
-      >
-        {loading ? "Opening native picker…" : "Load WAV to Deck A"}
-      </button>
-      <span className="scope-note">
-        Library indexing and collection management are planned for a later
-        milestone.
-      </span>
     </section>
   );
 }
@@ -1560,7 +1527,7 @@ export function AppShell({
             ? "Engine snapshot connected"
             : "Waiting for audio engine"}
         </span>
-        <span>Local audio · No library index · M1</span>
+        <span>Local files · Persistent catalog · PCM WAV deck decoder</span>
         <button
           className="shortcut-help-button"
           type="button"
@@ -1718,6 +1685,24 @@ export function App() {
       setMixer(snapshot);
     } catch (cause) {
       setError(getErrorMessage(cause));
+    } finally {
+      setLoadingDeck(null);
+    }
+  };
+
+  const loadLibraryTrack = async (trackId: string, deck: DeckId) => {
+    setLoadingDeck(deck);
+    setError("");
+    try {
+      const snapshot = await invoke<MixerSnapshot>("load_library_track", {
+        trackId,
+        deck,
+      });
+      setMixer(snapshot);
+      return true;
+    } catch (cause) {
+      setError(getErrorMessage(cause));
+      return false;
     } finally {
       setLoadingDeck(null);
     }
@@ -2091,7 +2076,9 @@ export function App() {
               </h1>
             </div>
             <div className="page-context">
-              <span className="m1-pill">M1 · TWO DECKS</span>
+              <span className="m1-pill">
+                {page === "library" ? "LOCAL CATALOG" : "M1 · TWO DECKS"}
+              </span>
               <span className="output-summary">Output: {outputSummary}</span>
             </div>
           </div>
@@ -2142,11 +2129,9 @@ export function App() {
           )}
 
           {page === "library" && (
-            <LibraryEmptyState
-              loading={loadingDeck === 0}
-              onLoad={() =>
-                dispatchCommand({ id: "deck.loadTrack", payload: { deck: 0 } })
-              }
+            <MusicLibrary
+              loadingDeck={loadingDeck}
+              onLoadTrack={(trackId, deck) => loadLibraryTrack(trackId, deck)}
             />
           )}
 
