@@ -2,8 +2,8 @@
 
 **Status:** ACTIVE operator guide<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-26<br>
-**Version:** 1.0
+**Date:** 2026-11-27<br>
+**Version:** 1.1
 
 ## Open and use the shortcut dialog
 
@@ -45,7 +45,8 @@ The defaults are SAYT-authored. On Windows and Linux, **Primary** means **Ctrl**
 - If stored mappings are corrupt or from an unsupported version, SAYT falls back to built-in mappings and displays a warning. Open the dialog and reset defaults if needed.
 - If a mapping will not save, check that local app storage is available. The current mapping remains active only after a successful save.
 - Loop shortcuts operate the focused deck. Loop In marks its current engine position; Loop Out must follow Loop In. Release exits at the next boundary while playing and immediately while paused. The Loop mode also exposes 250 ms, 500 ms, 1 s, 2 s, 4 s and 8 s pads, which start at the current playhead. These are seconds, not beat-synced sizes, and loop regions are not persisted.
-- Shortcuts do not provide system-wide hotkeys, Loop Roll, Beat Jump, pitch/sync, effects, sampler, recording, library search or controller input. Those actions are not implemented in this slice.
+- Manual BPM, signed Beat Jump, and held Loop Roll are available in each deck's performance controls. BPM is entered per deck and resets when its track changes; no automatic beat analysis or quantization is provided. Beat Jump and Loop Roll currently use on-screen controls and do not have shortcut bindings.
+- Shortcuts do not provide system-wide hotkeys, pitch/sync, effects, sampler, recording, library search or controller input. Those actions are not implemented in this slice.
 
 ## Owner verification on Windows
 

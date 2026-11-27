@@ -2,8 +2,8 @@
 
 **Status:** PROPOSED milestone sequence; M1 is active<br>
 **Owner:** SAYT project owner<br>
-**Date:** 2026-11-26<br>
-**Version:** 1.0.1
+**Date:** 2026-11-27<br>
+**Version:** 1.0.2
 
 This is the milestone-order source. It defines dependency and exit gates, not delivery dates. [`ROADMAP.md`](ROADMAP.md) remains a short entry point; [`REQUIREMENTS.md`](REQUIREMENTS.md) and [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md) carry detailed acceptance.
 
@@ -25,7 +25,7 @@ This is the milestone-order source. It defines dependency and exit gates, not de
 
 ## Current execution gate
 
-M1 is still IN PROGRESS. The PR #2 audio-validation contribution is integrated on the PR #1 branch as commit `853e51477e56593471c7126378d290524be391af`; its Windows/macOS/Ubuntu push and PR CI passed, including 52 toolkit tests and 77/77 fixture checks in the Linux PR job. The owner later reported PASS for Windows fixture loading, independent transport, low-volume mixer/EQ, device refresh/retry, and shutdown; per-check observations, device and viewport details were not supplied, so this remains attributed owner evidence. Runtime captures at 1440×900, 1280×800, 800×700, and 480×700 are recorded, while Screen 01 is still only partially implemented. The current device settings distinguish discovery loading, an empty device list, and enumeration failure in automated UI tests. Real no-device behavior, failed-switch recovery, unsupported-file interaction through the native picker, and macOS/Linux hardware playback still need evidence. See [`PROJECT_STATUS.md`](PROJECT_STATUS.md), [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md), and [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md).
+M1 is still IN PROGRESS. The PR #2 audio-validation contribution is integrated on the PR #1 branch as commit `853e51477e56593471c7126378d290524be391af`; its Windows/macOS/Ubuntu push and PR CI passed, including 52 toolkit tests and 77/77 fixture checks in the Linux PR job. The owner later reported PASS for Windows fixture loading, independent transport, low-volume mixer/EQ, device refresh/retry, and shutdown; per-check observations, device and viewport details were not supplied, so this remains attributed owner evidence. Runtime captures at 1440×900, 1280×800, 800×700, and 480×700 are recorded, while Screen 01 is still only partially implemented. The current device settings distinguish discovery loading, an empty device list, and enumeration failure in automated UI tests. Unsupported floating-point WAV interaction through the native picker is now Windows-runtime verified, including preservation of the previously loaded track and correct decoder-only error UI. Real no-device behavior, failed-switch recovery, and macOS/Linux hardware playback still need evidence. Latest code commit `80253e0` is pushed and its exact-head CI is pending; see [`PROJECT_STATUS.md`](PROJECT_STATUS.md), [`FEATURE_ACCEPTANCE_MATRIX.md`](FEATURE_ACCEPTANCE_MATRIX.md), and [`VERIFICATION_EVIDENCE.md`](VERIFICATION_EVIDENCE.md).
 
 ## Re-plan triggers
 
